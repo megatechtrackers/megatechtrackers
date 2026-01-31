@@ -1,0 +1,106 @@
+global:
+  resolve_timeout: 5m
+  
+  # NOTE: Email is now handled via alarm-service webhook
+  # alarm-service uses DB-configured SMTP (GoDaddy or MailHog based on mock mode)
+  # Keep MailHog as fallback for direct AlertManager emails (optional)
+  smtp_smarthost: 'mailhog:1025'
+  smtp_from: 'alertmanager@megatechtrackers.com'
+  smtp_require_tls: false
+
+# Templates for custom notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# The root route - ALL alerts go to alarm-service for DB-based recipient management
+route:
+  # Default receiver - routes to alarm-service webhook
+  receiver: 'alarm-service'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'service']
+  
+  # Wait before sending notification for new alerts
+  group_wait: 30s
+  
+  # Wait before sending notification about new alerts added to group
+  group_interval: 5m
+  
+  # Minimum time between two notifications for the same group
+  repeat_interval: 4h
+  
+  # Routes for specific alert types
+  routes:
+    # Critical alerts - send immediately
+    - match:
+        severity: critical
+      receiver: 'alarm-service'
+      group_wait: 10s
+      repeat_interval: 1h
+    
+    # Warning alerts - less frequent
+    - match:
+        severity: warning
+      receiver: 'alarm-service'
+      group_wait: 1m
+      repeat_interval: 6h
+
+# Inhibition rules - mute warnings when critical is firing
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+# Receivers
+receivers:
+  # Primary receiver - routes all alerts to alarm-service
+  # alarm-service handles email via DB-configured recipients
+  - name: 'alarm-service'
+    webhook_configs:
+      # Production: alarm-service (port 3200). Test profile: alarm-service-test (port 3100).
+      - url: 'http://alarm-service:3200/api/config/alertmanager/webhook'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+      - url: 'http://alarm-service-test:3100/api/config/alertmanager/webhook'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  # Fallback direct email (optional, not used by default)
+  - name: 'direct-email'
+    email_configs:
+      - to: 'admin@mockmail.local'
+        send_resolved: true
+        headers:
+          Subject: '🚨 [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <html>
+          <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: {{ if eq .Status "firing" }}#dc3545{{ else }}#28a745{{ end }};">
+              {{ if eq .Status "firing" }}🔴 ALERT FIRING{{ else }}✅ ALERT RESOLVED{{ end }}
+            </h2>
+            <table style="border-collapse: collapse; width: 100%;">
+              <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Alert:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ .GroupLabels.alertname }}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Severity:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ .GroupLabels.severity }}</td>
+              </tr>
+              {{ range .Alerts }}
+              <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Summary:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ .Annotations.summary }}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Description:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ .Annotations.description }}</td>
+              </tr>
+              {{ end }}
+            </table>
+          </body>
+          </html>

@@ -1,0 +1,226 @@
+# ============================================================
+# GRAFANA DASHBOARD GENERATOR - DEFAULTS & PRESETS
+# ============================================================
+# This file contains shared defaults applied to all dashboards.
+# Individual dashboards can override any setting.
+# ============================================================
+
+# ------------------------------------------------------------
+# DATASOURCE
+# ------------------------------------------------------------
+datasource:
+  type: prometheus
+  uid: prometheus
+
+# ------------------------------------------------------------
+# DASHBOARD DEFAULTS
+# ------------------------------------------------------------
+dashboard:
+  timezone: browser
+  refresh: "10s"
+  schema_version: 38
+  editable: true
+
+# ------------------------------------------------------------
+# QUERY DEFAULTS
+# ------------------------------------------------------------
+query:
+  # Automatically add "or vector(X)" to all queries
+  fallback: 0
+  # Rate interval variable
+  rate_interval: "$__rate_interval"
+
+# ------------------------------------------------------------
+# LAYOUT DEFAULTS (gridPos)
+# ------------------------------------------------------------
+layout:
+  # Total grid width is 24
+  grid_width: 24
+  
+  # Default sizes by panel type [width, height]
+  sizes:
+    stat: [6, 4]
+    gauge: [6, 5]
+    timeseries: [12, 8]
+    piechart: [12, 8]
+    bargauge: [12, 8]
+    table: [24, 8]
+    text: [24, 2]
+    row: [24, 1]
+  
+  # Row spacing
+  row_gap: 0
+
+# ------------------------------------------------------------
+# PANEL TYPE DEFAULTS
+# ------------------------------------------------------------
+panels:
+  # Stat panel defaults
+  stat:
+    color_mode: background
+    graph_mode: area
+    text_mode: value
+    orientation: horizontal
+    justify_mode: auto
+    reduce_calcs: [lastNotNull]
+  
+  # Gauge panel defaults
+  gauge:
+    show_threshold_labels: false
+    show_threshold_markers: true
+    orientation: auto
+    reduce_calcs: [lastNotNull]
+  
+  # Timeseries panel defaults
+  timeseries:
+    draw_style: line
+    fill_opacity: 20
+    line_width: 2
+    span_nulls: true
+    gradient_mode: none
+    show_points: never
+    point_size: 5
+    stacking: none
+    legend_display: list
+    legend_placement: bottom
+    tooltip_mode: multi
+  
+  # Piechart panel defaults
+  piechart:
+    pie_type: donut
+    legend_display: table
+    legend_placement: right
+    legend_values: [value, percent]
+    reduce_calcs: [lastNotNull]
+  
+  # Bargauge panel defaults
+  bargauge:
+    display_mode: gradient
+    orientation: horizontal
+    show_unfilled: true
+    reduce_calcs: [lastNotNull]
+  
+  # Table panel defaults
+  table:
+    show_header: true
+    cell_height: sm
+    filterable: true
+    align: auto
+
+# ------------------------------------------------------------
+# FIELD CONFIG DEFAULTS
+# ------------------------------------------------------------
+field_config:
+  # Default noValue display
+  no_value: "0"
+  
+  # Default color mode
+  color_mode: palette-classic
+
+# ------------------------------------------------------------
+# UNIT SHORTCUTS
+# ------------------------------------------------------------
+# Map short names to Grafana unit IDs
+units:
+  "$": currencyUSD
+  "USD": currencyUSD
+  "%": percent
+  "percent": percent
+  "bytes": bytes
+  "KB": kbytes
+  "MB": mbytes
+  "GB": gbytes
+  "s": s
+  "ms": ms
+  "µs": µs
+  "ops": ops
+  "ops/s": ops
+  "req/s": reqps
+  "short": short
+  "none": none
+
+# ------------------------------------------------------------
+# THRESHOLD PRESETS
+# ------------------------------------------------------------
+# Use with: thresholds: $preset_name
+thresholds:
+  # Service up/down status
+  up_down:
+    - { value: null, color: red }
+    - { value: 1, color: green }
+  
+  # Success rate (higher is better)
+  success_rate:
+    - { value: null, color: red }
+    - { value: 90, color: yellow }
+    - { value: 95, color: green }
+  
+  # Error count (lower is better)
+  error_count:
+    - { value: null, color: green }
+    - { value: 1, color: yellow }
+    - { value: 10, color: red }
+  
+  # Queue depth (lower is better)
+  queue_depth:
+    - { value: null, color: green }
+    - { value: 100, color: yellow }
+    - { value: 1000, color: red }
+  
+  # Percentage usage (lower is better)
+  usage_percent:
+    - { value: null, color: green }
+    - { value: 70, color: yellow }
+    - { value: 90, color: red }
+  
+  # Latency (lower is better)
+  latency:
+    - { value: null, color: green }
+    - { value: 1, color: yellow }
+    - { value: 5, color: red }
+  
+  # Cache hit ratio (higher is better)
+  cache_hit:
+    - { value: null, color: red }
+    - { value: 90, color: yellow }
+    - { value: 99, color: green }
+  
+  # Connection count (context-dependent)
+  connections:
+    - { value: null, color: green }
+    - { value: 400, color: yellow }
+    - { value: 450, color: red }
+  
+  # Cost thresholds
+  cost:
+    - { value: null, color: green }
+    - { value: 10, color: yellow }
+    - { value: 100, color: red }
+
+# ------------------------------------------------------------
+# COLOR PRESETS
+# ------------------------------------------------------------
+colors:
+  blue: "#3274D9"
+  green: "#73BF69"
+  yellow: "#FADE2A"
+  orange: "#FF9830"
+  red: "#F2495C"
+  purple: "#B877D9"
+  cyan: "#8AB8FF"
+
+# ------------------------------------------------------------
+# VALUE MAPPINGS PRESETS
+# ------------------------------------------------------------
+mappings:
+  up_down:
+    - { value: 0, text: "❌ DOWN", color: red }
+    - { value: 1, text: "✅ UP", color: green }
+  
+  enabled_disabled:
+    - { value: 0, text: "Disabled", color: yellow }
+    - { value: 1, text: "Enabled", color: green }
+  
+  yes_no:
+    - { value: 0, text: "No", color: red }
+    - { value: 1, text: "Yes", color: green }

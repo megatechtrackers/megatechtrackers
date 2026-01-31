@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock SMS Server - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/ui/dashboard.css">
+</head>
+<body>
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" id="mobile-toggle" onclick="toggleSidebar()">
+        <svg fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </button>
+    
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Mock SMS Server</div>
+                <div class="sidebar-subtitle">
+                    <span class="status-dot healthy" id="status-dot"></span>
+                    <span id="status-text">Running</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-stats">
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-value" id="sidebar-total">0</div>
+                    <div class="sidebar-stat-label">Total</div>
+                </div>
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-value" id="sidebar-success">0</div>
+                    <div class="sidebar-stat-label">Success</div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main">
+            <div class="main-header">
+                <div>
+                    <div class="main-title">SMS Messages Dashboard</div>
+                    <div class="main-meta">View and manage all received SMS messages</div>
+                </div>
+                <div class="auto-refresh">
+                    <input type="checkbox" id="autoRefresh" checked>
+                    <label for="autoRefresh">Auto-refresh (5s)</label>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <!-- Stats Overview -->
+                <div class="overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Received</div>
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-hint">All SMS messages</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-label">Successful</div>
+                        <div class="stat-value" id="stat-success">0</div>
+                        <div class="stat-hint">Successfully sent</div>
+                    </div>
+                    <div class="stat-card error">
+                        <div class="stat-label">Failed</div>
+                        <div class="stat-value" id="stat-failed">0</div>
+                        <div class="stat-hint">Failed to send</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Rate Limited</div>
+                        <div class="stat-value" id="stat-rate-limited">0</div>
+                        <div class="stat-hint">Rate limit exceeded</div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">Messages Over Time</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="messages-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">Status Distribution</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="status-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Messages List -->
+                <div class="messages-section">
+                    <div class="section-header">
+                        <div class="section-title">Recent Messages</div>
+                        <div class="toolbar">
+                            <input type="text" class="search-box" id="searchBox" placeholder="Search by phone number..." onkeyup="filterMessages()">
+                            <button onclick="refresh()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh</button>
+                            <button class="danger" onclick="clearMessages()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Clear All</button>
+                        </div>
+                    </div>
+                    <div class="messages-list" id="messages-list">
+                        <div class="empty-state">
+                            <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>No messages yet</h2>
+                            <p>SMS messages will appear here when received.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    
+    <script src="/ui/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+groups:
+  - name: sms_quota_alerts
+    rules:
+      # Warning when individual modem reaches 75% usage
+      - alert: SmsModemQuotaWarning
+        expr: (sms_modem_usage_count / sms_modem_usage_limit) > 0.75
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "SMS Modem {{ $labels.modem_name }} at {{ $value | humanizePercentage }} usage"
+          description: "Modem {{ $labels.modem_name }} has used {{ $value | humanizePercentage }} of its SMS quota. Consider planning package renewal with finance."
+
+      # Critical when individual modem reaches 90% usage
+      - alert: SmsModemQuotaCritical
+        expr: (sms_modem_usage_count / sms_modem_usage_limit) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "SMS Modem {{ $labels.modem_name }} at {{ $value | humanizePercentage }} usage - CRITICAL"
+          description: "Modem {{ $labels.modem_name }} has used {{ $value | humanizePercentage }} of its SMS quota. Urgent: Contact finance for immediate package renewal."
+
+      # Critical when total pool usage reaches 80%
+      - alert: SmsPoolQuotaCritical
+        expr: (sum(sms_modem_usage_count) / sum(sms_modem_usage_limit)) > 0.80
+        for: 5m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "SMS Pool overall usage at {{ $value | humanizePercentage }}"
+          description: "The total SMS pool has used {{ $value | humanizePercentage }} of combined quota across all modems. Multiple modems may need package renewal."
+
+      # Critical when modem is quota exhausted
+      - alert: SmsModemQuotaExhausted
+        expr: sms_modem_usage_count >= sms_modem_usage_limit
+        for: 1m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "SMS Modem {{ $labels.modem_name }} quota EXHAUSTED"
+          description: "Modem {{ $labels.modem_name }} has exhausted its SMS quota ({{ $value }}/{{ $labels.sms_limit }}). This modem will not send SMS until package is reloaded."
+
+      # Critical when all modems are quota exhausted
+      - alert: AllSmsModemQuotaExhausted
+        expr: sms_modem_quota_exhausted_count == sms_modem_pool_size AND sms_modem_pool_size > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "ALL SMS modems quota exhausted!"
+          description: "All {{ $value }} SMS modems have exhausted their quota. SMS delivery is COMPLETELY BLOCKED. Immediate action required!"
+
+      # Warning when no healthy modems available
+      - alert: NoHealthySmsModems
+        expr: sms_modem_healthy_count == 0 AND sms_modem_pool_size > 0
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "No healthy SMS modems available"
+          description: "All SMS modems are unhealthy or quota exhausted. SMS delivery may fail. Check modem connectivity and quota status."

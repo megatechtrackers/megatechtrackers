@@ -1,0 +1,66 @@
+# ============================================================
+# CONSUMER SERVICE - STATUS
+# ============================================================
+# Database and alarm consumers. Metrics from consumer-service-database
+# and consumer-service-alarm (job: consumer-service-database, consumer-service-alarm).
+# ============================================================
+
+title: Consumer Service - Status
+uid: consumer-service-status
+tags:
+- consumer
+- rabbitmq
+- monitoring
+refresh: 30s
+panels:
+- row: Service Health
+- title: Consumer (Database) Up
+  width: 4
+  query: up{job="consumer-service-database"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+- title: Consumer (Alarm) Up
+  width: 4
+  query: up{job="consumer-service-alarm"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+
+- row: Throughput by Queue
+- title: Messages Processed (Total)
+  type: timeseries
+  width: 24
+  height: 8
+  query: sum(rate(consumer_service_messages_processed_total[5m])) by (job, queue)
+  unit: ops
+  fill_opacity: 20
+- title: Messages Failed (Total)
+  type: timeseries
+  width: 24
+  height: 7
+  query: sum(rate(consumer_service_messages_failed_total[5m])) by (job, queue)
+  unit: ops
+  thresholds: $error_count
+  fill_opacity: 20
+
+- row: Current Counts by Queue
+- title: Processed (instant)
+  width: 6
+  query: sum(consumer_service_messages_processed_total) by (job, queue)
+  color: '#73BF69'
+  graph_mode: none
+- title: Failed (instant)
+  width: 6
+  query: sum(consumer_service_messages_failed_total) by (job, queue)
+  thresholds: $error_count
+  graph_mode: none
+- title: Processed by Consumer Type
+  type: timeseries
+  width: 12
+  height: 6
+  query: consumer_service_messages_processed_total
+  unit: short
+  fill_opacity: 15

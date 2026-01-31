@@ -1,0 +1,1445 @@
+services:
+  # PostgreSQL Primary (for writes)
+  postgres-primary:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile.postgres-with-cron
+    image: megatechtrackers-postgres-primary:latest
+    container_name: postgres-primary
+    user: "0:0"  # Run as root initially so cron can be configured
+    environment:
+      POSTGRES_DB: tracking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Karachi
+      # Cleanup configuration
+      WAL_RETENTION_DAYS: 7              # Keep WAL archives for 7 days
+      PG_LOG_RETENTION_DAYS: 7           # Keep PostgreSQL logs for 7 days
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - postgres-primary-archive:/var/lib/postgresql/archive
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./docker/postgres/setup-replication-user.sh:/docker-entrypoint-initdb.d/02-setup-replication-user.sh
+      - ./docker/postgres/init-replica.sh:/docker-entrypoint-initdb.d/03-init-replica.sh
+      - ./parser_nodes/teltonika/teltonika_database/unit_io_mapping.csv:/docker-entrypoint-initdb.d/unit_io_mapping.csv:ro
+      - ./docker/postgres/load-unit-io-mapping.sh:/docker-entrypoint-initdb.d/04-load-unit-io-mapping.sh
+      - ./parser_nodes/teltonika/teltonika_database/location_reference.csv:/docker-entrypoint-initdb.d/location_reference.csv:ro
+      - ./docker/postgres/load-location-reference-data.sh:/docker-entrypoint-initdb.d/05-load-location-reference-data.sh
+      - ./docker/postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf
+      - ./docker/postgres/pg_hba-primary.conf:/etc/postgresql/pg_hba.conf
+      - ./docker/postgres/postgres-entrypoint.sh:/usr/local/bin/postgres-entrypoint.sh
+      - ./docker/postgres/ensure-users.sh:/usr/local/bin/ensure-users.sh
+      # Automatic cleanup scripts (read-write so entrypoint can chmod them)
+      - ./docker/postgres/cleanup-wal-archives.sh:/usr/local/bin/cleanup-wal-archives.sh
+      - ./docker/postgres/cleanup-postgres-logs.sh:/usr/local/bin/cleanup-postgres-logs.sh
+      - ./docker/postgres/setup-cleanup-cron.sh:/usr/local/bin/setup-cleanup-cron.sh
+    entrypoint: ["/usr/local/bin/postgres-entrypoint.sh"]
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf
+    networks:
+      - tracking-network
+    # No depends_on - primary starts independently
+    # Other services will retry connections when they come online
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -c 'SELECT 1' -d tracking_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+
+  # PostgreSQL Replica (for dashboards - Streaming Replication)
+  postgres-replica:
+    image: timescale/timescaledb-ha:pg15
+    container_name: postgres-replica
+    user: "0:0"  # Run as root to avoid volume permission issues on Windows
+    environment:
+      PGDATA: /var/lib/postgresql/data  # Set data directory to match volume mount
+      POSTGRES_DB: tracking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGUSER: postgres
+      PGPASSWORD: replica_password
+      TZ: Asia/Karachi
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+      - ./docker/postgres/replica-entrypoint.sh:/usr/local/bin/replica-entrypoint.sh
+      - ./docker/postgres/postgresql-replica.conf:/etc/postgresql/postgresql.conf
+      - ./docker/postgres/pg_hba-replica.conf:/etc/postgresql/pg_hba.conf
+    entrypoint: ["/usr/local/bin/replica-entrypoint.sh"]
+    networks:
+      - tracking-network
+    # No depends_on - replica starts independently and waits for primary in entrypoint script
+    # Entrypoint script handles waiting for primary and retrying connection
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -c 'SELECT pg_is_in_recovery()' -d tracking_db | grep -q 't'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  # PgBouncer Connection Pooler (for better connection management)
+  pgbouncer:
+    build:
+      context: .
+      dockerfile: docker/pgbouncer/Dockerfile
+    image: megatechtrackers-pgbouncer:latest
+    container_name: pgbouncer
+    environment:
+      POSTGRES_HOST: postgres-primary
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: tracking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      WRITER_PASSWORD: writer_password
+      READONLY_PASSWORD: readonly_password
+      TZ: Asia/Karachi
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./docker/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      # userlist.txt is generated dynamically by entrypoint from PostgreSQL
+      # - ./docker/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+      - ./docker/pgbouncer/entrypoint.sh:/usr/local/bin/entrypoint.sh
+      - pgbouncer-logs:/var/log/pgbouncer
+      - pgbouncer-run:/var/run/pgbouncer
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
+
+  # RabbitMQ Node 1
+  rabbitmq-1:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-1
+    hostname: rabbitmq-1
+    environment:
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+      RABBITMQ_DEFAULT_USER: tracking_user
+      RABBITMQ_DEFAULT_PASS: tracking_password
+      RABBITMQ_DEFAULT_VHOST: tracking_gateway
+      TZ: Asia/Karachi
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-1-data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - tracking-network
+    # No depends_on - starts independently, other nodes can join cluster when ready
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # RabbitMQ Node 2
+  rabbitmq-2:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-2
+    hostname: rabbitmq-2
+    environment:
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+      RABBITMQ_DEFAULT_USER: tracking_user
+      RABBITMQ_DEFAULT_PASS: tracking_password
+      RABBITMQ_DEFAULT_VHOST: tracking_gateway
+      TZ: Asia/Karachi
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq-2-data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - tracking-network
+    # No depends_on - node starts independently, cluster setup happens via init scripts
+    # RabbitMQ handles cluster formation automatically when nodes become available
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # RabbitMQ Node 3
+  rabbitmq-3:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-3
+    hostname: rabbitmq-3
+    environment:
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+      RABBITMQ_DEFAULT_USER: tracking_user
+      RABBITMQ_DEFAULT_PASS: tracking_password
+      RABBITMQ_DEFAULT_VHOST: tracking_gateway
+      TZ: Asia/Karachi
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    volumes:
+      - rabbitmq-3-data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - tracking-network
+    # No depends_on - node starts independently, cluster setup happens via init scripts
+    # RabbitMQ handles cluster formation automatically when nodes become available
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # HAProxy Load Balancer for RabbitMQ
+  rabbitmq-lb:
+    image: haproxy:2.8-alpine
+    container_name: rabbitmq-lb
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "56720:5672"
+    volumes:
+      - ./docker/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - tracking-network
+    depends_on:
+      - rabbitmq-1
+      - rabbitmq-2
+      - rabbitmq-3
+    # No depends_on condition - HAProxy starts independently and handles unavailable backends gracefully
+    # HAProxy configuration should handle backend failures
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # HAProxy Load Balancer for Mock Tracker (distributes to parser services 2-8, NOT 1)
+  # Node 1 is reserved for real trackers on port 2001
+  haproxy-tracker:
+    image: haproxy:2.8-alpine
+    container_name: haproxy-tracker
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "2002:2001"      # Mock tracker connections (internal)
+      - "8704:8404"      # Stats dashboard (changed from 8404 - Windows reserved range)
+    volumes:
+      - ./docker/haproxy/haproxy-tracker.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - tracking-network
+    depends_on:
+      - parser-service-1
+      - parser-service-2
+      - parser-service-3
+      - parser-service-4
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Redis for Rate Limiting and Caching
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tracking-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Parser Service 1 (Teltonika)
+  parser-service-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-1:latest
+    container_name: parser-service-1
+    environment:
+      NODE_ID: teltonika-parser-1
+      VENDOR: teltonika
+      NODE_INDEX: 0
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5027:5027"  # Direct access for debugging
+      - "2001:5027"  # Main port for real trackers from external network
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    # No depends_on - node starts independently and retries connections
+    # Application code handles retries with exponential backoff
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 2 (Teltonika)
+  parser-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-2:latest
+    container_name: parser-service-2
+    environment:
+      NODE_ID: teltonika-parser-2
+      VENDOR: teltonika
+      NODE_INDEX: 1
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5028:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    # No depends_on - node starts independently and retries connections
+    # Application code handles retries with exponential backoff
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 3 (Teltonika)
+  parser-service-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-3:latest
+    container_name: parser-service-3
+    environment:
+      NODE_ID: teltonika-parser-3
+      VENDOR: teltonika
+      NODE_INDEX: 2
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5029:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 4 (Teltonika)
+  parser-service-4:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-4:latest
+    container_name: parser-service-4
+    environment:
+      NODE_ID: teltonika-parser-4
+      VENDOR: teltonika
+      NODE_INDEX: 3
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5030:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 5 (Teltonika)
+  parser-service-5:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-5:latest
+    container_name: parser-service-5
+    environment:
+      NODE_ID: teltonika-parser-5
+      VENDOR: teltonika
+      NODE_INDEX: 4
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5031:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 6 (Teltonika)
+  parser-service-6:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-6:latest
+    container_name: parser-service-6
+    environment:
+      NODE_ID: teltonika-parser-6
+      VENDOR: teltonika
+      NODE_INDEX: 5
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5032:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 7 (Teltonika)
+  parser-service-7:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-7:latest
+    container_name: parser-service-7
+    environment:
+      NODE_ID: teltonika-parser-7
+      VENDOR: teltonika
+      NODE_INDEX: 6
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5033:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Parser Service 8 (Teltonika)
+  parser-service-8:
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    image: megatechtrackers-parser-service-8:latest
+    container_name: parser-service-8
+    environment:
+      NODE_ID: teltonika-parser-8
+      VENDOR: teltonika
+      NODE_INDEX: 7
+      TOTAL_NODES: 8
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    ports:
+      - "5034:5027"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    command: python parser_nodes/teltonika/run.py
+
+  # Consumer Service - database writer
+  consumer-service-database:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    image: megatechtrackers-consumer-service-database:latest
+    container_name: consumer-service-database
+    environment:
+      CONSUMER_TYPE: database
+      WORKERS: 15
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    # No depends_on - service starts independently and retries connections
+    # Application code handles retries with exponential backoff
+    restart: unless-stopped
+    command: python consumer_node/run.py
+
+  # Consumer Service - alarm notifier (high priority)
+  consumer-service-alarm:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    image: megatechtrackers-consumer-service-alarm:latest
+    container_name: consumer-service-alarm
+    environment:
+      CONSUMER_TYPE: alarm
+      WORKERS: 3
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    # No depends_on - service starts independently and retries connections
+    # Application code handles retries with exponential backoff
+    restart: unless-stopped
+    command: python consumer_node/run.py
+
+  # Alarm Service (SMS & Email Notifications) - PRODUCTION
+  # Use: docker-compose --profile production up -d alarm-service
+  alarm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.alarm
+    image: megatechtrackers-alarm-service:latest
+    container_name: alarm-service
+    ports:
+      - "3200:3200"  # Health check and metrics endpoint (changed from 3100 - Windows reserved)
+    profiles:
+      - production
+    environment:
+      TZ: Asia/Karachi
+      # External Service URLs for Dashboard Links
+      MOCK_SMS_URL: http://localhost:8786
+      MOCK_EMAIL_URL: http://localhost:8025
+      GRAFANA_URL: http://localhost:3000
+      RABBITMQ_MANAGEMENT_URL: http://localhost:15672
+      # Database Configuration
+      DB_HOST: postgres-primary
+      DB_PORT: 5432
+      DB_NAME: tracking_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # Redis Configuration (for Rate Limiting)
+      REDIS_URL: redis://redis:6379
+      # RabbitMQ Configuration
+      RABBITMQ_URL: amqp://tracking_user:tracking_password@rabbitmq-lb:5672/tracking_gateway
+      RABBITMQ_EXCHANGE: alarm_exchange
+      RABBITMQ_QUEUE: alarm_notifications
+      RABBITMQ_DLQ: alarm_notifications_dlq
+      RABBITMQ_PREFETCH: 10
+      # Email Configuration (SMTP)
+      EMAIL_HOST: ${EMAIL_HOST:-localhost}
+      EMAIL_PORT: ${EMAIL_PORT:-25}
+      EMAIL_SECURE: "false"
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@megatechtrackers.com}
+      # Operations Service / SMS Gateway
+      SMS_API_URL: ${SMS_API_URL:-https://api.sms-provider.com/send}
+      SMS_API_KEY: ${SMS_API_KEY:-your-sms-api-key}
+      SMS_FROM: ${SMS_FROM:-Megatechtrackers}
+      # Alarm Configuration
+      POLL_INTERVAL: 5000
+      BATCH_SIZE: 50
+      MAX_RETRIES: 3
+      RETRY_BASE_DELAY: 1000
+      RETRY_MAX_DELAY: 60000
+      DEDUP_WINDOW_MINUTES: 5
+      MAX_CONCURRENCY: 10
+      QUEUE_DEPTH_THRESHOLD: 1000
+      # Channel-specific Configuration
+      EMAIL_MAX_RETRIES: 5
+      EMAIL_MAX_CONCURRENCY: 5
+      SMS_MAX_RETRIES: 3
+      SMS_MAX_CONCURRENCY: 5
+      VOICE_MAX_RETRIES: 2
+      VOICE_MAX_CONCURRENCY: 3
+      # Default contacts (fallback)
+      DEFAULT_ALARM_EMAIL: ${DEFAULT_ALARM_EMAIL:-admin@example.com}
+      DEFAULT_ALARM_PHONE: "${DEFAULT_ALARM_PHONE:-+1234567890}"
+      # Health Check
+      HEALTH_PORT: 3200
+      # Auto-reprocessing on startup (automatically reprocesses pending alarms)
+      AUTO_REPROCESS_ON_STARTUP: "true"
+      STARTUP_REPROCESS_LIMIT: 50
+      PENDING_ALARM_REPROCESS_INTERVAL: 300000
+      PENDING_ALARM_REPROCESS_LIMIT: 20
+      # Database Pool Configuration
+      DB_POOL_MIN: 2
+      DB_POOL_TARGET: 10
+      DB_POOL_MONITOR_INTERVAL: 60000
+      # Circuit Breaker Configuration
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD: 5
+      CIRCUIT_BREAKER_SUCCESS_THRESHOLD: 2
+      CIRCUIT_BREAKER_TIMEOUT: 60000
+      # RabbitMQ Configuration
+      RABBITMQ_MAX_RECONNECT_ATTEMPTS: 10
+      RABBITMQ_RECONNECT_DELAY: 5000
+      RABBITMQ_QUEUE_MONITOR_INTERVAL: 10000
+      # Webhook Configuration
+      WEBHOOK_SECRET: ""
+      WEBHOOK_RATE_LIMIT_WINDOW: 60000
+      WEBHOOK_RATE_LIMIT_MAX: 100
+      WEBHOOK_RETRY_ATTEMPTS: 3
+      WEBHOOK_RETRY_DELAY: 1000
+      # Worker Registry Configuration
+      WORKER_HEARTBEAT_INTERVAL: 30000
+      WORKER_CLEANUP_INTERVAL: 60000
+      WORKER_STALE_THRESHOLD: 300000
+      WORKER_DEAD_THRESHOLD: 600000
+      # DLQ Reprocessor Configuration
+      DLQ_ALERT_THRESHOLD: 100
+      DLQ_MAX_BACKOFF_MS: 300000
+      DLQ_BASE_BACKOFF_MS: 1000
+      DLQ_AUTO_REPROCESS_INTERVAL: 5000
+      DLQ_AUTO_REPROCESS_BATCH_SIZE: 200
+      # Feature Flags Configuration
+      FEATURE_FLAGS_REFRESH_INTERVAL: 60000
+      # Template Versioning Configuration
+      TEMPLATE_REFRESH_INTERVAL: 300000
+      # SLA Configuration
+      EMAIL_SLA_THRESHOLD_MS: 30000
+      SMS_SLA_THRESHOLD_MS: 10000
+      VOICE_SLA_THRESHOLD_MS: 60000
+      # Cost Configuration
+      EMAIL_COST_PER_MESSAGE: 0.001
+      SMS_COST_PER_MESSAGE: 0.01
+      VOICE_COST_PER_MESSAGE: 0.05
+      # Startup Configuration
+      STARTUP_MAX_RETRIES: 10
+      STARTUP_RETRY_DELAY_BASE: 5000
+      STARTUP_RETRY_DELAY_MAX: 30000
+      # Logging
+      LOG_LEVEL: info
+      NODE_ENV: production
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq-lb:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # SMS Gateway Service - Handles SMS commands via RUT200 modems
+  # Polls command_outbox for send_method='sms', sends via modem pool, reads inbox for replies
+  sms-gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.sms-gateway-service
+    image: megatechtrackers-sms-gateway-service:latest
+    container_name: sms-gateway-service
+    environment:
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Operations Service - Command Management UI/API
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # Operations Service Backend - FastAPI for command management
+  ops-service-backend:
+    build:
+      context: ./ops_node/backend
+      dockerfile: Dockerfile
+    image: megatechtrackers-ops-service-backend:latest
+    container_name: ops-service-backend
+    environment:
+      # Connect to main database (tracking_db)
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres-primary:5432/tracking_db
+      CORS_ORIGINS: '["http://localhost:13000", "http://ops-service-frontend:3000"]'
+      DEBUG: "false"
+      TZ: Asia/Karachi
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "18000:8000"
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Operations Service Frontend - Next.js UI for command management
+  ops-service-frontend:
+    build:
+      context: ./ops_node/frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:18000/api
+    image: megatechtrackers-ops-service-frontend:latest
+    container_name: ops-service-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:18000/api
+      TZ: Asia/Karachi
+    ports:
+      - "13000:3000"
+    networks:
+      - tracking-network
+    depends_on:
+      - ops-service-backend
+    restart: unless-stopped
+
+  # Monitoring Service (Fleet metrics server - receives parser metrics, exposes fleet_* and /metrics)
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitoring
+    image: megatechtrackers-monitoring-service:latest
+    container_name: monitoring-service
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "8888:8080"  # Changed from 8080 due to Windows port reservation
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    # No depends_on - monitoring-service starts independently
+    # Can receive metrics from parser services when they come online
+    restart: unless-stopped
+    command: python monitoring_node/run.py  # source: monitoring_node
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./docker/prometheus/alerts-disk.yml:/etc/prometheus/alerts-disk.yml:ro
+      - ./docker/prometheus/alerts-alarm-service.yml:/etc/prometheus/alerts-alarm-service.yml:ro
+      - ./docker/prometheus/alerts-ops-service.yml:/etc/prometheus/alerts-ops-service.yml:ro
+      - ./docker/prometheus/alerts-sms-gateway-service.yml:/etc/prometheus/alerts-sms-gateway-service.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - tracking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Alertmanager - Alert Handling and Notifications
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - tracking-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana - Visualization
+  grafana:
+    image: grafana/grafana:12.2.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_INSTALL_PLUGINS=
+      - MONITORING_RETENTION_DAYS=90
+      - TZ=Asia/Karachi
+      # Enable iframe embedding for customer dashboards
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SECURITY_X_FRAME_OPTIONS=
+      # Anonymous access for token-validated requests
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      # Dashboard settings
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=
+      - GF_DASHBOARDS_DEFAULT_TIMEZONE=Asia/Karachi
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=5s
+      - GF_DASHBOARDS_DEFAULT_REFRESH=30s
+      # Performance optimizations
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ALERTING_ENABLED=false
+      - GF_EXPLORE_ENABLED=true
+      - GF_LIVE_ENABLED=true
+      - GF_LIVE_MAX_CONNECTIONS=100
+      - GF_LIVE_ALLOWED_ORIGINS=*
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_SERVER_ENABLE_GZIP=true
+      - GF_SERVER_COMPRESS=true
+      - GF_LOG_LEVEL=warn
+      - GF_LOG_FILTERS=rendering:debug
+      # Database connection pooling
+      - GF_DATABASE_MAX_IDLE_CONN=2
+      - GF_DATABASE_MAX_OPEN_CONN=0
+      - GF_DATABASE_CONN_MAX_LIFETIME=14400
+      - GF_DATABASE_LOG_QUERIES=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./docker/scripts/cleanup-monitoring-data.sh:/usr/local/bin/cleanup-monitoring-data.sh
+    networks:
+      - tracking-network
+    depends_on:
+      - prometheus
+      - alertmanager
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Exporter (Primary)
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres-primary:5432/tracking_db?sslmode=disable"
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # PostgreSQL Exporter (Replica)
+  postgres-exporter-replica:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter-replica
+    ports:
+      - "9188:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres-replica:5432/tracking_db?sslmode=disable"
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    depends_on:
+      postgres-replica:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Node Exporter (System Metrics)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    environment:
+      TZ: Asia/Karachi
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+  # PgBouncer Exporter
+  pgbouncer-exporter:
+    image: spreaker/prometheus-pgbouncer-exporter:latest
+    container_name: pgbouncer-exporter
+    ports:
+      - "9127:9127"
+    environment:
+      PGBOUNCER_HOST: "pgbouncer"
+      PGBOUNCER_PORT: "6432"
+      PGBOUNCER_USER: "postgres"
+      PGBOUNCER_PASS: "postgres"
+      PGBOUNCER_EXPORTER_HOST: "0.0.0.0"
+      PGBOUNCER_EXPORTER_PORT: "9127"
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # RabbitMQ Exporter
+  rabbitmq-exporter:
+    image: kbudde/rabbitmq-exporter:latest
+    container_name: rabbitmq-exporter
+    ports:
+      - "9419:9419"
+    environment:
+      RABBIT_URL: "http://rabbitmq-1:15672"
+      RABBIT_USER: "tracking_user"
+      RABBIT_PASSWORD: "tracking_password"
+      PUBLISH_PORT: "9419"
+      OUTPUT_FORMAT: "JSON"
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # =============================================================================
+  # TESTING TOOLS
+  # =============================================================================
+  
+  # MailHog - Mock SMTP Server for Email Testing
+  # Web UI: http://localhost:8025
+  # SMTP: localhost:1025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP port
+      - "8025:8025"   # Web UI
+    environment:
+      MH_STORAGE: memory
+      MH_MAILDIR_PATH: /maildir
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    profiles:
+      - testing
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8025/api/v2/messages?limit=1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Mock SMS Server - Simulates SMS API for testing
+  # Web UI: http://localhost:8086
+  # SMS API: POST http://localhost:8086/sms/send
+  mock-sms-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-sms
+    image: megatechtrackers-mock-sms-server:latest
+    container_name: mock-sms-server
+    ports:
+      - "8786:8086"   # HTTP API and Web UI (changed from 8086 - Windows reserved range)
+    environment:
+      TZ: Asia/Karachi
+      PORT: 8086
+      LOG_LEVEL: INFO
+      # Set to non-zero to simulate random failures (percentage, e.g., 5 = 5%)
+      SIMULATE_FAILURES: 0
+      # Set to non-zero to simulate rate limiting after N messages (0 = disabled)
+      FAILURE_RATE_LIMIT: 0
+      # Maximum messages to keep in memory
+      MAX_HISTORY: 1000
+    networks:
+      - tracking-network
+    profiles:
+      - testing
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Alarm Service (Test Mode) - Uses mock email and SMS services
+  # This overrides the production alarm-service when testing profile is active
+  alarm-service-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.alarm
+    image: megatechtrackers-alarm-service-test:latest
+    container_name: alarm-service-test
+    ports:
+      - "13100:3100"  # Different port to avoid conflict with production (3100) and Windows reserved ports
+    environment:
+      TZ: Asia/Karachi
+      # External Service URLs for Dashboard Links
+      MOCK_SMS_URL: http://localhost:8786
+      MOCK_EMAIL_URL: http://localhost:8025
+      GRAFANA_URL: http://localhost:3000
+      RABBITMQ_MANAGEMENT_URL: http://localhost:15672
+      # Database Configuration
+      DB_HOST: postgres-primary
+      DB_PORT: 5432
+      DB_NAME: tracking_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # Redis Configuration
+      REDIS_URL: redis://redis:6379
+      # RabbitMQ Configuration
+      RABBITMQ_URL: amqp://tracking_user:tracking_password@rabbitmq-lb:5672/tracking_gateway
+      RABBITMQ_EXCHANGE: alarm_exchange
+      RABBITMQ_QUEUE: alarm_notifications
+      RABBITMQ_DLQ: alarm_notifications_dlq
+      RABBITMQ_PREFETCH: 10
+      # Email Configuration - Point to MailHog
+      EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_SECURE: "false"
+      EMAIL_USER: test@megatechtrackers.com
+      EMAIL_PASSWORD: testpassword
+      EMAIL_FROM: alarms@megatechtrackers.com
+      # Operations Service - Point to Mock SMS Server
+      SMS_API_URL: http://mock-sms-server:8086/sms/send
+      SMS_API_KEY: test-api-key-12345
+      SMS_FROM: Megatechtrackers
+      # Alarm Configuration
+      POLL_INTERVAL: 5000
+      BATCH_SIZE: 50
+      MAX_RETRIES: 3
+      RETRY_BASE_DELAY: 1000
+      RETRY_MAX_DELAY: 60000
+      DEDUP_WINDOW_MINUTES: 5
+      MAX_CONCURRENCY: 10
+      QUEUE_DEPTH_THRESHOLD: 1000
+      # Channel-specific Configuration
+      EMAIL_MAX_RETRIES: 3
+      EMAIL_MAX_CONCURRENCY: 5
+      SMS_MAX_RETRIES: 3
+      SMS_MAX_CONCURRENCY: 5
+      VOICE_MAX_RETRIES: 2
+      VOICE_MAX_CONCURRENCY: 3
+      # Default contacts (fallback)
+      DEFAULT_ALARM_EMAIL: ${DEFAULT_ALARM_EMAIL:-admin@example.com}
+      DEFAULT_ALARM_PHONE: "${DEFAULT_ALARM_PHONE:-+1234567890}"
+      # Health Check
+      HEALTH_PORT: 3100
+      # Auto-reprocessing on startup (automatically reprocesses pending alarms)
+      AUTO_REPROCESS_ON_STARTUP: "true"
+      STARTUP_REPROCESS_LIMIT: 50
+      PENDING_ALARM_REPROCESS_INTERVAL: 300000
+      PENDING_ALARM_REPROCESS_LIMIT: 20
+      # Database Pool Configuration
+      DB_POOL_MIN: 2
+      DB_POOL_TARGET: 10
+      DB_POOL_MONITOR_INTERVAL: 60000
+      # Circuit Breaker Configuration
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD: 5
+      CIRCUIT_BREAKER_SUCCESS_THRESHOLD: 2
+      CIRCUIT_BREAKER_TIMEOUT: 60000
+      # RabbitMQ Configuration
+      RABBITMQ_MAX_RECONNECT_ATTEMPTS: 10
+      RABBITMQ_RECONNECT_DELAY: 5000
+      RABBITMQ_QUEUE_MONITOR_INTERVAL: 10000
+      # Webhook Configuration
+      WEBHOOK_SECRET: ""
+      WEBHOOK_RATE_LIMIT_WINDOW: 60000
+      WEBHOOK_RATE_LIMIT_MAX: 100
+      WEBHOOK_RETRY_ATTEMPTS: 3
+      WEBHOOK_RETRY_DELAY: 1000
+      # Worker Registry Configuration
+      WORKER_HEARTBEAT_INTERVAL: 30000
+      WORKER_CLEANUP_INTERVAL: 60000
+      WORKER_STALE_THRESHOLD: 300000
+      WORKER_DEAD_THRESHOLD: 600000
+      # DLQ Reprocessor Configuration
+      DLQ_ALERT_THRESHOLD: 100
+      DLQ_MAX_BACKOFF_MS: 300000
+      DLQ_BASE_BACKOFF_MS: 1000
+      DLQ_AUTO_REPROCESS_INTERVAL: 5000
+      DLQ_AUTO_REPROCESS_BATCH_SIZE: 200
+      # Feature Flags Configuration
+      FEATURE_FLAGS_REFRESH_INTERVAL: 60000
+      # Template Versioning Configuration
+      TEMPLATE_REFRESH_INTERVAL: 300000
+      # SLA Configuration
+      EMAIL_SLA_THRESHOLD_MS: 30000
+      SMS_SLA_THRESHOLD_MS: 10000
+      VOICE_SLA_THRESHOLD_MS: 60000
+      # Cost Configuration
+      EMAIL_COST_PER_MESSAGE: 0.001
+      SMS_COST_PER_MESSAGE: 0.01
+      VOICE_COST_PER_MESSAGE: 0.05
+      # Startup Configuration
+      STARTUP_MAX_RETRIES: 10
+      STARTUP_RETRY_DELAY_BASE: 5000
+      STARTUP_RETRY_DELAY_MAX: 30000
+      # Logging
+      LOG_LEVEL: debug
+      NODE_ENV: development
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    profiles:
+      - testing
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq-lb:
+        condition: service_started
+      mailhog:
+        condition: service_healthy
+      mock-sms-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Mock Teltonika Tracker - Simulates GPS trackers for system testing
+  # Use: docker-compose --profile testing up -d mock-tracker
+  # Stop: docker-compose stop mock-tracker
+  mock-tracker:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-tracker
+    image: megatechtrackers-mock-tracker:latest
+    container_name: mock-tracker
+    environment:
+      TZ: Asia/Karachi
+      # Target the HAProxy load balancer (distributes to all parser services)
+      TRACKER_HOST: haproxy-tracker
+      TRACKER_PORT: 2001
+      # Number of simulated trackers
+      NUM_TRACKERS: 20
+      # Seconds between packets per tracker (5s = fast testing rate)
+      SEND_RATE: 5
+      # IMEI prefix for mock devices (avoid conflict with real devices)
+      IMEI_PREFIX: "99900000"
+      # Stats reporting interval (seconds)
+      STATS_INTERVAL: 30
+      # Log level (DEBUG, INFO, WARNING, ERROR)
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: 1
+    networks:
+      - tracking-network
+    # Don't auto-start - manual testing tool
+    profiles:
+      - testing
+    depends_on:
+      haproxy-tracker:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # =============================================================================
+  # ACCESS CONTROL LAYER (Frappe + Access Gateway + Web/Mobile Apps)
+  # Profile: frappe - Use: docker compose --profile frappe up -d
+  # =============================================================================
+
+  # MariaDB Database for Frappe
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb
+    profiles:
+      - frappe
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: frappe
+      MYSQL_USER: frappe
+      MYSQL_PASSWORD: frappe
+      TZ: Asia/Karachi
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./docker/mariadb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - tracking-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-padmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --bind-address=0.0.0.0
+    restart: unless-stopped
+
+  # Frappe Framework
+  frappe:
+    build:
+      context: ./docker/frappe
+      dockerfile: Dockerfile.dev
+    image: megatechtrackers-frappe:latest
+    container_name: frappe
+    profiles:
+      - frappe
+    expose:
+      - "8000"
+      - "9000"
+    ports:
+      - "9000:9000"
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: frappe
+      DB_USERNAME: frappe
+      DB_PASSWORD: frappe
+      REDIS_CACHE: redis://redis:6379
+      REDIS_QUEUE: redis://redis:6379
+      REDIS_SOCKETIO: redis://redis:6379
+      SITE_NAME: site1.localhost
+      ADMIN_PASSWORD: admin
+      TZ: Asia/Karachi
+    volumes:
+      - frappe-data:/home/frappe/frappe-bench
+      - ./frappe_apps/megatechtrackers:/workspace/apps/megatechtrackers:ro
+    user: "frappe:frappe"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tracking-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+    restart: unless-stopped
+
+  # Nginx reverse proxy for Frappe (fixes Content-Length mismatch issues)
+  frappe-nginx:
+    image: nginx:alpine
+    container_name: frappe-proxy
+    profiles:
+      - frappe
+    ports:
+      - "8000:8080"
+    environment:
+      TZ: Asia/Karachi
+    volumes:
+      - ./docker/nginx/frappe-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      frappe:
+        condition: service_healthy
+    networks:
+      - tracking-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Nginx reverse proxy for Grafana (token validation for dashboard embedding)
+  grafana-proxy:
+    image: nginx:alpine
+    container_name: grafana-proxy
+    profiles:
+      - frappe
+    ports:
+      - "3200:3000"  # External access for embedded dashboards (token required)
+    environment:
+      TZ: Asia/Karachi
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - grafana
+      - access-gateway
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+  # Access Gateway - Token generation & Grafana proxy
+  access-gateway:
+    build:
+      context: ./access_control_node
+      dockerfile: Dockerfile.dev
+    image: megatechtrackers-access-gateway:latest
+    container_name: access-gateway
+    profiles:
+      - frappe
+    ports:
+      - "3001:3001"
+    environment:
+      # Internal URLs (container-to-container)
+      GRAFANA_URL: http://grafana:3000
+      # Public URL returned in embed links (browser-facing)
+      GRAFANA_PUBLIC_URL: ${GRAFANA_PUBLIC_URL:-http://localhost:3200}
+      FRAPPE_URL: http://frappe:8000
+      REDIS_URL: redis://redis:6379
+      # Grafana auth (from .env, auto-generated by startup script)
+      GRAFANA_USER: ${GRAFANA_USER:-admin}
+      GRAFANA_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GRAFANA_API_KEY: ${GRAFANA_API_KEY:-}
+      # Frappe token auth (from .env, auto-generated by startup script)
+      FRAPPE_API_KEY: ${FRAPPE_API_KEY:-dummy}
+      FRAPPE_API_SECRET: ${FRAPPE_API_SECRET:-dummy}
+      # CORS for local development
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:*,http://127.0.0.1:*}
+      NODE_ENV: ${NODE_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TZ: Asia/Karachi
+    depends_on:
+      - redis
+      - grafana
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+  # Web App - Customer dashboard viewer (Next.js)
+  web-app:
+    build:
+      context: ./web_app_node
+      dockerfile: Dockerfile.dev
+    image: megatechtrackers-web-app:latest
+    container_name: web-app
+    profiles:
+      - frappe
+    ports:
+      - "3002:3002"
+    environment:
+      # Server-side (container-to-container) for Next.js API routes
+      FRAPPE_URL: http://frappe:8000
+      ACCESS_GATEWAY_URL: http://access-gateway:3001
+      # Client-side (browser) URLs
+      NEXT_PUBLIC_FRAPPE_URL: ${NEXT_PUBLIC_FRAPPE_URL:-http://localhost:8000}
+      NEXT_PUBLIC_ACCESS_GATEWAY_URL: ${NEXT_PUBLIC_ACCESS_GATEWAY_URL:-http://localhost:3001}
+      # File watching in Docker on Windows
+      WATCHPACK_POLLING: "true"
+      TZ: Asia/Karachi
+    depends_on:
+      - access-gateway
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+  # Mobile App - Expo/React Native dev server
+  mobile-app:
+    build:
+      context: ./mobile_app_node
+      dockerfile: Dockerfile.dev
+    image: megatechtrackers-mobile-app:latest
+    container_name: mobile-app
+    profiles:
+      - frappe
+    ports:
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+      - "19006:19006"
+    environment:
+      EXPO_NO_INTERACTIVE: 1
+      EXPO_NO_TELEMETRY: 1
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      EXPO_PUBLIC_FRAPPE_URL: ${EXPO_PUBLIC_FRAPPE_URL:-http://localhost:8000}
+      EXPO_PUBLIC_ACCESS_GATEWAY_URL: ${EXPO_PUBLIC_ACCESS_GATEWAY_URL:-http://localhost:3001}
+      EXPO_PUBLIC_PROJECT_ID: ${EXPO_PUBLIC_PROJECT_ID:-}
+      TZ: Asia/Karachi
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+  # MkDocs - Internal documentation server
+  docs:
+    build:
+      context: .
+      dockerfile: docs/Dockerfile.dev
+    image: megatechtrackers-docs:latest
+    container_name: docs
+    profiles:
+      - frappe
+    ports:
+      - "8001:8000"
+    environment:
+      TZ: Asia/Karachi
+    volumes:
+      - ./mkdocs.yml:/app/mkdocs.yml:ro
+      - ./docs:/app/docs:ro
+    networks:
+      - tracking-network
+    restart: unless-stopped
+
+volumes:
+  postgres-primary-data:
+  postgres-primary-archive:
+  postgres-replica-data:
+  pgbouncer-logs:
+  pgbouncer-run:
+  rabbitmq-1-data:
+  rabbitmq-2-data:
+  rabbitmq-3-data:
+  redis-data:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:
+  # Access Control Layer volumes
+  mariadb-data:
+  frappe-data:
+
+networks:
+  tracking-network:
+    driver: bridge

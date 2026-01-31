@@ -1,0 +1,408 @@
+{
+  "title": "Alarm Service - SLA Compliance",
+  "uid": "sla-tracking",
+  "tags": [
+    "alarm",
+    "sla",
+    "compliance"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "SLA Compliance Rate by Channel",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(notification_sla_compliance_email * 100) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Email %"
+        },
+        {
+          "expr": "(notification_sla_compliance_sms * 100) or vector(0)",
+          "refId": "B",
+          "legendFormat": "SMS %"
+        },
+        {
+          "expr": "(notification_sla_compliance_voice * 100) or vector(0)",
+          "refId": "C",
+          "legendFormat": "Voice %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 90,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Delivery Time P95 by Channel",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(rate(notification_delivery_time_ms_email_bucket[$__rate_interval])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Email P95 (sec)"
+        },
+        {
+          "expr": "(rate(notification_delivery_time_ms_sms_bucket[$__rate_interval])) or vector(0)",
+          "refId": "B",
+          "legendFormat": "SMS P95 (sec)"
+        },
+        {
+          "expr": "(rate(notification_delivery_time_ms_voice_bucket[$__rate_interval])) or vector(0)",
+          "refId": "C",
+          "legendFormat": "Voice P95 (sec)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Success Rate by Channel",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(notification_success_rate_email * 100) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Email %"
+        },
+        {
+          "expr": "(notification_success_rate_sms * 100) or vector(0)",
+          "refId": "B",
+          "legendFormat": "SMS %"
+        },
+        {
+          "expr": "(notification_success_rate_voice * 100) or vector(0)",
+          "refId": "C",
+          "legendFormat": "Voice %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 90,
+                "color": "yellow"
+              },
+              {
+                "value": 99,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "SLA Current Status",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(notification_sla_compliance_email * 100) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Email SLA",
+          "instant": true
+        },
+        {
+          "expr": "(notification_sla_compliance_sms * 100) or vector(0)",
+          "refId": "B",
+          "legendFormat": "SMS SLA",
+          "instant": true
+        },
+        {
+          "expr": "(notification_sla_compliance_voice * 100) or vector(0)",
+          "refId": "C",
+          "legendFormat": "Voice SLA",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 90,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "0",
+          "displayName": "SLA Current Status"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "orientation": "horizontal",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Delivery Time Distribution (Email)",
+      "type": "heatmap",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(rate(notification_delivery_time_ms_email_bucket[$__rate_interval])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "0"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 6,
+      "title": "Delivery Time Distribution (SMS)",
+      "type": "heatmap",
+      "gridPos": {
+        "x": 8,
+        "y": 16,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(rate(notification_delivery_time_ms_sms_bucket[$__rate_interval])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "0"
+        }
+      },
+      "options": {}
+    },
+    {
+      "id": 7,
+      "title": "Delivery Time Distribution (Voice)",
+      "type": "heatmap",
+      "gridPos": {
+        "x": 16,
+        "y": 16,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "(rate(notification_delivery_time_ms_voice_bucket[$__rate_interval])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "0"
+        }
+      },
+      "options": {}
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
+}

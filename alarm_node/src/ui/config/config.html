@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Alarm Service</title>
+    <link rel="stylesheet" href="/ui/shared/styles.css">
+    <link rel="stylesheet" href="/ui/config/config.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <div class="header-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+                    </svg>
+                    Configuration
+                </div>
+                <div class="header-subtitle">Alarm Service Configuration Panel</div>
+            </div>
+            <div class="header-actions">
+                <span id="system-status-indicator"></span>
+                <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="system">System Control</div>
+            <div class="tab" data-tab="sms-modems">SMS Modems</div>
+            <div class="tab" data-tab="templates">Templates</div>
+            <div class="tab" data-tab="contacts">Contacts</div>
+            <div class="tab" data-tab="alert-recipients">Alert Recipients</div>
+            <div class="tab" data-tab="email">Email Settings</div>
+            <div class="tab" data-tab="push">Push Notifications</div>
+        </div>
+        
+        <!-- System Control Tab -->
+        <div class="tab-content active" id="system-tab">
+            <div id="alert-container"></div>
+            
+            <div class="system-status-grid">
+                <div class="status-card">
+                    <div class="status-card-label">System State</div>
+                    <div class="status-card-value" id="system-state-value">Loading...</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">SMS Mode</div>
+                    <div class="status-card-value" id="sms-mode-value">Loading...</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Email Mode</div>
+                    <div class="status-card-value" id="email-mode-value">Loading...</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">System Control</div>
+                <div class="system-control-row">
+                    <button class="btn" id="system-toggle-btn" onclick="toggleSystemState()">
+                        <span id="system-toggle-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></span>
+                        <span id="system-toggle-text">Pause System</span>
+                    </button>
+                    <span id="system-toggle-status" class="badge badge-success">Running</span>
+                </div>
+                <p class="text-muted">
+                    Pausing the system will stop processing new alarms. Messages will be requeued until resumed.
+                </p>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Mock Mode Configuration</div>
+                <div class="mock-mode-grid">
+                    <div>
+                        <div class="form-label">SMS Mode</div>
+                        <button class="btn btn-secondary" onclick="toggleMockMode('sms')">
+                            Toggle SMS Mock Mode
+                        </button>
+                        <p class="text-muted">
+                            Mock: Uses mock SMS server. Real: Uses configured modems.
+                        </p>
+                    </div>
+                    <div>
+                        <div class="form-label">Email Mode</div>
+                        <button class="btn btn-secondary" onclick="toggleMockMode('email')">
+                            Toggle Email Mock Mode
+                        </button>
+                        <p class="text-muted">
+                            Mock: Uses MailHog. Real: Uses configured SMTP.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SMS Modems Tab -->
+        <div class="tab-content" id="sms-modems-tab">
+            <div id="sms-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">SMS Modems</div>
+                    <button class="btn btn-primary" onclick="showAddModemModal()">+ Add Modem</button>
+                </div>
+                
+                <div id="sms-status-summary"></div>
+                
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Host</th>
+                                <th>Services</th>
+                                <th>Enabled</th>
+                                <th>Health</th>
+                                <th>SMS Usage</th>
+                                <th>Package</th>
+                                <th>Expires</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sms-modems-table">
+                            <tr>
+                                <td colspan="9" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Templates Tab -->
+        <div class="tab-content" id="templates-tab">
+            <div id="templates-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Alarm Templates</div>
+                    <button class="btn btn-primary" onclick="showAddTemplateModal()">+ Add Template</button>
+                </div>
+                
+                <div class="filter-row">
+                    <select class="form-select" id="template-filter-channel" onchange="loadTemplates()">
+                        <option value="">All Channels</option>
+                        <option value="email">Email</option>
+                        <option value="sms">SMS</option>
+                        <option value="voice">Voice</option>
+                        <option value="push">Push</option>
+                    </select>
+                    <select class="form-select" id="template-filter-type" onchange="loadTemplates()">
+                        <option value="">All Types</option>
+                        <option value="alarm">Alarm</option>
+                        <option value="system-alert">System Alert</option>
+                    </select>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Channel</th>
+                                <th>Type</th>
+                                <th>Version</th>
+                                <th>Active</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="templates-table">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contacts Tab -->
+        <div class="tab-content" id="contacts-tab">
+            <div id="contacts-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Alarm Contacts</div>
+                    <button class="btn btn-primary" onclick="showAddContactModal()">+ Add Contact</button>
+                </div>
+                
+                <div class="filter-row">
+                    <input type="text" class="form-input" id="contact-search-imei" placeholder="Filter by IMEI..." onkeyup="filterContacts()">
+                    <select class="form-select" id="contact-filter-type" onchange="filterContacts()">
+                        <option value="">All Types</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                    <select class="form-select" id="contact-filter-active" onchange="filterContacts()">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>IMEI</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Active</th>
+                                <th>Quiet Hours</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contacts-table">
+                            <tr>
+                                <td colspan="9" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="contacts-pagination" class="pagination"></div>
+            </div>
+        </div>
+        
+        <!-- Alert Recipients Tab -->
+        <div class="tab-content" id="alert-recipients-tab">
+            <div id="recipients-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">AlertManager Recipients</div>
+                    <button class="btn btn-primary" onclick="showAddRecipientModal()">+ Add Recipient</button>
+                </div>
+                <p class="text-muted mb-16">
+                    Recipients for system alerts routed through AlertManager. These emails will receive infrastructure and service alerts.
+                </p>
+                
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>Severity Filter</th>
+                                <th>Enabled</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recipients-table">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Settings Tab -->
+        <div class="tab-content" id="email-tab">
+            <div id="email-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-title">Real SMTP Settings</div>
+                <form id="email-form">
+                    <div class="form-group">
+                        <label class="form-label">SMTP Host</label>
+                        <input type="text" class="form-input" id="smtp-host" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Port</label>
+                        <input type="number" class="form-input" id="smtp-port" placeholder="587">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Username</label>
+                        <input type="text" class="form-input" id="smtp-user" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Password</label>
+                        <input type="password" class="form-input" id="smtp-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Use TLS</label>
+                        <select class="form-select" id="smtp-secure">
+                            <option value="true">Yes (TLS/SSL)</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Email Settings</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Mock SMTP Settings (MailHog)</div>
+                <form id="mock-email-form">
+                    <div class="form-group">
+                        <label class="form-label">MailHog Host</label>
+                        <input type="text" class="form-input" id="mock-smtp-host" placeholder="mailhog">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">MailHog Port</label>
+                        <input type="number" class="form-input" id="mock-smtp-port" placeholder="1025">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Mock Email Settings</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Push Notifications Tab -->
+        <div class="tab-content" id="push-tab">
+            <div id="push-alert-container"></div>
+            
+            <div class="card">
+                <div class="card-title">Firebase Cloud Messaging (FCM)</div>
+                <form id="push-form">
+                    <div class="form-group">
+                        <label class="form-label">Firebase Project ID</label>
+                        <input type="text" class="form-input" id="firebase-project-id" placeholder="my-project-id">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Firebase Client Email</label>
+                        <input type="text" class="form-input" id="firebase-client-email" placeholder="firebase-adminsdk@project-id.iam.gserviceaccount.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Firebase Private Key</label>
+                        <textarea class="form-input" id="firebase-private-key" rows="5" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Push Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- Add/Edit SMS Modem Modal -->
+    <div class="modal" id="modem-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modem-modal-title">Add SMS Modem</div>
+                <button class="modal-close" onclick="closeModemModal()">×</button>
+            </div>
+            <form id="modem-form">
+                <input type="hidden" id="modem-id">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" id="modem-name" placeholder="SMS Modem 1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Host (URL)</label>
+                    <input type="text" class="form-input" id="modem-host" placeholder="https://192.168.1.100" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="modem-username" placeholder="admin" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="modem-password" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Certificate Fingerprint (Optional)</label>
+                    <input type="text" class="form-input" id="modem-cert" placeholder="AA:BB:CC:...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Modem ID</label>
+                    <input type="text" class="form-input" id="modem-modem-id" placeholder="1-1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority (1-10)</label>
+                    <input type="number" class="form-input" id="modem-priority" min="1" max="10" value="5" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Max Concurrent SMS</label>
+                    <input type="number" class="form-input" id="modem-max-concurrent" min="1" max="20" value="5" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Enabled</label>
+                    <select class="form-select" id="modem-enabled">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+                <div style="font-weight: 600; margin-bottom: 16px; color: var(--accent-primary);">Service Assignment</div>
+                <div class="form-group">
+                    <label class="form-label">Allowed Services</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="modem-service-alarms" value="alarms" checked>
+                            <span>Alarms</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="modem-service-commands" value="commands" checked>
+                            <span>Commands</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="modem-service-otp" value="otp">
+                            <span>OTP</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="modem-service-marketing" value="marketing">
+                            <span>Marketing</span>
+                        </label>
+                    </div>
+                    <small class="text-muted">Select which services can use this modem. Unchecked services will use other modems.</small>
+                </div>
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+                <div style="font-weight: 600; margin-bottom: 16px; color: var(--accent-primary);">SMS Package Settings</div>
+                <div class="form-group">
+                    <label class="form-label">SMS Limit</label>
+                    <input type="number" class="form-input" id="modem-sms-limit" placeholder="110000" min="0">
+                    <small class="text-muted">Total SMS allowed in package</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Package Cost</label>
+                    <input type="number" class="form-input" id="modem-package-cost" placeholder="1500.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Currency</label>
+                    <select class="form-select" id="modem-package-currency">
+                        <option value="PKR">PKR</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Package End Date</label>
+                    <input type="date" class="form-input" id="modem-package-end-date">
+                    <small class="text-muted">When the package expires</small>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModemModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Package Management Modal -->
+    <div class="modal" id="package-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Manage SMS Package</div>
+                <button class="modal-close" onclick="closePackageModal()">×</button>
+            </div>
+            <form id="package-form">
+                <input type="hidden" id="package-modem-id">
+                <div class="form-group">
+                    <label class="form-label">SMS Limit</label>
+                    <input type="number" class="form-input" id="package-sms-limit" placeholder="110000" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Package Cost</label>
+                    <input type="number" class="form-input" id="package-cost" placeholder="1500.00" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Currency</label>
+                    <select class="form-select" id="package-currency" required>
+                        <option value="PKR">PKR</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Package End Date</label>
+                    <input type="date" class="form-input" id="package-end-date" required>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="closePackageModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Package</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Template Modal -->
+    <div class="modal" id="template-modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title" id="template-modal-title">Add Template</div>
+                <button class="modal-close" onclick="closeTemplateModal()">×</button>
+            </div>
+            <form id="template-form">
+                <input type="hidden" id="template-id">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" id="template-name" placeholder="Alarm Notification" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Channel</label>
+                        <select class="form-select" id="template-channel" required>
+                            <option value="email">Email</option>
+                            <option value="sms">SMS</option>
+                            <option value="voice">Voice</option>
+                            <option value="push">Push</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Template Type</label>
+                        <select class="form-select" id="template-type" required>
+                            <option value="alarm">Alarm</option>
+                            <option value="system-alert">System Alert</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Version</label>
+                    <input type="number" class="form-input" id="template-version" value="1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject (Email only)</label>
+                    <input type="text" class="form-input" id="template-subject" placeholder="Alarm: {{status}}">
+                    <small class="text-muted">Handlebars template supported</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Body Template</label>
+                    <textarea class="form-input" id="template-body" rows="12" placeholder="Enter template body (Handlebars syntax)" required></textarea>
+                    <small class="text-muted">Supports Handlebars syntax. For email, MJML is supported.</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Variables (JSON)</label>
+                    <textarea class="form-input" id="template-variables" rows="4" placeholder='{"imei": "Device IMEI", "status": "Alarm status"}'></textarea>
+                    <small class="text-muted">JSON object documenting available variables</small>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Contact Modal -->
+    <div class="modal" id="contact-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="contact-modal-title">Add Contact</div>
+                <button class="modal-close" onclick="closeContactModal()">×</button>
+            </div>
+            <form id="contact-form">
+                <input type="hidden" id="contact-id">
+                <div class="form-group">
+                    <label class="form-label">IMEI *</label>
+                    <input type="text" class="form-input" id="contact-imei" placeholder="359587012345678" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contact Name *</label>
+                    <input type="text" class="form-input" id="contact-name" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="contact-email" placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" class="form-input" id="contact-phone" placeholder="+1234567890">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Contact Type</label>
+                        <select class="form-select" id="contact-type">
+                            <option value="primary">Primary</option>
+                            <option value="secondary">Secondary</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priority (1-10)</label>
+                        <input type="number" class="form-input" id="contact-priority" min="1" max="10" value="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Timezone</label>
+                    <select class="form-select" id="contact-timezone">
+                        <option value="UTC">UTC</option>
+                        <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                        <option value="America/New_York">America/New_York (EST)</option>
+                        <option value="Europe/London">Europe/London (GMT)</option>
+                        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Quiet Hours Start</label>
+                        <input type="time" class="form-input" id="contact-quiet-start">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Quiet Hours End</label>
+                        <input type="time" class="form-input" id="contact-quiet-end">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-input" id="contact-notes" rows="2" placeholder="Optional notes about this contact"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Active</label>
+                    <select class="form-select" id="contact-active">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="closeContactModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Alert Recipient Modal -->
+    <div class="modal" id="recipient-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="recipient-modal-title">Add Alert Recipient</div>
+                <button class="modal-close" onclick="closeRecipientModal()">×</button>
+            </div>
+            <form id="recipient-form">
+                <input type="hidden" id="recipient-id">
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" class="form-input" id="recipient-email" placeholder="admin@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" id="recipient-name" placeholder="System Admin">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Severity Filter</label>
+                    <select class="form-select" id="recipient-severity">
+                        <option value="all">All Alerts</option>
+                        <option value="critical">Critical Only</option>
+                        <option value="warning">Warning & Above</option>
+                    </select>
+                    <small class="text-muted">Filter which alerts this recipient receives</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Enabled</label>
+                    <select class="form-select" id="recipient-enabled">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecipientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/ui/shared/utils.js"></script>
+    <script src="/ui/config/config.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+# ============================================================
+# SYSTEM - ACTIVE ALERTS
+# ============================================================
+
+title: System - Active Alerts
+uid: alerts
+tags:
+- alerts
+- monitoring
+- fleet
+panels:
+- row: Alert Status
+- title: 🔥 Firing
+  query: count(ALERTS{alertstate="firing"})
+  thresholds:
+  - 1:#FADE2A
+  - 3:#F2495C
+  graph_mode: none
+  text_mode: value
+- title: ⏳ Pending
+  query: count(ALERTS{alertstate="pending"})
+  thresholds:
+  - 1:#FADE2A
+  - 5:#FF9830
+  graph_mode: none
+  text_mode: value
+- title: 🚨 Critical
+  query: count(ALERTS{alertstate="firing",severity="critical"})
+  thresholds:
+  - 1:#F2495C
+  graph_mode: none
+  text_mode: value
+- title: ⚠️ Warning
+  query: count(ALERTS{alertstate="firing",severity="warning"})
+  thresholds:
+  - 1:#FADE2A
+  - 5:#FF9830
+  graph_mode: none
+  text_mode: value
+- row: Alert Timeline
+- title: Alerts by Severity Over Time
+  type: timeseries
+  height: 7
+  query: count by (severity) (ALERTS{alertstate="firing"}) | {{severity}}
+  fill_opacity: 30
+  stacking: normal
+- title: Alert State Timeline
+  type: timeseries
+  height: 7
+  query: count by (alertstate) (ALERTS) | {{alertstate}}
+  fill_opacity: 30
+- row: Alert Details
+- title: Alerts by Service
+  type: bargauge
+  width: 8
+  height: 7
+  query: count by (job) (ALERTS{alertstate="firing"}) | {{job}}
+  thresholds:
+  - 1:#FADE2A
+  - 3:#F2495C
+- title: Active Alerts Table
+  type: table
+  width: 16
+  height: 7
+  query: ALERTS{alertstate="firing"}
+- row: Service-Specific Alerts
+- title: Database Alerts
+  type: timeseries
+  height: 6
+  query: |-
+    ALERTS{alertname=~".*Database.*|.*Postgres.*|.*PgBouncer.*",alertstate="firing"} | {{alertname}}
+  fill_opacity: 30
+- title: RabbitMQ Alerts
+  type: timeseries
+  height: 6
+  query: ALERTS{alertname=~"RabbitMQ.*",alertstate="firing"} | {{alertname}}
+  fill_opacity: 30
+- title: System Alerts
+  type: timeseries
+  height: 6
+  query: ALERTS{alertname=~"High.*|Low.*|Service.*",alertstate="firing"} | {{alertname}}
+  fill_opacity: 30
+- title: Fleet Alerts
+  type: timeseries
+  height: 6
+  query: |-
+    ALERTS{alertname=~".*Parser.*|.*Fleet.*|.*Tracker.*",alertstate="firing"} | {{alertname}}
+  fill_opacity: 30

@@ -1,0 +1,48 @@
+{
+  "name": "alarm-service",
+  "version": "1.0.0",
+  "description": "Alarm notification service for sending SMS and email notifications from the alarms table",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && npm run copy-ui",
+    "copy-ui": "node -e \"const fs=require('fs');const path=require('path');function copyDir(src,dest){if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});const entries=fs.readdirSync(src,{withFileTypes:true});for(const entry of entries){const srcPath=path.join(src,entry.name);const destPath=path.join(dest,entry.name);if(entry.isDirectory()){copyDir(srcPath,destPath);}else{fs.copyFileSync(srcPath,destPath);}}}copyDir('src/ui','dist/ui');\"",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "watch": "tsc -w",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "alarms",
+    "notifications",
+    "sms",
+    "email"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "firebase-admin": "^12.0.0",
+    "handlebars": "^4.7.8",
+    "ioredis": "^5.9.0",
+    "joi": "^17.11.0",
+    "mjml": "^4.15.3",
+    "moment-timezone": "^0.5.43",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.3",
+    "prom-client": "^15.1.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.4",
+    "@types/express": "^4.17.25",
+    "@types/node": "^20.19.27",
+    "@types/nodemailer": "^6.4.21",
+    "@types/pg": "^8.16.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

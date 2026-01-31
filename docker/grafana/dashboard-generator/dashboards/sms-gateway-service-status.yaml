@@ -1,0 +1,139 @@
+# ============================================================
+# SMS GATEWAY SERVICE - STATUS
+# ============================================================
+# SMS Gateway Service and Modem Pool monitoring
+# Uses sms_gateway_service_* metrics from sms-gateway-service
+# and sms_modem_* metrics from alarm-service
+# ============================================================
+
+title: SMS Gateway Service - Status
+uid: sms-gateway-service
+tags:
+- sms-gateway-service
+- modem
+- monitoring
+refresh: 30s
+panels:
+- row: 📱 Modem Pool Overview
+- title: Total Modems
+  width: 6
+  height: 5
+  query: sms_modem_pool_size
+  color: '#3274D9'
+  graph_mode: area
+- title: Healthy Modems
+  width: 6
+  height: 5
+  query: sms_modem_healthy_count
+  thresholds:
+  - 0:red
+  - 1:green
+  graph_mode: area
+- title: Unhealthy Modems
+  width: 6
+  height: 5
+  query: sms_modem_unhealthy_count
+  thresholds:
+  - 0:green
+  - 1:yellow
+  - 3:red
+  graph_mode: none
+- title: Quota Exhausted
+  width: 6
+  height: 5
+  query: sms_modem_quota_exhausted_count
+  thresholds:
+  - 0:green
+  - 1:red
+  graph_mode: none
+
+- row: 📊 Queue Status
+- title: Outbox Depth
+  width: 8
+  height: 5
+  query: sms_gateway_service_outbox_depth
+  thresholds:
+  - 10:yellow
+  - 100:red
+  graph_mode: area
+- title: Inbox Depth
+  width: 8
+  height: 5
+  query: sms_gateway_service_inbox_depth
+  thresholds:
+  - 10:yellow
+  - 100:red
+  graph_mode: area
+- title: Pending Commands
+  width: 8
+  height: 5
+  query: sms_gateway_service_sent_pending_count
+  thresholds:
+  - 10:yellow
+  - 50:red
+  graph_mode: area
+
+- row: 📈 Queue Trends
+- title: Queue Depths Over Time
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - sms_gateway_service_outbox_depth | Outbox Queue
+  - sms_gateway_service_inbox_depth | Inbox Queue
+  - sms_gateway_service_sent_pending_count | Awaiting Reply
+  fill_opacity: 20
+- title: Modem Health Over Time
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - sms_modem_healthy_count | Healthy
+  - sms_modem_unhealthy_count | Unhealthy
+  - sms_modem_degraded_count | Degraded
+  fill_opacity: 20
+
+- row: ⚡ Command Processing
+- title: Commands Matched
+  width: 8
+  height: 5
+  query: sms_gateway_service_command_matched_total
+  color: '#73BF69'
+  graph_mode: area
+- title: Command Timeouts
+  width: 8
+  height: 5
+  query: sms_gateway_service_command_timeout_total
+  thresholds: $error_count
+  graph_mode: area
+- title: Command Retries
+  width: 8
+  height: 5
+  query: sms_gateway_service_command_retry_total
+  thresholds:
+  - 1:yellow
+  - 10:red
+  graph_mode: area
+
+- row: 📉 Processing Rates
+- title: Commands Matched Rate
+  type: timeseries
+  width: 8
+  height: 8
+  query: sms_gateway_service_command_matched_total
+  transform: rate
+  fill_opacity: 20
+- title: Command Timeouts Rate
+  type: timeseries
+  width: 8
+  height: 8
+  query: sms_gateway_service_command_timeout_total
+  transform: rate
+  fill_opacity: 20
+- title: Command Retries Rate
+  type: timeseries
+  width: 8
+  height: 8
+  query: sms_gateway_service_command_retry_total
+  transform: rate
+  fill_opacity: 20

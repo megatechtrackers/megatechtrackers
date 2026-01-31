@@ -1,0 +1,103 @@
+# ============================================================
+# ALARM SERVICE - CIRCUIT BREAKERS
+# ============================================================
+# Circuit breaker status and channel availability
+# ============================================================
+
+title: Alarm Service - Circuit Breakers
+uid: circuit-breakers
+tags:
+- alarm
+- circuit-breaker
+- resilience
+refresh: 30s
+panels:
+- row: 🔌 Channel Availability
+- title: Email Channel
+  width: 8
+  height: 5
+  query: email_channel_available | Email
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: SMS Channel
+  width: 8
+  height: 5
+  query: sms_channel_available | SMS
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Voice Channel
+  width: 8
+  height: 5
+  query: voice_channel_available | Voice
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+
+- row: ⚡ Circuit Breaker Opens
+- title: Total CB Opens
+  width: 8
+  height: 5
+  query: |-
+    email_circuit_breaker_open + sms_circuit_breaker_open + voice_circuit_breaker_open | Total
+  thresholds: $error_count
+  graph_mode: area
+- title: Email CB Opens
+  width: 8
+  height: 5
+  query: email_circuit_breaker_open | Email
+  thresholds: $error_count
+  graph_mode: none
+- title: SMS CB Opens
+  width: 8
+  height: 5
+  query: sms_circuit_breaker_open | SMS
+  thresholds: $error_count
+  graph_mode: none
+
+- row: 📈 Circuit Breaker Trends
+- title: CB Opens Over Time
+  type: timeseries
+  width: 24
+  height: 8
+  queries:
+  - email_circuit_breaker_open | Email CB Opens
+  - sms_circuit_breaker_open | SMS CB Opens
+  - voice_circuit_breaker_open | Voice CB Opens
+  fill_opacity: 30
+  stacking: normal
+
+- row: ⚠️ Errors Leading to CB Opens
+- title: Channel Errors Rate
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_send_error
+    legend: Email Errors/sec
+    transform: rate
+  - expr: sms_send_error
+    legend: SMS Errors/sec
+    transform: rate
+  - expr: voice_send_error
+    legend: Voice Errors/sec
+    transform: rate
+  unit: ops
+  fill_opacity: 10
+- title: CB Opens Rate
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_circuit_breaker_open
+    legend: Email Opens/sec
+    transform: rate
+  - expr: sms_circuit_breaker_open
+    legend: SMS Opens/sec
+    transform: rate
+  - expr: voice_circuit_breaker_open
+    legend: Voice Opens/sec
+    transform: rate
+  unit: ops
+  fill_opacity: 10

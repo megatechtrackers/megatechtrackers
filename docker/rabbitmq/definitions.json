@@ -1,0 +1,231 @@
+{
+  "rabbit_version": "3.12.0",
+  "rabbitmq_version": "3.12.0",
+  "product_name": "RabbitMQ",
+  "product_version": "3.12.0",
+  "users": [
+    {
+      "name": "tracking_user",
+      "password": "tracking_password",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "tracking_gateway"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "tracking_user",
+      "vhost": "tracking_gateway",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "tracking_data_exchange",
+      "vhost": "tracking_gateway",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "alarm_exchange",
+      "vhost": "tracking_gateway",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "trackdata_queue",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 3600000,
+        "x-max-length": 1000000,
+        "x-dead-letter-exchange": "dlx_tracking_data",
+        "x-dead-letter-routing-key": "dlq_tracking_data",
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "alarms_queue",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-max-priority": 10,
+        "x-message-ttl": 86400000,
+        "x-max-length": 100000,
+        "x-dead-letter-exchange": "dlx_tracking_data",
+        "x-dead-letter-routing-key": "dlq_alarms",
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "events_queue",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 86400000,
+        "x-max-length": 500000,
+        "x-dead-letter-exchange": "dlx_tracking_data",
+        "x-dead-letter-routing-key": "dlq_events",
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "dlq_tracking_data",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 100000
+      }
+    },
+    {
+      "name": "dlq_alarms",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 10000
+      }
+    },
+    {
+      "name": "dlq_events",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 50000
+      }
+    },
+    {
+      "name": "alarm_notifications",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-max-priority": 10,
+        "x-message-ttl": 86400000,
+        "x-max-length": 50000,
+        "x-dead-letter-exchange": "dlx_tracking_data",
+        "x-dead-letter-routing-key": "dlq_alarm_notifications",
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "alarm_notifications_dlq",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 10000
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "tracking_data_exchange",
+      "vhost": "tracking_gateway",
+      "destination": "trackdata_queue",
+      "destination_type": "queue",
+      "routing_key": "tracking.*.trackdata",
+      "arguments": {}
+    },
+    {
+      "source": "tracking_data_exchange",
+      "vhost": "tracking_gateway",
+      "destination": "alarms_queue",
+      "destination_type": "queue",
+      "routing_key": "tracking.*.alarm",
+      "arguments": {}
+    },
+    {
+      "source": "tracking_data_exchange",
+      "vhost": "tracking_gateway",
+      "destination": "events_queue",
+      "destination_type": "queue",
+      "routing_key": "tracking.*.event",
+      "arguments": {}
+    },
+    {
+      "source": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "destination": "dlq_tracking_data",
+      "destination_type": "queue",
+      "routing_key": "dlq_tracking_data",
+      "arguments": {}
+    },
+    {
+      "source": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "destination": "dlq_alarms",
+      "destination_type": "queue",
+      "routing_key": "dlq_alarms",
+      "arguments": {}
+    },
+    {
+      "source": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "destination": "dlq_events",
+      "destination_type": "queue",
+      "routing_key": "dlq_events",
+      "arguments": {}
+    },
+    {
+      "source": "alarm_exchange",
+      "vhost": "tracking_gateway",
+      "destination": "alarm_notifications",
+      "destination_type": "queue",
+      "routing_key": "alarm.notification",
+      "arguments": {}
+    },
+    {
+      "source": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "destination": "alarm_notifications_dlq",
+      "destination_type": "queue",
+      "routing_key": "dlq_alarm_notifications",
+      "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "tracking_gateway",
+      "name": "ha-all",
+      "pattern": ".*",
+      "apply-to": "queues",
+      "definition": {
+        "ha-mode": "all",
+        "ha-sync-mode": "automatic"
+      },
+      "priority": 0
+    }
+  ]
+}

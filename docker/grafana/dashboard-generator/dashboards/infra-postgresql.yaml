@@ -1,0 +1,120 @@
+# ============================================================
+# INFRA - POSTGRESQL DATABASE
+# ============================================================
+
+title: Infra - PostgreSQL Database
+uid: postgresql-overview
+tags:
+- postgresql
+- database
+- fleet
+panels:
+- row: Overview
+- title: Primary Connections
+  width: 4
+  query: pg_stat_database_numbackends{datname="tracking_db",instance="postgres-primary"}
+  thresholds:
+  - 400:#FADE2A
+  - 450:#F2495C
+- title: Replica Connections
+  width: 4
+  query: pg_stat_database_numbackends{datname="tracking_db",instance="postgres-replica"}
+  thresholds:
+  - 400:#FADE2A
+  - 450:#F2495C
+- title: Database Size
+  width: 4
+  query: pg_database_size_bytes{datname="tracking_db",instance="postgres-primary"}
+  unit: bytes
+  color: '#3274D9'
+- title: Replication Lag
+  width: 4
+  query: pg_replication_lag_seconds{instance="postgres-replica"}
+  unit: s
+  decimals: 1
+  thresholds:
+  - 5:#FADE2A
+  - 30:#F2495C
+- title: Cache Hit Ratio
+  type: gauge
+  width: 4
+  height: 4
+  query: pg_stat_database_blks_hit{datname="tracking_db",instance="postgres-primary"}
+  transform: rate
+  unit: '%'
+  thresholds:
+  - 90:#FADE2A
+  - 99:#73BF69
+- title: WAL Size
+  width: 4
+  query: pg_wal_size_bytes{instance="postgres-primary"}
+  unit: bytes
+  color: '#FF9830'
+  graph_mode: none
+- row: Connection & Performance
+- title: Connection Pool Over Time
+  type: timeseries
+  height: 7
+  queries:
+  - |-
+    pg_stat_database_numbackends{datname="tracking_db",instance="postgres-primary"} | Primary
+  - |-
+    pg_stat_database_numbackends{datname="tracking_db",instance="postgres-replica"} | Replica
+- title: Transactions per Second
+  type: timeseries
+  height: 7
+  queries:
+  - expr: pg_stat_database_xact_commit{datname="tracking_db",instance="postgres-primary"}
+    legend: Primary TPS
+    transform: rate
+  - expr: pg_stat_database_xact_commit{datname="tracking_db",instance="postgres-replica"}
+    legend: Replica TPS
+    transform: rate
+  unit: req/s
+- row: Throughput & Replication
+- title: Write Throughput (Tuples/sec)
+  type: timeseries
+  height: 7
+  queries:
+  - expr: pg_stat_database_tup_inserted{datname="tracking_db",instance="postgres-primary"}
+    legend: Inserts
+    transform: rate
+  - expr: pg_stat_database_tup_updated{datname="tracking_db",instance="postgres-primary"}
+    legend: Updates
+    transform: rate
+  - expr: pg_stat_database_tup_deleted{datname="tracking_db",instance="postgres-primary"}
+    legend: Deletes
+    transform: rate
+  unit: req/s
+  fill_opacity: 30
+  stacking: normal
+- title: Replication Lag & Database Size
+  type: timeseries
+  height: 7
+  queries:
+  - pg_replication_lag_seconds{instance="postgres-replica"} | Replication Lag
+  - expr: |-
+      pg_database_size_bytes{datname="tracking_db",instance="postgres-primary"} / 1073741824
+    legend: DB Size (GB)
+- row: Cache & Queries
+- title: Cache Hit Ratio Over Time
+  type: timeseries
+  height: 7
+  queries:
+  - expr: pg_stat_database_blks_hit{datname="tracking_db",instance="postgres-primary"}
+    legend: Primary
+    transform: rate
+  - expr: pg_stat_database_blks_hit{datname="tracking_db",instance="postgres-replica"}
+    legend: Replica
+    transform: rate
+  unit: '%'
+  thresholds: $cache_hit
+  fill_opacity: 10
+- title: Active Queries
+  type: timeseries
+  height: 7
+  queries:
+  - |-
+    pg_stat_activity_count{datname="tracking_db",instance="postgres-primary"} | Primary
+  - |-
+    pg_stat_activity_count{datname="tracking_db",instance="postgres-replica"} | Replica

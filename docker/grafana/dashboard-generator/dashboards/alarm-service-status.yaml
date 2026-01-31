@@ -1,0 +1,289 @@
+# ============================================================
+# ALARM SERVICE - STATUS
+# ============================================================
+
+title: Alarm Service - Status
+uid: alarm-service
+tags:
+- alarm
+- notifications
+- monitoring
+refresh: 30s
+panels:
+- row: System Overview
+- title: RabbitMQ Status
+  width: 4
+  query: rabbitmq_connection_status | Connected
+  thresholds: $up_down
+- title: Active Workers
+  width: 4
+  query: active_workers_count | Active
+  thresholds:
+  - 1:green
+  - 3:blue
+- title: Stale Workers
+  width: 4
+  query: stale_workers_count | Stale
+  thresholds:
+  - 1:yellow
+  - 3:red
+- title: Queue Depth
+  width: 4
+  query: rabbitmq_queue_depth | Queue
+  thresholds: $queue_depth
+- title: Paused Queue
+  width: 4
+  query: rabbitmq_paused_requeue_count | Paused
+  thresholds:
+  - 1:orange
+  - 10:red
+- title: DLQ Size
+  width: 4
+  query: dlq_size | DLQ
+  thresholds: $error_count
+- title: Success Rate
+  type: gauge
+  height: 4
+  query: |-
+    clamp_max(100 * (sum(increase(email_sent_total[30d])) + sum(increase(sms_sent_total[30d])) + sum(increase(voice_sent_total[30d]))) / (sum(increase(email_sent_total[30d])) + sum(increase(sms_sent_total[30d])) + sum(increase(voice_sent_total[30d])) + sum(increase(email_send_error[30d])) + sum(increase(sms_send_error[30d])) + sum(increase(voice_send_error[30d])) + 0.001), 100) | Success % (30d)
+  unit: '%'
+  decimals: 1
+  thresholds:
+  - 80:yellow
+  - 95:green
+- title: Emails Sent (Total)
+  query: sum(email_sent_total) | Emails
+  decimals: 0
+- title: SMS Sent (Total)
+  query: sum(sms_sent_total) | SMS
+  decimals: 0
+- title: Alarms Processed (Total)
+  query: sum(alarms_processed_total) or vector(0) | Alarms
+  decimals: 0
+- row: Processing Metrics
+- title: Alarm Processing Rate
+  type: timeseries
+  query: alarms_processed_total
+  transform: rate
+- title: RabbitMQ Queue Depth Over Time
+  type: timeseries
+  queries:
+  - rabbitmq_queue_depth | Queue Depth
+  - rabbitmq_paused_requeue_count | Paused Queue
+- title: Email/SMS/Voice Sent Rate
+  type: timeseries
+  queries:
+  - expr: email_sent_total
+    legend: Email/sec
+    transform: rate
+  - expr: sms_sent_total
+    legend: SMS/sec
+    transform: rate
+  - expr: voice_sent_total
+    legend: Voice/sec
+    transform: rate
+- title: Error Rate by Channel
+  type: timeseries
+  queries:
+  - expr: email_send_error
+    legend: Email Errors/sec
+    transform: rate
+  - expr: sms_send_error
+    legend: SMS Errors/sec
+    transform: rate
+  - expr: voice_send_error
+    legend: Voice Errors/sec
+    transform: rate
+- row: Latency Metrics
+- title: Processing Latency (P95, P99)
+  type: timeseries
+  queries:
+  - expr: alarm_processing_duration_ms_bucket
+    legend: P50 Latency
+    transform: rate
+  - expr: alarm_processing_duration_ms_bucket
+    legend: P95 Latency
+    transform: rate
+  - expr: alarm_processing_duration_ms_bucket
+    legend: P99 Latency
+    transform: rate
+  unit: ms
+  fill_opacity: 10
+- title: Channel Send Latency (P95, P99)
+  type: timeseries
+  queries:
+  - expr: email_send_duration_ms_bucket
+    legend: Email P95
+    transform: rate
+  - expr: email_send_duration_ms_bucket
+    legend: Email P99
+    transform: rate
+  - expr: sms_send_duration_ms_bucket
+    legend: SMS P95
+    transform: rate
+  - expr: sms_send_duration_ms_bucket
+    legend: SMS P99
+    transform: rate
+  unit: ms
+  fill_opacity: 10
+- title: RabbitMQ Processing Duration
+  type: timeseries
+  queries:
+  - expr: rabbitmq_processing_duration_ms_bucket
+    legend: P50
+    transform: rate
+  - expr: rabbitmq_processing_duration_ms_bucket
+    legend: P95
+    transform: rate
+  - expr: rabbitmq_processing_duration_ms_bucket
+    legend: P99
+    transform: rate
+  unit: ms
+  fill_opacity: 10
+- title: RabbitMQ Consumer Lag & Processing Rate
+  type: timeseries
+  queries:
+  - expr: rabbitmq_consumer_lag_ms / 1000
+    legend: Consumer Lag (seconds)
+  - rabbitmq_messages_processed_rate | Processing Rate (msg/sec)
+  fill_opacity: 10
+- row: Queue & DLQ Management
+- title: DLQ Size & Batch Processing
+  type: timeseries
+  queries:
+  - dlq_size | DLQ Items
+  - expr: dlq_batch_reprocessed
+    legend: DLQ Batch Reprocessed/sec
+    transform: rate
+  - expr: dlq_batch_failed
+    legend: DLQ Batch Failed/sec
+    transform: rate
+- title: DLQ Reprocessing
+  type: timeseries
+  queries:
+  - expr: dlq_reprocessed_total
+    legend: Reprocessed/sec
+    transform: rate
+  - expr: dlq_reprocess_error
+    legend: Reprocess Errors/sec
+    transform: rate
+- title: RabbitMQ Message Flow
+  type: timeseries
+  queries:
+  - expr: rabbitmq_message_received
+    legend: Received/sec
+    transform: rate
+  - expr: rabbitmq_message_acknowledged
+    legend: Acknowledged/sec
+    transform: rate
+  - expr: rabbitmq_message_requeued
+    legend: Requeued/sec
+    transform: rate
+  - expr: rabbitmq_message_dlq
+    legend: DLQ/sec
+    transform: rate
+- title: Paused Queue Messages
+  type: timeseries
+  queries:
+  - rabbitmq_paused_requeue_count | Paused Messages
+  - expr: rabbitmq_message_requeued_paused
+    legend: Requeue Rate (paused)/sec
+    transform: rate
+- row: Circuit Breakers & Retries
+- title: Circuit Breaker Opens
+  type: timeseries
+  queries:
+  - expr: email_circuit_breaker_open
+    legend: Email CB Opens/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: sms_circuit_breaker_open
+    legend: SMS CB Opens/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: voice_circuit_breaker_open
+    legend: Voice CB Opens/min
+    transform: rate
+    rate_multiplier: 60
+- title: Retry Rate by Channel
+  type: timeseries
+  queries:
+  - expr: email_send_retry
+    legend: Email Retries/sec
+    transform: rate
+  - expr: sms_send_retry
+    legend: SMS Retries/sec
+    transform: rate
+  - expr: voice_send_retry
+    legend: Voice Retries/sec
+    transform: rate
+- title: Channel Availability
+  type: timeseries
+  queries:
+  - email_channel_available | Email Available
+  - sms_channel_available | SMS Available
+  - voice_channel_available | Voice Available
+  fill_opacity: 30
+- title: Permanent Failures Rate
+  type: timeseries
+  queries:
+  - expr: email_send_failed_permanent
+    legend: Email Failures/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: sms_send_failed_permanent
+    legend: SMS Failures/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: voice_send_failed_permanent
+    legend: Voice Failures/min
+    transform: rate
+    rate_multiplier: 60
+- row: Errors & Backpressure
+- title: Backpressure & Batch Errors
+  type: timeseries
+  queries:
+  - expr: alarm_backpressure_applied
+    legend: Backpressure Applied/sec
+    transform: rate
+  - expr: alarm_batch_error
+    legend: Batch Errors/sec
+    transform: rate
+  - expr: alarm_processing_error
+    legend: Processing Errors/sec
+    transform: rate
+- title: RabbitMQ Connection Errors & Reconnects
+  type: timeseries
+  queries:
+  - expr: rabbitmq_connection_error
+    legend: Connection Errors/sec
+    transform: rate
+  - expr: rabbitmq_reconnect
+    legend: Reconnect Attempts/sec
+    transform: rate
+- title: Duplicate Sends Skipped Rate
+  type: timeseries
+  queries:
+  - expr: email_send_skipped_duplicate
+    legend: Email Skipped/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: sms_send_skipped_duplicate
+    legend: SMS Skipped/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: voice_send_skipped_duplicate
+    legend: Voice Skipped/min
+    transform: rate
+    rate_multiplier: 60
+- title: Worker Heartbeats & Dead Workers
+  type: timeseries
+  queries:
+  - expr: worker_heartbeat
+    legend: Heartbeats/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: dead_workers_removed
+    legend: Dead Workers Removed/min
+    transform: rate
+    rate_multiplier: 60

@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=development
+
+# Install deps first for caching
+COPY package*.json ./
+RUN npm install
+
+# App source (overridden by bind mount in docker-compose for local dev)
+COPY . .
+
+EXPOSE 3002
+
+CMD ["npm", "run", "dev"]
+

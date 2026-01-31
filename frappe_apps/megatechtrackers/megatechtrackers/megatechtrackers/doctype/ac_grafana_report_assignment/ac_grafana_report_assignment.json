@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ac_report",
+  "ac_context_vehicles",
+  "ac_context_companies",
+  "ac_context_departments",
+  "ac_inherited"
+ ],
+ "fields": [
+  {
+   "fieldname": "ac_report",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Report",
+   "options": "AC Grafana Report",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ac_context_vehicles",
+   "fieldtype": "Small Text",
+   "label": "Context Vehicles (comma-separated)"
+  },
+  {
+   "fieldname": "ac_context_companies",
+   "fieldtype": "Small Text",
+   "label": "Context Companies (comma-separated)"
+  },
+  {
+   "fieldname": "ac_context_departments",
+   "fieldtype": "Small Text",
+   "label": "Context Departments (comma-separated)"
+  },
+  {
+   "fieldname": "ac_inherited",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Inherited",
+   "default": 0,
+   "read_only": 1
+  },
+  {
+   "fieldname": "parent",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "parenttype",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "parentfield",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent Field",
+   "read_only": 1
+  },
+  {
+   "fieldname": "idx",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Idx",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_child_table": 1,
+ "links": [],
+ "modified": "2025-12-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Megatechtrackers",
+ "name": "AC Grafana Report Assignment",
+ "naming_rule": "By fieldname",
+ "title_field": "ac_report",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

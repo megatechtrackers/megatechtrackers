@@ -1,0 +1,62 @@
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Install system dependencies for build
+RUN apk add --no-cache \
+    postgresql-client \
+    tzdata
+
+# Copy package files
+COPY alarm_node/package*.json ./alarm_node/
+
+# Install all dependencies (including dev dependencies for TypeScript build)
+WORKDIR /app/alarm_node
+RUN npm ci
+
+# Copy application source code
+WORKDIR /app
+COPY alarm_node/ /app/alarm_node/
+
+# Build TypeScript code
+WORKDIR /app/alarm_node
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    postgresql-client \
+    tzdata \
+    netcat-openbsd \
+    wget
+
+# Copy package files
+COPY alarm_node/package*.json ./alarm_node/
+
+# Install only production dependencies
+WORKDIR /app/alarm_node
+RUN npm ci --only=production
+
+# Copy built application from builder stage
+WORKDIR /app
+COPY --from=builder /app/alarm_node/dist ./alarm_node/dist
+
+# Copy entrypoint script
+COPY docker/entrypoint-alarm.sh /usr/local/bin/entrypoint-alarm.sh
+RUN chmod +x /usr/local/bin/entrypoint-alarm.sh
+
+# Create logs directory
+RUN mkdir -p /app/alarm_node/logs
+
+# Set working directory to alarm_node
+WORKDIR /app/alarm_node
+
+# Use entrypoint to wait for dependencies before running
+ENTRYPOINT ["/usr/local/bin/entrypoint-alarm.sh"]
+
+# Default command
+CMD ["npm", "start"]

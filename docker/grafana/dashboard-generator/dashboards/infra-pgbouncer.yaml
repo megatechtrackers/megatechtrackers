@@ -1,0 +1,73 @@
+# ============================================================
+# INFRA - PGBOUNCER (CONNECTION POOL)
+# ============================================================
+
+title: Infra - PgBouncer (Connection Pool)
+uid: pgbouncer-overview
+tags:
+- pgbouncer
+- database
+- connection-pool
+panels:
+- title: PgBouncer Status
+  height: 8
+  query: pgbouncer_up | Status
+  thresholds:
+  - 0:red
+- title: Active Client Connections
+  height: 8
+  query: sum(pgbouncer_pools_client_active_connections) | Active
+- title: Waiting Client Connections
+  height: 8
+  query: sum(pgbouncer_pools_client_waiting_connections) | Waiting
+- title: Server Connections Active
+  height: 8
+  query: sum(pgbouncer_pools_server_active_connections) | Active
+- title: Connection Pool Usage
+  type: timeseries
+  queries:
+  - expr: sum(pgbouncer_pools_client_active_connections) by (database)
+    legend: '{{database}} - Client Active'
+  - expr: sum(pgbouncer_pools_client_waiting_connections) by (database)
+    legend: '{{database}} - Client Waiting'
+  - expr: sum(pgbouncer_pools_server_active_connections) by (database)
+    legend: '{{database}} - Server Active'
+  - expr: sum(pgbouncer_pools_server_idle_connections) by (database)
+    legend: '{{database}} - Server Idle'
+- title: Transactions per Second
+  type: timeseries
+  query: pgbouncer_stats_transactions_total
+  transform: rate
+- title: Queries per Second
+  type: timeseries
+  query: pgbouncer_stats_queries_total
+  transform: rate
+- title: Bytes Sent/Received
+  type: timeseries
+  queries:
+  - expr: pgbouncer_stats_sent_bytes_total
+    legend: '{{database}} - Sent/sec'
+    transform: rate
+  - expr: pgbouncer_stats_received_bytes_total
+    legend: '{{database}} - Received/sec'
+    transform: rate
+  unit: Bps
+- title: Max Wait Time
+  type: timeseries
+  query: pgbouncer_pools_client_maxwait_seconds | {{database}}/{{user}} - Max Wait
+  unit: s
+- title: Pool Size by Database
+  type: timeseries
+  queries:
+  - pgbouncer_databases_database_pool_size | {{database}} - Pool Size
+  - pgbouncer_databases_database_current_connections | {{database}} - Current
+- title: Transaction Duration
+  type: timeseries
+  query: pgbouncer_stats_transactions_duration_microseconds_total
+  transform: rate
+  unit: s
+- title: Query Duration
+  type: timeseries
+  query: pgbouncer_stats_queries_duration_microseconds_total
+  transform: rate
+  unit: s

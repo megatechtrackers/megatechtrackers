@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ac_department_name",
+  "ac_company"
+ ],
+ "fields": [
+  {
+   "fieldname": "ac_department_name",
+   "fieldtype": "Data",
+   "label": "Department Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "ac_company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "AC Company",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Select the company this department belongs to"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-12-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Megatechtrackers",
+ "name": "AC Department",
+ "naming_rule": "By ac_department_name",
+ "show_title_field_in_link": 1,
+ "title_field": "ac_department_name",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

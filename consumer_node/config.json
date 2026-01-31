@@ -1,0 +1,39 @@
+{
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "publisher_confirms": true,
+    "publisher_confirm_timeout": 5.0,
+    "message_persistence": true,
+    "description": "RabbitMQ configuration - host should point to load balancer"
+  },
+  "consumer": {
+    "type": "database",
+    "workers": 5,
+    "prefetch_count": 100,
+    "batch_size": 200,
+    "batch_timeout": 1.0,
+    "description": "Consumer configuration - workers: number of consumer processes, prefetch_count: messages per worker, batch_size: number of records per batch , batch_timeout: maximum time (seconds) to wait before flushing batch"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "megatechtrackers",
+    "user": "postgres",
+    "password": "",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for consumers (write access)"
+  },
+  "logging": {
+    "log_file": "logs/consumer.log",
+    "level": "INFO",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false,
+    "description": "Logging configuration for consumer service - log_file: log file path, level: logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL), max_bytes: max log file size before rotation (default 10MB), backup_count: number of backup files to keep (default 5), json_format: enable structured JSON logging (default false)"
+  }
+}

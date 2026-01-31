@@ -1,0 +1,150 @@
+# Disk Usage and Storage Monitoring Alerts
+# Monitors disk space, WAL archives, logs, and volume growth
+
+groups:
+  - name: disk_usage
+    interval: 60s
+    rules:
+      # Critical: Disk usage above 90%
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          component: disk
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk space is below 10% ({{ $value | humanize }}% remaining). Immediate action required!"
+          
+      # Warning: Disk usage above 80%
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 10m
+        labels:
+          severity: warning
+          component: disk
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 20% ({{ $value | humanize }}% remaining). Consider cleanup."
+          
+      # Disk usage growing rapidly (>5GB/hour)
+      - alert: DiskSpaceGrowthHigh
+        expr: rate(node_filesystem_avail_bytes{mountpoint="/"}[1h]) < -5368709120
+        for: 15m
+        labels:
+          severity: warning
+          component: disk
+        annotations:
+          summary: "Rapid disk usage growth on {{ $labels.instance }}"
+          description: "Disk space decreasing by >5GB/hour. Check for runaway processes or logs."
+
+  - name: postgres_storage
+    interval: 60s
+    rules:
+      # PostgreSQL data directory size growing too fast
+      - alert: PostgreSQLDataGrowthHigh
+        expr: rate(pg_database_size_bytes[1h]) > 10737418240
+        for: 30m
+        labels:
+          severity: warning
+          component: postgresql
+        annotations:
+          summary: "High PostgreSQL data growth rate"
+          description: "Database {{ $labels.datname }} growing >10GB/hour. Check retention policies."
+          
+      # WAL archive directory size (if we can monitor via node_exporter)
+      - alert: WALArchiveSizeLarge
+        expr: (node_filesystem_size_bytes{mountpoint=~".*archive.*"} - node_filesystem_avail_bytes{mountpoint=~".*archive.*"}) > 107374182400
+        for: 15m
+        labels:
+          severity: warning
+          component: postgresql
+        annotations:
+          summary: "WAL archive directory exceeds 100GB"
+          description: "WAL archives consuming {{ $value | humanize1024 }}B. Check cleanup scripts."
+          
+      # PostgreSQL log directory size
+      - alert: PostgreSQLLogsSizeLarge
+        expr: (node_filesystem_size_bytes{mountpoint=~".*/log.*"} - node_filesystem_avail_bytes{mountpoint=~".*/log.*"}) > 53687091200
+        for: 15m
+        labels:
+          severity: warning
+          component: postgresql
+        annotations:
+          summary: "PostgreSQL log directory exceeds 50GB"
+          description: "PostgreSQL logs consuming {{ $value | humanize1024 }}B. Check log retention."
+
+  - name: rabbitmq_storage
+    interval: 60s
+    rules:
+      # RabbitMQ queue size too large
+      - alert: RabbitMQQueueSizeLarge
+        expr: sum(rabbitmq_queue_messages) by (queue) > 1000000
+        for: 30m
+        labels:
+          severity: warning
+          component: rabbitmq
+        annotations:
+          summary: "RabbitMQ queue {{ $labels.queue }} has >1M messages"
+          description: "Queue {{ $labels.queue }} contains {{ $value }} messages. Check consumers."
+          
+      # RabbitMQ disk free space low
+      - alert: RabbitMQDiskSpaceLow
+        expr: rabbitmq_disk_space_available_bytes < 10737418240
+        for: 10m
+        labels:
+          severity: critical
+          component: rabbitmq
+        annotations:
+          summary: "RabbitMQ disk space critically low"
+          description: "RabbitMQ has only {{ $value | humanize1024 }}B free disk space. Cleanup required!"
+          
+      # RabbitMQ memory usage high
+      - alert: RabbitMQMemoryHigh
+        expr: (rabbitmq_process_resident_memory_bytes / rabbitmq_resident_memory_limit_bytes) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: rabbitmq
+        annotations:
+          summary: "RabbitMQ memory usage above 90%"
+          description: "RabbitMQ using {{ $value | humanizePercentage }} of memory limit."
+
+  - name: monitoring_storage
+    interval: 300s
+    rules:
+      # Prometheus data size large
+      - alert: PrometheusDataSizeLarge
+        expr: prometheus_tsdb_storage_blocks_bytes > 53687091200
+        for: 1h
+        labels:
+          severity: info
+          component: prometheus
+        annotations:
+          summary: "Prometheus storage exceeds 50GB"
+          description: "Prometheus TSDB is {{ $value | humanize1024 }}B. Check retention settings."
+          
+      # Grafana data size (if we can monitor it)
+      - alert: GrafanaDataSizeLarge
+        expr: (node_filesystem_size_bytes{mountpoint=~".*grafana.*"} - node_filesystem_avail_bytes{mountpoint=~".*grafana.*"}) > 5368709120
+        for: 1h
+        labels:
+          severity: info
+          component: grafana
+        annotations:
+          summary: "Grafana data directory exceeds 5GB"
+          description: "Grafana consuming {{ $value | humanize1024 }}B. Consider cleanup."
+
+  - name: volume_growth
+    interval: 300s
+    rules:
+      # Any Docker volume growing >10GB/day
+      - alert: DockerVolumeGrowthHigh
+        expr: rate(container_fs_usage_bytes[24h]) > 115740
+        for: 1h
+        labels:
+          severity: warning
+          component: docker
+        annotations:
+          summary: "Docker volume {{ $labels.name }} growing rapidly"
+          description: "Volume growing at {{ $value | humanize }}B/s (~10GB/day). Investigate."

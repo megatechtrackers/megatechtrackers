@@ -1,0 +1,182 @@
+groups:
+  - name: sms_gateway_service_alerts
+    interval: 30s
+    rules:
+      # Service Health
+      - alert: SMSGatewayDown
+        expr: up{job="sms-gateway-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sms-gateway-service
+        annotations:
+          summary: "SMS Gateway Service is down"
+          description: "SMS Gateway Service {{ $labels.instance }} is not responding"
+
+      # Modem Health
+      - alert: SMSGatewayNoHealthyModems
+        expr: sms_gateway_service_modem_healthy_count == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: sms-gateway-service
+        annotations:
+          summary: "No healthy modems available"
+          description: "All modems are unhealthy - SMS sending disabled"
+
+      - alert: SMSGatewayModemUnhealthy
+        expr: sms_gateway_service_modem_unhealthy_count > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Unhealthy modem detected"
+          description: "{{ $value }} modem(s) are unhealthy"
+
+      - alert: SMSGatewayLowSignal
+        expr: sms_gateway_service_modem_signal_strength < 10
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Low modem signal strength"
+          description: "Modem {{ $labels.modem_name }} has signal strength {{ $value }}"
+
+      # Queue Alerts
+      - alert: SMSGatewayOutboxBacklog
+        expr: sms_gateway_service_outbox_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "SMS outbox backlog"
+          description: "{{ $value }} messages waiting in outbox"
+
+      - alert: SMSGatewayOutboxCritical
+        expr: sms_gateway_service_outbox_depth > 500
+        for: 2m
+        labels:
+          severity: critical
+          service: sms-gateway-service
+        annotations:
+          summary: "SMS outbox critical backlog"
+          description: "{{ $value }} messages in outbox - sending falling behind"
+
+      - alert: SMSGatewayInboxBacklog
+        expr: sms_gateway_service_inbox_depth > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "SMS inbox processing backlog"
+          description: "{{ $value }} unprocessed incoming messages"
+
+      - alert: SMSGatewayPendingReplies
+        expr: sms_gateway_service_sent_pending_count > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Many SMS awaiting reply"
+          description: "{{ $value }} sent SMS awaiting device reply"
+
+      # SMS Processing
+      - alert: SMSGatewayHighFailureRate
+        expr: rate(sms_gateway_service_sms_sent_total{status="failed"}[5m]) / rate(sms_gateway_service_sms_sent_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "High SMS failure rate"
+          description: "{{ $value | humanizePercentage }} of SMS failing to send"
+
+      - alert: SMSGatewayCriticalFailureRate
+        expr: rate(sms_gateway_service_sms_sent_total{status="failed"}[5m]) / rate(sms_gateway_service_sms_sent_total[5m]) > 0.3
+        for: 5m
+        labels:
+          severity: critical
+          service: sms-gateway-service
+        annotations:
+          summary: "Critical SMS failure rate"
+          description: "{{ $value | humanizePercentage }} of SMS failing - modem issues"
+
+      # Latency
+      - alert: SMSGatewayHighSendLatency
+        expr: histogram_quantile(0.95, rate(sms_gateway_service_sms_send_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "High SMS send latency"
+          description: "P95 SMS send time is {{ $value }}s"
+
+      - alert: SMSGatewayModemAPILatency
+        expr: histogram_quantile(0.95, rate(sms_gateway_service_modem_api_latency_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "High modem API latency"
+          description: "P95 modem API latency is {{ $value }}s for {{ $labels.modem }}"
+
+      # Modem API Errors
+      - alert: SMSGatewayModemAPIErrors
+        expr: rate(sms_gateway_service_modem_api_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Modem API errors detected"
+          description: "{{ $value }} errors/sec for modem {{ $labels.modem }}"
+
+      # Command Matching
+      - alert: SMSGatewayHighTimeoutRate
+        expr: rate(sms_gateway_service_command_timeout_total[5m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Many commands timing out"
+          description: "{{ $value }} commands/sec timing out - devices may be unreachable"
+
+      - alert: SMSGatewayHighRetryRate
+        expr: rate(sms_gateway_service_command_retry_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "High command retry rate"
+          description: "{{ $value }} retries/sec - network issues"
+
+      # Database Errors
+      - alert: SMSGatewayDBErrors
+        expr: rate(sms_gateway_service_db_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Database errors detected"
+          description: "{{ $value }} database errors/sec"
+
+      # Polling Health
+      - alert: SMSGatewayPollingErrors
+        expr: rate(sms_gateway_service_polling_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: sms-gateway-service
+        annotations:
+          summary: "Polling errors detected"
+          description: "{{ $value }} polling errors/sec for {{ $labels.type }}"

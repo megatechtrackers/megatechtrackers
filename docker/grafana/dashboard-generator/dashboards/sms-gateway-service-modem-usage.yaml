@@ -1,0 +1,80 @@
+# ============================================================
+# SMS GATEWAY SERVICE - MODEM USAGE
+# ============================================================
+# Monitor SMS usage, quota status, and package expiration
+# Uses sms_modem_* metrics from Alarm Service
+# ============================================================
+
+title: SMS Gateway Service - Modem Usage
+uid: sms-modem-usage
+tags:
+- sms
+- modem
+- usage
+- quota
+refresh: 30s
+time_from: now-24h
+panels:
+- row: 📊 Pool Overview
+- title: Overall Pool Usage
+  type: gauge
+  width: 8
+  height: 6
+  query: (sum(sms_modem_usage_count) / (sum(sms_modem_usage_limit) + 0.001)) * 100
+  unit: '%'
+  thresholds:
+  - 75:yellow
+  - 90:red
+- title: Total SMS Sent
+  width: 4
+  height: 6
+  query: sum(sms_modem_usage_count)
+  color: '#3274D9'
+  graph_mode: area
+- title: Total SMS Remaining
+  width: 4
+  height: 6
+  query: sum(sms_modem_usage_limit) - sum(sms_modem_usage_count)
+  color: '#73BF69'
+  graph_mode: area
+- title: Healthy Modems
+  width: 4
+  height: 6
+  query: sms_modem_healthy_count
+  thresholds: $up_down
+  graph_mode: none
+- title: Quota Exhausted
+  width: 4
+  height: 6
+  query: sms_modem_quota_exhausted_count
+  thresholds:
+  - 0:green
+  - 1:red
+  graph_mode: none
+
+- row: 📈 Usage Per Modem
+- title: Modem Usage %
+  type: bargauge
+  width: 12
+  height: 8
+  query: (sms_modem_usage_count / (sms_modem_usage_limit + 0.001)) * 100 | {{modem_name}}
+  unit: '%'
+  thresholds:
+  - 75:yellow
+  - 90:red
+- title: SMS Usage Over Time
+  type: timeseries
+  width: 12
+  height: 8
+  query: sms_modem_usage_count | {{modem_name}}
+  fill_opacity: 10
+  legend_placement: right
+
+- row: 📋 Modem Details
+- title: Modem Status Table
+  type: table
+  width: 24
+  height: 8
+  queries:
+  - sms_modem_usage_count | SMS Sent
+  - sms_modem_usage_limit | SMS Limit

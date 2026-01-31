@@ -1,0 +1,23 @@
+# Mock SMS Server Dockerfile
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install dependencies
+COPY tools/mock_sms_server/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY tools/mock_sms_server/mock_sms_server.py .
+COPY tools/mock_sms_server/dashboard_generator.py .
+COPY tools/mock_sms_server/ui ./ui
+
+# Expose port
+EXPOSE 8086
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')" || exit 1
+
+# Run server
+CMD ["python", "mock_sms_server.py"]

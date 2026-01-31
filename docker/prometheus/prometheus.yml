@@ -1,0 +1,178 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'fleet'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alerts.yml"
+  - "alerts-disk.yml"
+  - "alerts-alarm-service.yml"
+  - "alerts-sms-quota.yml"
+  - "alerts-ops-service.yml"
+  - "alerts-sms-gateway-service.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL Exporter (Primary)
+  - job_name: 'postgres-primary'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          instance: 'postgres-primary'
+          role: 'primary'
+
+  # PostgreSQL Exporter (Replica)
+  - job_name: 'postgres-replica'
+    static_configs:
+      - targets: ['postgres-exporter-replica:9187']
+        labels:
+          instance: 'postgres-replica'
+          role: 'replica'
+
+  # PgBouncer Exporter
+  - job_name: 'pgbouncer'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['pgbouncer-exporter:9127']
+        labels:
+          instance: 'pgbouncer'
+
+  # RabbitMQ Exporter
+  - job_name: 'rabbitmq'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['rabbitmq-exporter:9419']
+        labels:
+          instance: 'rabbitmq-cluster'
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'host'
+
+  # Monitoring Service (fleet metrics - fleet_trackers_online, etc.)
+  - job_name: 'monitoring-service'
+    static_configs:
+      - targets: ['monitoring-service:8080']
+        labels:
+          instance: 'monitoring-service'
+          service: 'monitoring-service'
+    metrics_path: '/metrics/prometheus'
+
+  # Alarm Service (Production)
+  - job_name: 'alarm-service'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['alarm-service:3200']
+        labels:
+          instance: 'alarm-service-prod'
+          service: 'alarm-service'
+    metrics_path: '/metrics'
+
+  # Alarm Service (Test)
+  - job_name: 'alarm-service-test'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['alarm-service-test:3100']
+        labels:
+          instance: 'alarm-service-test'
+          service: 'alarm-service'
+    metrics_path: '/metrics'
+
+  # Operations Service Backend
+  - job_name: 'ops-service-backend'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['ops-service-backend:8000']
+        labels:
+          instance: 'ops-service-backend'
+          service: 'ops-service'
+    metrics_path: '/metrics'
+
+  # SMS Gateway Service (SMS Command Processing)
+  - job_name: 'sms-gateway-service'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['sms-gateway-service:8080']
+        labels:
+          instance: 'sms-gateway-service'
+          service: 'sms-gateway-service'
+    metrics_path: '/metrics'
+
+  # Access Gateway (token, embed, proxy API)
+  - job_name: 'access-gateway'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['access-gateway:3001']
+        labels:
+          instance: 'access-gateway'
+          service: 'access-gateway'
+    metrics_path: '/metrics'
+
+  # Consumer Service - database writer
+  - job_name: 'consumer-service-database'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['consumer-service-database:9090']
+        labels:
+          instance: 'consumer-service-database'
+          service: 'consumer-service'
+          consumer_type: 'database'
+    metrics_path: '/metrics'
+
+  # Consumer Service - alarm notifier
+  - job_name: 'consumer-service-alarm'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['consumer-service-alarm:9090']
+        labels:
+          instance: 'consumer-service-alarm'
+          service: 'consumer-service'
+          consumer_type: 'alarm'
+    metrics_path: '/metrics'
+
+  # Web App (Next.js - frappe profile)
+  - job_name: 'web-app'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['web-app:3002']
+        labels:
+          instance: 'web-app'
+          service: 'web-app'
+    metrics_path: '/api/metrics'
+
+  # Ops Service Frontend (Next.js)
+  - job_name: 'ops-service-frontend'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['ops-service-frontend:3000']
+        labels:
+          instance: 'ops-service-frontend'
+          service: 'ops-service-frontend'
+    metrics_path: '/api/metrics'

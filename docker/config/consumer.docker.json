@@ -1,0 +1,46 @@
+{
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "publisher_confirms": true,
+    "publisher_confirm_timeout": 5.0,
+    "message_persistence": true,
+    "description": "RabbitMQ configuration"
+  },
+  "consumer": {
+    "type": "${CONSUMER_TYPE:-database}",
+    "workers": ${WORKERS:-15},
+    "prefetch_count": 100,
+    "batch_size": 200,
+    "batch_timeout": 1.0,
+    "description": "Consumer configuration "
+  },
+  "database": {
+    "host": "pgbouncer",
+    "port": 6432,
+    "name": "tracking_db",
+    "user": "tracking_writer",
+    "password": "writer_password",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for consumers (write access). Using PgBouncer connection pooler for better connection management. Note: PgBouncer uses transaction pooling mode."
+  },
+  "logging": {
+    "level": "INFO",
+    "log_file": "logs/consumer.log",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false,
+    "description": "Logging configuration for consumer service"
+  },
+  "retry": {
+    "max_retries": 3,
+    "initial_delay": 1.0,
+    "max_delay": 10.0,
+    "exponential_base": 2.0,
+    "description": "Retry configuration for database operations"
+  }
+}

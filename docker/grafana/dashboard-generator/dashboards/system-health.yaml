@@ -1,0 +1,213 @@
+# ============================================================
+# SYSTEM - HEALTH OVERVIEW
+# ============================================================
+
+title: System - Health Overview
+uid: system-health
+tags:
+- health
+- overview
+- status
+panels:
+- row: 🏥 OVERALL SYSTEM HEALTH
+- title: Alarm Service (Production)
+  width: 3
+  query: rabbitmq_connection_status{job='alarm-service'}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Alarm Service (Test)
+  width: 3
+  query: rabbitmq_connection_status{job='alarm-service-test'}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Email Channel
+  width: 4
+  query: email_channel_available
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: SMS Channel
+  width: 4
+  query: sms_channel_available
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: PostgreSQL
+  width: 4
+  query: pg_up{job='postgres-primary'}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: RabbitMQ
+  width: 4
+  query: rabbitmq_up
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: PgBouncer
+  width: 2
+  query: pgbouncer_up
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Access Gateway
+  width: 3
+  query: up{job="access-gateway"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Consumer (DB)
+  width: 2
+  query: up{job="consumer-service-database"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Consumer (Alarm)
+  width: 2
+  query: up{job="consumer-service-alarm"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Web App
+  width: 2
+  query: up{job="web-app"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- title: Ops Frontend
+  width: 2
+  query: up{job="ops-service-frontend"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+- row: 📊 KEY METRICS - What's Good vs Bad
+- title: Email Success Rate
+  type: gauge
+  query: avg(notification_success_rate_email) * 100
+  unit: '%'
+  thresholds: $success_rate
+- title: SMS Success Rate
+  type: gauge
+  query: avg(notification_success_rate_sms) * 100
+  unit: '%'
+  thresholds: $success_rate
+- title: Email SLA Compliance
+  type: gauge
+  query: avg(notification_sla_compliance_email) * 100
+  unit: '%'
+  thresholds: $success_rate
+- title: SMS SLA Compliance
+  type: gauge
+  query: avg(notification_sla_compliance_sms) * 100
+  unit: '%'
+  thresholds: $success_rate
+- row: ⚠️ ERROR INDICATORS - Should Be Zero
+- title: Queue Depth
+  width: 4
+  query: rabbitmq_queue_depth
+  thresholds:
+  - 1:yellow
+  - 100:red
+- title: DLQ Size
+  width: 4
+  query: dlq_size
+  thresholds: $error_count
+- title: Email Errors
+  width: 4
+  query: email_send_error
+  thresholds: $latency
+- title: SMS Errors
+  width: 4
+  query: sms_send_error
+  thresholds: $latency
+- title: Email CB Opens
+  width: 4
+  query: email_circuit_breaker_open
+  thresholds:
+  - 1:red
+- title: SMS CB Opens
+  width: 4
+  query: sms_circuit_breaker_open
+  thresholds:
+  - 1:red
+- row: 📈 THROUGHPUT - Activity Indicators
+- title: Alarms Processed
+  width: 4
+  query: alarms_processed_total
+  color: '#3274D9'
+- title: Emails Sent
+  width: 4
+  query: email_sent_total
+  color: '#73BF69'
+- title: SMS Sent
+  width: 4
+  query: sms_sent_total
+  color: '#B877D9'
+- title: Trackers Online
+  width: 4
+  query: fleet_trackers_online
+  color: '#FF9830'
+- title: Processing Rate
+  width: 4
+  query: rabbitmq_messages_processed_rate
+  unit: ops
+  decimals: 2
+  color: '#8AB8FF'
+- title: Consumer Lag
+  width: 4
+  query: rabbitmq_consumer_lag_ms / 1000
+  unit: s
+  thresholds: $latency
+- row: 🖥️ INFRASTRUCTURE - Database & Queue Health
+- title: DB Cache Hit Ratio
+  type: gauge
+  query: (sum(rate(pg_stat_database_blks_hit{datname='tracking_db',instance='postgres-primary'}[5m])) / (sum(rate(pg_stat_database_blks_hit{datname='tracking_db',instance='postgres-primary'}[5m])) + sum(rate(pg_stat_database_blks_read{datname='tracking_db',instance='postgres-primary'}[5m])) + 0.001)) * 100
+  unit: '%'
+  thresholds:
+  - 95:yellow
+  - 99:green
+- title: Replication Lag
+  height: 5
+  query: pg_replication_lag_seconds
+  unit: s
+  thresholds: $latency
+- title: DB Connections
+  height: 5
+  query: pg_stat_database_numbackends{datname='tracking_db',instance='postgres-primary'}
+  thresholds: $connections
+- title: RabbitMQ Messages Ready
+  height: 5
+  query: sum(rabbitmq_queue_messages_ready) or vector(0)
+  thresholds:
+  - 1000:yellow
+  - 10000:red
+- row: 📋 THRESHOLD REFERENCE
+- title: Health Thresholds Reference
+  type: text
+  content: |-
+    ## 🚦 Health Indicators Reference
+
+    | Metric | 🟢 Good | 🟡 Warning | 🔴 Critical |
+    |--------|---------|------------|-------------|
+    | **Success Rate** | > 95% | 90-95% | < 90% |
+    | **SLA Compliance** | > 95% | 90-95% | < 90% |
+    | **Queue Depth** | 0 | 1-100 | > 100 |
+    | **DLQ Size** | 0 | 1-10 | > 10 |
+    | **Errors** | 0 | 1-5 | > 5 |
+    | **Circuit Breaker** | 0 opens | - | > 0 opens |
+    | **Consumer Lag** | < 1s | 1-5s | > 5s |
+    | **DB Cache Hit** | > 99% | 95-99% | < 95% |
+    | **Replication Lag** | < 1s | 1-5s | > 5s |
+    | **DB Connections** | < 400 | 400-450 | > 450 |
+    | **RabbitMQ Ready** | < 1000 | 1000-10000 | > 10000 |
+
+    ---
+
+    ### 🔗 Quick Links to Dashboards
+    - **[Alarm Service](http://localhost:13100)** - Circuit breakers, DLQ, Feature flags
+    - **[Mock SMS Server](http://localhost:8086)** - SMS delivery status
+    - **[MailHog](http://localhost:8025)** - Email delivery status
+    - **[Fleet Monitoring](http://localhost:8080)** - Parser services & trackers
+    - **[RabbitMQ](http://localhost:15672)** - Queue management

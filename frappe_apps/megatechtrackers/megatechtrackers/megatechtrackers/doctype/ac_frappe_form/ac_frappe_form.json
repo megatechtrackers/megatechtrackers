@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ac_frappe_form_name",
+  "ac_form_label",
+  "ac_form_url",
+  "ac_description",
+  "ac_is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "ac_frappe_form_name",
+   "fieldtype": "Data",
+   "label": "Form Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "ac_form_label",
+   "fieldtype": "Data",
+   "label": "Form Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ac_form_url",
+   "fieldtype": "Data",
+   "label": "Form URL",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ac_description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "ac_is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "default": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-12-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Megatechtrackers",
+ "name": "AC Frappe Form",
+ "naming_rule": "By ac_frappe_form_name",
+ "show_title_field_in_link": 1,
+ "title_field": "ac_form_label",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

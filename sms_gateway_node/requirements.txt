@@ -1,0 +1,6 @@
+# SMS Gateway Node Dependencies
+aiohttp>=3.9.0
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+cryptography>=41.0.0
+prometheus-client>=0.19.0

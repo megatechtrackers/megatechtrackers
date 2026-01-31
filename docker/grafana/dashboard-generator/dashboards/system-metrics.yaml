@@ -1,0 +1,115 @@
+# ============================================================
+# SYSTEM - SERVER RESOURCES
+# ============================================================
+
+title: System - Server Resources
+uid: infra-system-metrics
+tags:
+- system
+- infrastructure
+- fleet
+panels:
+- row: Overview
+- title: CPU
+  type: gauge
+  query: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+  unit: '%'
+  thresholds:
+  - 60:#FADE2A
+  - 80:#FF9830
+  - 90:#F2495C
+- title: Memory
+  type: gauge
+  query: (1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))) * 100
+  unit: '%'
+  thresholds:
+  - 70:#FADE2A
+  - 85:#FF9830
+  - 95:#F2495C
+- title: Disk
+  type: gauge
+  query: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100
+  unit: '%'
+  thresholds:
+  - 70:#FADE2A
+  - 85:#FF9830
+  - 95:#F2495C
+- title: System Info
+  height: 5
+  queries:
+  - expr: count(node_cpu_seconds_total{mode="idle"})
+    legend: CPU Cores
+  - node_memory_MemTotal_bytes | Total RAM
+  color: '#8AB8FF'
+  graph_mode: none
+- row: CPU & Memory
+- title: CPU Usage Over Time
+  type: timeseries
+  height: 7
+  query: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) | CPU %
+  unit: '%'
+  thresholds: $usage_percent
+  color: '#3274D9'
+- title: Memory Usage Over Time
+  type: timeseries
+  height: 7
+  query: (1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))) * 100 | Memory %
+  unit: '%'
+  color: '#73BF69'
+- title: Memory Breakdown
+  type: timeseries
+  width: 24
+  height: 7
+  queries:
+  - expr: |-
+      node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes
+    legend: Used
+  - node_memory_Buffers_bytes | Buffers
+  - node_memory_Cached_bytes | Cached
+  - node_memory_MemFree_bytes | Free
+  unit: bytes
+  fill_opacity: 80
+  stacking: normal
+- row: Disk & Network
+- title: Disk I/O Throughput
+  type: timeseries
+  height: 7
+  queries:
+  - expr: node_disk_read_bytes_total
+    legend: Read
+    transform: rate
+  - expr: node_disk_written_bytes_total
+    legend: Write
+    transform: rate
+  unit: Bps
+- title: Network Traffic
+  type: timeseries
+  height: 7
+  queries:
+  - expr: node_network_receive_bytes_total{device!~"lo|veth.*|br.*|docker.*"}
+    legend: '{{device}} RX'
+    transform: rate
+  - expr: node_network_transmit_bytes_total{device!~"lo|veth.*|br.*|docker.*"}
+    legend: '{{device}} TX'
+    transform: rate
+  unit: Bps
+- row: Load & Operations
+- title: System Load
+  type: timeseries
+  height: 6
+  queries:
+  - node_load1 | 1 min
+  - node_load5 | 5 min
+  - node_load15 | 15 min
+  fill_opacity: 10
+- title: Disk I/O Operations
+  type: timeseries
+  height: 6
+  queries:
+  - expr: node_disk_reads_completed_total
+    legend: Reads/sec
+    transform: rate
+  - expr: node_disk_writes_completed_total
+    legend: Writes/sec
+    transform: rate
+  unit: iops

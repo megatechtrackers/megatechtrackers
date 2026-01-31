@@ -1,0 +1,79 @@
+# ============================================================
+# ALARM SERVICE - SLA COMPLIANCE
+# ============================================================
+
+title: Alarm Service - SLA Compliance
+uid: sla-tracking
+tags:
+- alarm
+- sla
+- compliance
+refresh: 30s
+panels:
+- title: SLA Compliance Rate by Channel
+  type: timeseries
+  queries:
+  - expr: notification_sla_compliance_email * 100
+    legend: Email %
+  - expr: notification_sla_compliance_sms * 100
+    legend: SMS %
+  - expr: notification_sla_compliance_voice * 100
+    legend: Voice %
+  unit: '%'
+  thresholds: $success_rate
+  fill_opacity: 10
+- title: Delivery Time P95 by Channel
+  type: timeseries
+  queries:
+  - expr: notification_delivery_time_ms_email_bucket
+    legend: Email P95 (sec)
+    transform: rate
+  - expr: notification_delivery_time_ms_sms_bucket
+    legend: SMS P95 (sec)
+    transform: rate
+  - expr: notification_delivery_time_ms_voice_bucket
+    legend: Voice P95 (sec)
+    transform: rate
+  unit: s
+  fill_opacity: 10
+- title: Success Rate by Channel
+  type: timeseries
+  queries:
+  - expr: notification_success_rate_email * 100
+    legend: Email %
+  - expr: notification_success_rate_sms * 100
+    legend: SMS %
+  - expr: notification_success_rate_voice * 100
+    legend: Voice %
+  unit: '%'
+  thresholds: $cache_hit
+  fill_opacity: 10
+- title: SLA Current Status
+  width: 12
+  height: 8
+  queries:
+  - expr: notification_sla_compliance_email * 100
+    legend: Email SLA
+  - expr: notification_sla_compliance_sms * 100
+    legend: SMS SLA
+  - expr: notification_sla_compliance_voice * 100
+    legend: Voice SLA
+  unit: '%'
+  decimals: 2
+  thresholds: $success_rate
+  graph_mode: none
+- title: Delivery Time Distribution (Email)
+  type: heatmap
+  width: 8
+  query: notification_delivery_time_ms_email_bucket
+  transform: rate
+- title: Delivery Time Distribution (SMS)
+  type: heatmap
+  width: 8
+  query: notification_delivery_time_ms_sms_bucket
+  transform: rate
+- title: Delivery Time Distribution (Voice)
+  type: heatmap
+  width: 8
+  query: notification_delivery_time_ms_voice_bucket
+  transform: rate

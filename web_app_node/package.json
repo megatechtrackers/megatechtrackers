@@ -1,0 +1,29 @@
+{
+  "name": "web-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js",
+    "build": "next build",
+    "start": "node server.js",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "axios": "^1.7.7",
+    "js-cookie": "^3.0.5",
+    "prom-client": "^15.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "@types/js-cookie": "^3.0.6",
+    "typescript": "^5.7.2",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^16.1.0"
+  }
+}

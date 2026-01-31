@@ -1,0 +1,82 @@
+# ============================================================
+# INFRA - RABBITMQ (MESSAGE QUEUE)
+# ============================================================
+
+title: Infra - RabbitMQ (Message Queue)
+uid: rabbitmq-overview
+tags:
+- rabbitmq
+- messaging
+- fleet
+panels:
+- row: Overview
+- title: Connections
+  width: 4
+  query: rabbitmq_connections
+  color: '#3274D9'
+- title: Channels
+  width: 4
+  query: rabbitmq_channels
+  color: '#73BF69'
+- title: Consumers
+  width: 4
+  query: sum(rabbitmq_queue_consumers)
+  color: '#B877D9'
+  graph_mode: none
+- title: Messages Ready
+  width: 4
+  query: sum(rabbitmq_queue_messages_ready)
+  thresholds:
+  - 1000:#FADE2A
+  - 10000:#F2495C
+- title: Unacked
+  width: 4
+  query: sum(rabbitmq_queue_messages_unacknowledged)
+  thresholds:
+  - 100:#FADE2A
+  - 1000:#F2495C
+- title: Memory Used
+  width: 4
+  query: rabbitmq_node_mem_used
+  unit: bytes
+  color: '#FF9830'
+- row: Queue Metrics
+- title: Queue Messages
+  type: timeseries
+  width: 24
+  height: 7
+  query: rabbitmq_queue_messages | {{queue}}
+- title: Messages Ready vs Unacknowledged
+  type: timeseries
+  height: 7
+  queries:
+  - expr: sum(rabbitmq_queue_messages_ready)
+    legend: Ready
+  - expr: sum(rabbitmq_queue_messages_unacknowledged)
+    legend: Unacked
+  fill_opacity: 30
+- title: Message Rates
+  type: timeseries
+  height: 7
+  queries:
+  - expr: rabbitmq_queue_messages_published_total
+    legend: Published/sec
+    transform: rate
+  - expr: rabbitmq_queue_messages_delivered_total
+    legend: Delivered/sec
+    transform: rate
+  unit: req/s
+- row: Node Resources
+- title: Memory Usage
+  type: timeseries
+  height: 7
+  queries:
+  - rabbitmq_node_mem_used | Used
+  - rabbitmq_node_mem_limit | Limit
+  unit: bytes
+- title: Disk Free Space
+  type: timeseries
+  height: 7
+  query: rabbitmq_node_disk_free | Disk Free
+  unit: bytes
+  color: '#73BF69'

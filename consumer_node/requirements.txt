@@ -1,0 +1,14 @@
+# Consumer Node Dependencies
+
+# Async Database Drivers
+asyncpg>=0.29.0            # Async PostgreSQL driver
+sqlalchemy>=2.0.0          # SQLAlchemy 2.0 ORM (for database write operations)
+
+# RabbitMQ
+aio-pika>=9.0.0            # Async RabbitMQ client (for consuming messages)
+
+# Utilities
+python-dateutil>=2.8.2     # Date/time utilities (for parsing datetime fields)
+
+# Prometheus metrics
+prometheus_client>=0.19.0  # /metrics endpoint for consumer health and throughput

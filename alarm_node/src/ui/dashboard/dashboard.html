@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm Service - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/ui/shared/styles.css">
+    <link rel="stylesheet" href="/ui/dashboard/dashboard.css">
+</head>
+<body>
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" id="mobile-toggle" onclick="toggleSidebar()">
+        <svg fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </button>
+    
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Alarm Service</div>
+                <div class="sidebar-subtitle">
+                    <span class="status-dot healthy" id="status-dot"></span>
+                    <span id="status-text">Healthy</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-stats">
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-value" id="sidebar-processed">0</div>
+                    <div class="sidebar-stat-label">Processed</div>
+                </div>
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-value" id="sidebar-success">0%</div>
+                    <div class="sidebar-stat-label">Success Rate</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="/config" class="nav-item">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+                    <span class="nav-label">Configuration</span>
+                </a>
+                <a href="/metrics" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+                    <span class="nav-label">Metrics</span>
+                </a>
+                <a href="/health" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+                    <span class="nav-label">Health</span>
+                </a>
+                <a href="__MOCK_SMS_URL__" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                    <span class="nav-label">Mock SMS</span>
+                </a>
+                <a href="__MOCK_EMAIL_URL__" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                    <span class="nav-label">Mock Email</span>
+                </a>
+                <a href="__GRAFANA_URL__" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+                    <span class="nav-label">Grafana</span>
+                </a>
+                <a href="__RABBITMQ_URL__" class="nav-item" target="_blank">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+                    <span class="nav-label">RabbitMQ</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main">
+            <div class="main-header">
+                <div>
+                    <div class="main-title">Alarm Processing Dashboard</div>
+                    <div class="main-meta">Monitor and manage alarm notifications</div>
+                </div>
+                <div class="auto-refresh">
+                    <input type="checkbox" id="autoRefresh" checked>
+                    <label for="autoRefresh">Auto-refresh (5s)</label>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <!-- Stats Overview -->
+                <div class="overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Alarms Processed</div>
+                        <div class="stat-value" id="stat-processed">0</div>
+                        <div class="stat-hint">Last hour</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="stat-success-rate">0%</div>
+                        <div class="stat-hint">All channels</div>
+                    </div>
+                    <div class="stat-card" id="queue-depth-card" style="cursor: pointer; position: relative;" onclick="showQueueDepthInfo()">
+                        <div class="stat-label">Queue Depth</div>
+                        <div class="stat-value" id="stat-queue">0</div>
+                        <div class="stat-hint" id="queue-depth-hint" style="color: #94a3b8;">Pending alarms</div>
+                        <div id="queue-depth-badge" style="display: none; position: absolute; top: 8px; right: 8px; background: #3b82f6; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: 600;">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: middle; margin-right: 2px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>VIEW
+                        </div>
+                    </div>
+                    <div class="stat-card" id="paused-queue-card" style="display: none; cursor: pointer; position: relative; border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);" onclick="showPausedQueueModal()">
+                        <div class="stat-label" id="paused-queue-label" style="color: #f59e0b;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Paused Queue</div>
+                        <div class="stat-value" id="stat-paused-queue" style="color: #f59e0b; font-size: 2rem;">0</div>
+                        <div class="stat-hint" id="paused-queue-hint" style="color: #fbbf24; font-weight: 500;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Click to view items
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Workers</div>
+                        <div class="stat-value" id="stat-workers">0</div>
+                        <div class="stat-hint">Processing instances</div>
+                    </div>
+                </div>
+                
+                <!-- System Controls -->
+                <div class="system-controls-panel" style="margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 12px; border: 1px solid #475569;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-size: 1.1rem; font-weight: 600; color: #e2e8f0;">System Status:</span>
+                            <span id="system-status-badge" style="padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">Loading...</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="pause-resume-btn" onclick="togglePauseResume()" style="padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                Loading...
+                            </button>
+                            <a href="/config" style="padding: 10px 20px; border-radius: 8px; background: #3b82f6; color: white; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Circuit Breakers -->
+                <div class="circuit-breaker-grid" id="circuit-breakers">
+                    <!-- Dynamically populated -->
+                </div>
+                
+                <!-- DLQ Monitoring -->
+                <div class="dlq-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Dead Letter Queue (DLQ)</div>
+                        <div class="toolbar">
+                            <button class="secondary" onclick="toggleDLQItems()" id="dlq-toggle-btn" style="margin-right: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View Items</button>
+                            <button class="primary" onclick="reprocessDLQ()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Reprocess Batch</button>
+                        </div>
+                    </div>
+                    <div class="dlq-stats">
+                        <div class="dlq-stat">
+                            <div class="dlq-stat-label">Total Items</div>
+                            <div class="dlq-stat-value" id="dlq-total">0</div>
+                        </div>
+                        <div class="dlq-stat">
+                            <div class="dlq-stat-label">By Email</div>
+                            <div class="dlq-stat-value" id="dlq-email">0</div>
+                        </div>
+                        <div class="dlq-stat">
+                            <div class="dlq-stat-label">By SMS</div>
+                            <div class="dlq-stat-value" id="dlq-sms">0</div>
+                        </div>
+                        <div class="dlq-stat">
+                            <div class="dlq-stat-label">By Voice</div>
+                            <div class="dlq-stat-value" id="dlq-voice">0</div>
+                        </div>
+                    </div>
+                    <!-- DLQ Items Table (hidden by default) -->
+                    <div id="dlq-items-container" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                        <div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Time</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">IMEI</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Alarm Type</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Channel</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Error Type</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Attempts</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dlq-items-body">
+                                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--text-muted);">Click "View Items" to load DLQ details</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paused Queue Details Modal -->
+                <div id="paused-queue-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+                    <div style="background: var(--bg-card); border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow: hidden; border: 1px solid var(--border-color);">
+                        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">Paused Queue Items</span>
+                            <button onclick="closePausedQueueModal()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem;">&times;</button>
+                        </div>
+                        <div style="overflow-y: auto; max-height: calc(80vh - 60px); padding: 16px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Paused At</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">IMEI</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Alarm Type</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">GPS Time</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Location</th>
+                                        <th style="padding: 10px 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Speed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paused-queue-items-body">
+                                    <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feature Flags -->
+                <div class="flags-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Feature Flags</div>
+                    </div>
+                    <div id="flags-list" style="max-height: 300px; overflow-y: auto;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">Processing Rate</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="processing-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-title">Success/Error Rate</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="success-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alarm History Panel -->
+                <div class="history-panel" style="margin-top: 24px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
+                    <div class="panel-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div class="panel-title" style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">Alarm History</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <input type="text" id="history-imei-filter" placeholder="Filter by IMEI..." style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; width: 150px;">
+                            <select id="history-status-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem;">
+                                <option value="">All Statuses</option>
+                                <option value="success">Success</option>
+                                <option value="failed">Failed</option>
+                                <option value="pending">Pending</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <select id="history-channel-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem;">
+                                <option value="">All Channels</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="voice">Voice</option>
+                                <option value="push">Push</option>
+                            </select>
+                            <button onclick="loadAlarmHistory()" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="history-table-wrapper" style="overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-primary); z-index: 1;">
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Time</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">IMEI</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Event</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Channel</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Recipient</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Status</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Attempt</th>
+                                    <th style="padding: 12px 16px; text-align: left; color: var(--text-secondary); font-weight: 600;">Error</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr><td colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">Loading history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="history-pagination" style="padding: 12px 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                        <span id="history-info" style="color: var(--text-muted); font-size: 0.85rem;">0 records</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="history-prev" onclick="historyPage = Math.max(0, historyPage - 1); loadAlarmHistory();" disabled class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">Previous</button>
+                            <button id="history-next" onclick="historyPage++; loadAlarmHistory();" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/ui/dashboard/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+# ============================================================
+# ALARM SERVICE - NOTIFICATION CHANNELS
+# ============================================================
+# Channel performance, success rates, and latency
+# ============================================================
+
+title: Alarm Service - Notification Channels
+uid: channel-performance
+tags:
+- alarm
+- channels
+- performance
+refresh: 30s
+panels:
+- row: 📊 Channel Status
+- title: Email Available
+  width: 8
+  height: 4
+  query: email_channel_available | Email
+  thresholds: $up_down
+  graph_mode: none
+- title: SMS Available
+  width: 8
+  height: 4
+  query: sms_channel_available | SMS
+  thresholds: $up_down
+  graph_mode: none
+- title: Voice Available
+  width: 8
+  height: 4
+  query: voice_channel_available | Voice
+  thresholds: $up_down
+  graph_mode: none
+
+- row: 📈 Send Rate & Success
+- title: Notifications Sent by Channel
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_sent_total
+    legend: Email/sec
+    transform: rate
+  - expr: sms_sent_total
+    legend: SMS/sec
+    transform: rate
+  - expr: voice_sent_total
+    legend: Voice/sec
+    transform: rate
+  unit: ops
+  fill_opacity: 10
+- title: Success Rate by Channel
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: notification_success_rate_email * 100
+    legend: Email %
+  - expr: notification_success_rate_sms * 100
+    legend: SMS %
+  - expr: notification_success_rate_voice * 100
+    legend: Voice %
+  unit: '%'
+  thresholds: $cache_hit
+  fill_opacity: 10
+
+- row: ⚡ Latency Metrics
+- title: Send Duration (P95)
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_send_duration_ms_bucket
+    legend: Email P95
+    transform: rate
+  - expr: sms_send_duration_ms_bucket
+    legend: SMS P95
+    transform: rate
+  - expr: voice_send_duration_ms_bucket
+    legend: Voice P95
+    transform: rate
+  unit: ms
+  fill_opacity: 10
+- title: Delivery Time (P95)
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: notification_delivery_time_ms_email_bucket
+    legend: Email P95
+    transform: rate
+  - expr: notification_delivery_time_ms_sms_bucket
+    legend: SMS P95
+    transform: rate
+  - expr: notification_delivery_time_ms_voice_bucket
+    legend: Voice P95
+    transform: rate
+  unit: s
+  fill_opacity: 10
+
+- row: ⚠️ Errors & Retries
+- title: Error Rate by Channel
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_send_error
+    legend: Email Errors/sec
+    transform: rate
+  - expr: sms_send_error
+    legend: SMS Errors/sec
+    transform: rate
+  - expr: voice_send_error
+    legend: Voice Errors/sec
+    transform: rate
+  unit: ops
+  fill_opacity: 10
+- title: Retry Rate by Channel
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_send_retry
+    legend: Email Retries/sec
+    transform: rate
+  - expr: sms_send_retry
+    legend: SMS Retries/sec
+    transform: rate
+  - expr: voice_send_retry
+    legend: Voice Retries/sec
+    transform: rate
+  unit: ops
+  fill_opacity: 10

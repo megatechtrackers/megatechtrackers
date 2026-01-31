@@ -1,0 +1,15 @@
+# PostgreSQL with Cron for Automatic Cleanup
+# Based on TimescaleDB HA image with cron pre-installed
+
+FROM timescale/timescaledb-ha:pg15
+
+# Install cron as root
+USER root
+RUN apt-get update && \
+    apt-get install -y cron && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /var/log/postgresql && \
+    chown -R postgres:postgres /var/log/postgresql
+
+# Switch back to postgres user
+USER postgres

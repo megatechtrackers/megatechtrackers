@@ -1,0 +1,24 @@
+# Mock Teltonika Tracker Dockerfile
+# Simulates GPS trackers for testing system robustness
+
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# No external dependencies needed - uses only Python standard library
+COPY tools/mock_tracker/ /app/
+
+# Set default environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TRACKER_HOST=haproxy-tracker
+ENV TRACKER_PORT=2001
+ENV NUM_TRACKERS=20
+ENV SEND_RATE=2.0
+ENV LOG_LEVEL=INFO
+
+# Health check - verify Python is working
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import socket; print('OK')" || exit 1
+
+# Run the mock tracker
+CMD ["python", "mock_teltonika_tracker.py"]

@@ -1,0 +1,72 @@
+# ============================================================
+# OPERATIONS SERVICE - STATUS
+# ============================================================
+# Updated to use actual available metrics
+# ============================================================
+
+title: Operations Service - Status
+uid: ops-service
+tags:
+- ops-service
+- device-configuration
+- monitoring
+refresh: 30s
+panels:
+- row: System Overview
+- title: Service Info
+  width: 24
+  height: 5
+  queries:
+  - ops_service_units_registered_total | Units Registered
+  - ops_service_device_types_total | Device Types
+  - ops_service_http_requests_in_progress | HTTP In Progress
+  graph_mode: none
+  text_mode: auto
+
+- row: Command Queue Status
+- title: Command Outbox Queue
+  type: timeseries
+  height: 7
+  query: ops_service_command_outbox_depth | Outbox Depth
+  thresholds:
+  - 10:yellow
+  - 100:red
+
+- title: Commands Awaiting Reply
+  type: timeseries
+  height: 7
+  query: ops_service_command_sent_pending | Awaiting Reply
+  thresholds:
+  - 10:yellow
+  - 50:red
+
+- title: Current Outbox Depth
+  width: 8
+  query: ops_service_command_outbox_depth
+  thresholds:
+  - 10:yellow
+  - 100:red
+
+- title: Commands Pending Reply
+  width: 8  
+  query: ops_service_command_sent_pending
+  thresholds:
+  - 10:yellow
+  - 50:red
+
+- title: HTTP Requests In Progress
+  width: 8
+  query: ops_service_http_requests_in_progress
+  color: '#3274D9'
+
+- row: Cleanup Operations
+- title: History Cleanup (Deleted Records)
+  type: timeseries
+  width: 12
+  query: ops_service_cleanup_history_deleted_total
+  transform: rate
+  
+- title: Total Records Cleaned
+  width: 12
+  query: ops_service_cleanup_history_deleted_total
+  color: '#FF9830'

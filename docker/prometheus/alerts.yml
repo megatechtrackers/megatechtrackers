@@ -1,0 +1,245 @@
+groups:
+  - name: fleet_alerts
+    interval: 30s
+    rules:
+      # Database Connection Alerts
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends{datname="tracking_db"} > 400
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections detected"
+          description: "Database connections are at {{ $value }}/500 (80% of limit)"
+
+      - alert: CriticalDatabaseConnections
+        expr: pg_stat_database_numbackends{datname="tracking_db"} > 450
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical database connections"
+          description: "Database connections are at {{ $value }}/500 (90% of limit) - immediate action required"
+
+      # PgBouncer Connection Alerts
+      - alert: HighPgBouncerConnections
+        expr: pgbouncer_pools_cl_active > 120
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PgBouncer client connections"
+          description: "PgBouncer has {{ $value }} active client connections (approaching limit)"
+
+      # RabbitMQ Memory Alerts
+      - alert: RabbitMQHighMemoryUsage
+        expr: rabbitmq_node_mem_used / rabbitmq_node_mem_limit > 0.6
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ high memory usage"
+          description: "RabbitMQ memory usage is {{ $value | humanizePercentage }} of limit"
+
+      - alert: RabbitMQCriticalMemoryUsage
+        expr: rabbitmq_node_mem_used / rabbitmq_node_mem_limit > 0.8
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RabbitMQ critical memory usage"
+          description: "RabbitMQ memory usage is {{ $value | humanizePercentage }} of limit - immediate action required"
+
+      # RabbitMQ Queue Depth Alerts
+      - alert: RabbitMQHighQueueDepth
+        expr: rabbitmq_queue_messages_ready > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ high queue depth"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages waiting (high backlog)"
+
+      - alert: RabbitMQCriticalQueueDepth
+        expr: rabbitmq_queue_messages_ready > 50000
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RabbitMQ critical queue depth"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages waiting - consumer may be falling behind"
+
+      # Consumer Processing Lag
+      - alert: ConsumerHighProcessingLag
+        expr: rabbitmq_queue_messages_ready / rate(rabbitmq_queue_messages_delivered_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumer processing lag detected"
+          description: "Queue {{ $labels.queue }} processing lag is {{ $value }} seconds"
+
+      # PostgreSQL Replication Lag
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "Replica is {{ $value }} seconds behind primary"
+
+      # Parser Service Connection Alerts
+      - alert: ParserServiceHighConnections
+        expr: parser_service_trackers_online > 4000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Parser service high connections"
+          description: "Parser service instance {{ $labels.node }} has {{ $value }} active trackers (approaching 5,000 limit)"
+
+      # Fleet Capacity Alert
+      - alert: FleetCapacityWarning
+        expr: fleet_trackers_online / fleet_connections_capacity > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fleet capacity warning"
+          description: "Fleet is at {{ $value | humanizePercentage }} of total capacity"
+
+      # Monitoring Service (fleet metrics server) down
+      - alert: MonitoringServiceDown
+        expr: up{job="monitoring-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring-service
+        annotations:
+          summary: "Monitoring service is down"
+          description: "Monitoring service (fleet metrics) {{ $labels.instance }} is down - fleet_* metrics will be missing"
+
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% available on {{ $labels.instance }}"
+
+      # Service Down Alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} is down"
+
+      # Alarm Service Specific Alerts
+      - alert: AlarmServiceDLQThreshold
+        expr: dlq_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "DLQ threshold exceeded"
+          description: "Dead Letter Queue has {{ $value }} messages (threshold: 1000)"
+
+      - alert: AlarmServiceDLQCritical
+        expr: dlq_size > 5000
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "DLQ critical threshold exceeded"
+          description: "Dead Letter Queue has {{ $value }} messages (critical threshold: 5000) - immediate action required"
+
+      - alert: CircuitBreakerOpenTooLong
+        expr: |
+          (email_circuit_breaker_open > 0 OR sms_circuit_breaker_open > 0 OR voice_circuit_breaker_open > 0)
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "Circuit breaker open for extended period"
+          description: "Circuit breaker has been open for more than 5 minutes. Channel may be experiencing issues."
+
+      - alert: HighErrorRate
+        expr: |
+          (rate(email_send_error[5m]) + rate(sms_send_error[5m]) + rate(voice_send_error[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "High error rate detected"
+          description: "Total error rate is {{ $value }} errors/sec across all channels"
+
+      - alert: CriticalErrorRate
+        expr: |
+          (rate(email_send_error[5m]) + rate(sms_send_error[5m]) + rate(voice_send_error[5m])) > 50
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "Critical error rate"
+          description: "Total error rate is {{ $value }} errors/sec - system may be failing"
+
+      - alert: AlarmServiceDown
+        expr: up{job=~"alarm-service.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "Alarm service is down"
+          description: "Alarm service {{ $labels.instance }} is down"
+
+      - alert: LowSuccessRate
+        expr: |
+          (notification_success_rate_email < 0.95 OR notification_success_rate_sms < 0.95 OR notification_success_rate_voice < 0.95)
+        for: 10m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "Low success rate detected"
+          description: "One or more channels have success rate below 95%"
+
+      - alert: SLANonCompliance
+        expr: |
+          (notification_sla_compliance_email < 0.90 OR notification_sla_compliance_sms < 0.90 OR notification_sla_compliance_voice < 0.90)
+        for: 15m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "SLA non-compliance detected"
+          description: "One or more channels have SLA compliance below 90%"

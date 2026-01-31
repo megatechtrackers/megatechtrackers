@@ -1,0 +1,139 @@
+# ============================================================
+# ALARM SERVICE - DELIVERY COSTS
+# ============================================================
+# Track notification delivery costs by channel
+# ============================================================
+
+title: Alarm Service - Delivery Costs
+uid: cost-tracking
+tags:
+- alarm
+- cost
+- billing
+refresh: 1m
+time_from: now-24h
+panels:
+- row: 💰 Cost Overview
+- title: Estimated Total Cost
+  width: 6
+  height: 5
+  query: |-
+    ((email_sent_total * 0.0001) or vector(0)) + ((sms_sent_total * 0.05) or vector(0)) + ((voice_sent_total * 0.02) or vector(0)) | Total
+  unit: $
+  decimals: 2
+  thresholds: $cost
+  graph_mode: area
+- title: Email Cost
+  width: 6
+  height: 5
+  query: email_sent_total * 0.0001 | Email
+  unit: $
+  decimals: 2
+  color: '#3274D9'
+  graph_mode: area
+- title: SMS Cost
+  width: 6
+  height: 5
+  query: sms_sent_total * 0.05 | SMS
+  unit: $
+  decimals: 2
+  color: '#B877D9'
+  graph_mode: area
+- title: Voice Cost
+  width: 6
+  height: 5
+  query: voice_sent_total * 0.02 | Voice
+  unit: $
+  decimals: 2
+  color: '#FF9830'
+  graph_mode: area
+
+- row: 📊 Notifications Sent
+- title: Emails Sent
+  width: 8
+  height: 4
+  query: email_sent_total | 📧 Emails
+  color: '#3274D9'
+  graph_mode: none
+- title: SMS Sent
+  width: 8
+  height: 4
+  query: sms_sent_total | 📱 SMS
+  color: '#B877D9'
+  graph_mode: none
+- title: Voice Calls
+  width: 8
+  height: 4
+  query: voice_sent_total | 📞 Voice
+  color: '#FF9830'
+  graph_mode: none
+
+- row: 📈 Trends Over Time
+- title: Notification Send Rate
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_sent_total
+    legend: 📧 Email/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: sms_sent_total
+    legend: 📱 SMS/min
+    transform: rate
+    rate_multiplier: 60
+  - expr: voice_sent_total
+    legend: 📞 Voice/min
+    transform: rate
+    rate_multiplier: 60
+- title: Cost Rate ($/hour)
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: email_sent_total
+    legend: 📧 Email
+    transform: rate
+    rate_multiplier: 0.36
+  - expr: sms_sent_total
+    legend: 📱 SMS
+    transform: rate
+    rate_multiplier: 180
+  - expr: voice_sent_total
+    legend: 📞 Voice
+    transform: rate
+    rate_multiplier: 72
+  unit: $
+
+- row: 📉 Cumulative & Breakdown
+- title: Cumulative Notifications
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - email_sent_total | 📧 Emails
+  - sms_sent_total | 📱 SMS
+  - voice_sent_total | 📞 Voice
+  fill_opacity: 10
+  stacking: normal
+- title: Cost Breakdown
+  type: pie
+  width: 12
+  height: 8
+  queries:
+  - expr: email_sent_total * 0.0001
+    legend: 📧 Email
+  - expr: sms_sent_total * 0.05
+    legend: 📱 SMS
+  - expr: voice_sent_total * 0.02
+    legend: 📞 Voice
+  unit: $
+  decimals: 2
+
+- row: 💵 Rate Reference
+- title: Cost Rates Reference
+  type: text
+  width: 24
+  height: 3
+  content: |-
+    **Estimated rates:** Email: $0.0001/msg (AWS SES) | SMS: $0.05/msg (Twilio) | Voice: $0.02/call

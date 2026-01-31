@@ -1,0 +1,115 @@
+groups:
+  - name: alarm_service_alerts
+    interval: 30s
+    rules:
+      # DLQ Threshold Alerts
+      - alert: AlarmServiceDLQThreshold
+        expr: dlq_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "DLQ threshold exceeded"
+          description: "Dead Letter Queue has {{ $value }} messages (threshold: 1000)"
+
+      - alert: AlarmServiceDLQCritical
+        expr: dlq_size > 5000
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "DLQ critical threshold exceeded"
+          description: "Dead Letter Queue has {{ $value }} messages (critical threshold: 5000) - immediate action required"
+
+      # Circuit Breaker Alerts
+      - alert: CircuitBreakerOpenTooLong
+        expr: |
+          (rate(email_circuit_breaker_open[5m]) > 0 OR rate(sms_circuit_breaker_open[5m]) > 0 OR rate(voice_circuit_breaker_open[5m]) > 0)
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "Circuit breaker open for extended period"
+          description: "Circuit breaker has been open for more than 5 minutes. Channel may be experiencing issues."
+
+      # Error Rate Alerts
+      - alert: HighErrorRate
+        expr: |
+          (rate(email_send_error[5m]) + rate(sms_send_error[5m]) + rate(voice_send_error[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "High error rate detected"
+          description: "Total error rate is {{ $value }} errors/sec across all channels"
+
+      - alert: CriticalErrorRate
+        expr: |
+          (rate(email_send_error[5m]) + rate(sms_send_error[5m]) + rate(voice_send_error[5m])) > 50
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "Critical error rate"
+          description: "Total error rate is {{ $value }} errors/sec - system may be failing"
+
+      # Service Health Alerts
+      - alert: AlarmServiceDown
+        expr: up{job=~"alarm-service.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "Alarm service is down"
+          description: "Alarm service {{ $labels.instance }} is down"
+
+      # Success Rate Alerts
+      - alert: LowSuccessRate
+        expr: |
+          (notification_success_rate_email < 0.95 OR notification_success_rate_sms < 0.95 OR notification_success_rate_voice < 0.95)
+        for: 10m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "Low success rate detected"
+          description: "One or more channels have success rate below 95%"
+
+      # SLA Compliance Alerts
+      - alert: SLANonCompliance
+        expr: |
+          (notification_sla_compliance_email < 0.90 OR notification_sla_compliance_sms < 0.90 OR notification_sla_compliance_voice < 0.90)
+        for: 15m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "SLA non-compliance detected"
+          description: "One or more channels have SLA compliance below 90%"
+
+      # Queue Depth Alerts
+      - alert: AlarmQueueBacklog
+        expr: rabbitmq_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: alarm-service
+        annotations:
+          summary: "Alarm queue backlog"
+          description: "RabbitMQ alarm queue has {{ $value }} messages waiting"
+
+      - alert: AlarmQueueCriticalBacklog
+        expr: rabbitmq_queue_depth > 10000
+        for: 2m
+        labels:
+          severity: critical
+          service: alarm-service
+        annotations:
+          summary: "Alarm queue critical backlog"
+          description: "RabbitMQ alarm queue has {{ $value }} messages - consumer falling behind"

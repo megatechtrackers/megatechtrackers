@@ -1,0 +1,70 @@
+# ============================================================
+# ACCESS GATEWAY - STATUS
+# ============================================================
+# Token generation, embed URLs, Grafana proxy.
+# Metrics from access-gateway (job: access-gateway).
+# ============================================================
+
+title: Access Gateway - Status
+uid: access-gateway-status
+tags:
+- access-gateway
+- api
+- monitoring
+refresh: 30s
+panels:
+- row: Service Health
+- title: Access Gateway Up
+  width: 4
+  query: up{job="access-gateway"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+
+- row: HTTP Traffic
+- title: HTTP Requests Total
+  type: timeseries
+  width: 12
+  height: 7
+  query: sum(rate(http_requests_total{job="access-gateway"}[5m])) by (method, status_code)
+  unit: reqps
+  fill_opacity: 20
+- title: HTTP Request Duration (p99)
+  type: timeseries
+  width: 12
+  height: 7
+  query: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="access-gateway"}[5m])) by (le, route))
+  unit: s
+  fill_opacity: 20
+
+- row: Embed URL & Cache
+- title: Embed URL Generations
+  type: timeseries
+  width: 12
+  height: 6
+  query: sum(rate(embed_url_generation_total{job="access-gateway"}[5m])) by (status)
+  unit: ops
+  fill_opacity: 20
+- title: Cache Hits / Misses
+  type: timeseries
+  width: 12
+  height: 6
+  queries:
+  - expr: sum(rate(cache_hits_total{job="access-gateway"}[5m])) by (cache_type)
+    legend: Hits {{cache_type}}
+  - expr: sum(rate(cache_misses_total{job="access-gateway"}[5m])) by (cache_type)
+    legend: Misses {{cache_type}}
+  fill_opacity: 20
+
+- row: Current State
+- title: Active Connections
+  width: 6
+  query: active_connections{job="access-gateway"}
+  color: '#3274D9'
+  graph_mode: none
+- title: Errors Total
+  width: 6
+  query: sum(errors_total{job="access-gateway"}) by (error_type)
+  thresholds: $error_count
+  graph_mode: none

@@ -1,0 +1,2 @@
+# Mock Teltonika Tracker - No external dependencies
+# Uses only Python standard library

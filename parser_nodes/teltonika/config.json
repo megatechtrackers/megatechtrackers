@@ -1,0 +1,111 @@
+{
+  "data_transfer_mode": {
+    "mode": "RABBITMQ",
+    "description": "Data Transfer Mode: LOGS (CSV files) or RABBITMQ (publish to RabbitMQ)"
+  },
+  "server": {
+    "ip": "0.0.0.0",
+    "tcp_port": 2001,
+    "description": "Teltonika TCP Server Configuration - Note: parser_node.listen_ip/port take precedence"
+  },
+  "parser_node": {
+    "node_id": "teltonika-parser-1",
+    "vendor": "teltonika",
+    "expected_trackers": 1000,
+    "listen_ip": "0.0.0.0",
+    "listen_port": 2001,
+    "description": "Parser service configuration - node_id must be unique per node"
+  },
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "publisher_confirms": true,
+    "publisher_confirm_timeout": 5.0,
+    "message_persistence": true,
+    "description": "RabbitMQ configuration - host should point to load balancer"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "megatechtrackers",
+    "user": "postgres",
+    "password": "",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for parser services (used for all database operations: unit_io_mapping, command_outbox, command_sent)"
+  },
+  "system": {
+    "initial_capacity": 100000,
+    "deviceinfo_check_interval": 1,
+    "send_interval_time": 5000,
+    "development_mode": true,
+    "description": "System runtime parameters - initial_capacity: IP table size (100k devices), deviceinfo_check_interval: fallback for ip_table.check_interval, send_interval_time: command polling interval (ms), development_mode: set to true for development (relaxes security checks, allows running without DATABASE_PASSWORD)"
+  },
+  "teltonika_protocol": {
+    "connection_timeout": 300,
+    "read_timeout": 30,
+    "description": "Teltonika Protocol Configuration - connection_timeout: timeout in seconds (300s = 5min for production), read_timeout: timeout for reading data packets"
+  },
+  "tcp_server": {
+    "buffer_size": 8192,
+    "max_concurrent_connections": 50000,
+    "backlog": 1000,
+    "connection_reject_timeout": 1.0,
+    "connection_cleanup_timeout": 5.0,
+    "keepalive_idle": 60,
+    "keepalive_interval": 10,
+    "keepalive_count": 3,
+    "log_raw_packets": true,
+    "raw_packet_max_bytes": 256,
+    "max_packet_size": 10485760,
+    "description": "TCP Server Configuration - buffer_size: read buffer in bytes, max_concurrent_connections: max simultaneous connections, backlog: pending connection queue, keepalive_idle: seconds before first keepalive probe, keepalive_interval: seconds between keepalive probes, keepalive_count: number of probes before connection considered dead, log_raw_packets: enable raw packet hex dump logging, raw_packet_max_bytes: max bytes to log per packet, max_packet_size: maximum packet size in bytes (10MB default)"
+  },
+  "async_queues": {
+    "msg_received_capacity": 10000,
+    "msg_parse_capacity": 10000,
+    "queue_poll_timeout": 1.0,
+    "description": "Async Queue Configuration - capacity: max queue size, queue_poll_timeout: polling timeout in seconds"
+  },
+  "ip_table": {
+    "check_interval": 300,
+    "description": "IP Table Configuration - check_interval: stale connection check interval in seconds"
+  },
+  "shutdown": {
+    "tcp_server_stop_timeout": 1.0,
+    "task_completion_timeout": 1.5,
+    "description": "Shutdown Configuration - timeouts for graceful shutdown in seconds (reduced for faster shutdown)"
+  },
+  "database_connection": {
+    "connection_timeout": 30,
+    "description": "Database Connection Configuration - connection_timeout: database connection timeout in seconds"
+  },
+  "async_operations": {
+    "buffer_wait_timeout": 1.0,
+    "description": "Async Operations Configuration - timeouts for waiting on buffers in seconds"
+  },
+  "logging": {
+    "gateway_log_file": "logs/gateway.log",
+    "level": "INFO",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false,
+    "description": "Logging Configuration - gateway_log_file: main gateway log file in logs/ folder, level: logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL), max_bytes: max log file size before rotation (default 10MB), backup_count: number of backup files to keep (default 5), json_format: enable structured JSON logging (default false)"
+  },
+  "unit_io_mapping": {
+    "cache_ttl_minutes": 30,
+    "cache_max_size": 10000,
+    "inactive_cleanup_hours": 24,
+    "check_db_changes": true,
+    "cleanup_interval_minutes": 60,
+    "description": "Unit IO Mapping Cache Configuration - cache_ttl_minutes: fallback TTL, cache_max_size: max cached IMEIs (LRU), inactive_cleanup_hours: remove inactive devices, check_db_changes: enable change detection, cleanup_interval_minutes: cleanup task interval"
+  },
+  "load_monitoring": {
+    "enabled": true,
+    "report_interval_seconds": 10,
+    "api_endpoint": "http://monitoring-server:8080/api/parser-nodes/metrics",
+    "description": "Load monitoring configuration - reports parser service metrics"
+  }
+}

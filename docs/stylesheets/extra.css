@@ -1,0 +1,42 @@
+/*
+ * MkDocs Material Theme - Ops Node Styling
+ * Matches the ops_node frontend design
+ */
+
+/* ============================================
+   COLOR VARIABLES (matching ops_node)
+   ============================================ */
+:root {
+  --ops-bg-primary: #f8f9fa;
+  --ops-bg-card: #ffffff;
+  --ops-bg-sidebar: #1e293b;
+  --ops-bg-header: #0f172a;
+  --ops-text-primary: #1e293b;
+  --ops-text-secondary: #64748b;
+  --ops-text-muted: #94a3b8;
+  --ops-border: #e2e8f0;
+  --ops-accent: #3b82f6;
+}
+
+/* ============================================
+   HEADER - Dark theme
+   ============================================ */
+.md-header {
+  background-color: var(--ops-bg-header) !important;
+}
+
+/* ============================================
+   TABS (Navigation under header)
+   ============================================ */
+.md-tabs {
+  background-color: var(--ops-bg-sidebar) !important;
+}
+
+/* ============================================
+   COPY BUTTON - Always visible
+   ============================================ */
+.md-clipboard {
+  opacity: 1 !important;
+}
+
+

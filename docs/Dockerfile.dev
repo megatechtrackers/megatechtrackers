@@ -1,0 +1,20 @@
+# MkDocs development server
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install MkDocs with Material theme and plugins
+RUN pip install --no-cache-dir \
+    mkdocs>=1.5.0 \
+    mkdocs-material>=9.0.0 \
+    pymdown-extensions>=10.0 \
+    mkdocs-minify-plugin>=0.7.0
+
+# Copy mkdocs config
+COPY mkdocs.yml /app/mkdocs.yml
+COPY docs /app/docs
+
+EXPOSE 8000
+
+# Run MkDocs dev server
+CMD ["mkdocs", "serve", "-a", "0.0.0.0:8000"]

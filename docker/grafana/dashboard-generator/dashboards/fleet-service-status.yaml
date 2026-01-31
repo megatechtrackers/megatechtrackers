@@ -1,0 +1,112 @@
+# ============================================================
+# FLEET SERVICE - STATUS
+# ============================================================
+
+title: Fleet Service - Status
+uid: fleet-service
+tags:
+- fleet
+- fleet
+- trackers
+- gps
+panels:
+- row: Fleet Overview
+- title: Trackers Online
+  width: 4
+  query: fleet_trackers_online
+  thresholds:
+  - 50:#73BF69
+  - 500:#FADE2A
+- title: Connection Attempts
+  width: 4
+  query: fleet_connection_attempts
+  color: '#8AB8FF'
+  graph_mode: none
+- title: Rejected
+  width: 4
+  query: fleet_connections_rejected
+  thresholds:
+  - 1:#FADE2A
+  - 10:#F2495C
+  graph_mode: none
+- title: Parser Services
+  width: 4
+  query: fleet_parser_services_total
+  thresholds:
+  - 1:#FADE2A
+  - 4:#73BF69
+  graph_mode: none
+- title: Uptime
+  width: 4
+  query: monitoring_server_uptime_seconds
+  unit: dtdurations
+  decimals: 0
+  color: '#B877D9'
+  graph_mode: none
+- title: Throughput
+  width: 4
+  query: fleet_messages_per_second
+  unit: req/s
+  decimals: 1
+  color: '#FF9830'
+- title: Fleet Capacity
+  type: gauge
+  query: fleet_trackers_online / fleet_connections_capacity * 100
+  unit: '%'
+  thresholds:
+  - 60:#FADE2A
+  - 80:#FF9830
+  - 90:#F2495C
+- title: Trackers Online Over Time
+  type: timeseries
+  width: 18
+  height: 9
+  queries:
+  - fleet_trackers_online | Online
+  - expr: fleet_connections_capacity / 100
+    legend: Capacity (÷100)
+  fill_opacity: 15
+- row: Parser Services Performance
+- title: Trackers per Service
+  type: timeseries
+  width: 24
+  query: parser_service_trackers_online | {{node}}
+  fill_opacity: 80
+  stacking: normal
+- title: CPU Usage by Service
+  type: timeseries
+  height: 7
+  query: parser_service_cpu_percent | {{node}}
+  unit: '%'
+  thresholds: $usage_percent
+  fill_opacity: 10
+- title: Memory Usage by Service
+  type: timeseries
+  height: 7
+  query: parser_service_memory_percent | {{node}}
+  unit: '%'
+  fill_opacity: 10
+- row: Parser Service Status
+- title: All Parser Services
+  type: table
+  height: 7
+  queries:
+  - parser_service_trackers_online
+  - parser_service_cpu_percent
+  - parser_service_memory_percent
+  - parser_service_messages_per_second
+  - parser_service_capacity
+- row: Health & Reliability
+- title: Message Throughput by Service
+  type: timeseries
+  height: 7
+  query: parser_service_messages_per_second | {{node}}
+  unit: req/s
+- title: Connection Rate
+  type: timeseries
+  height: 7
+  query: fleet_connection_attempts
+  transform: rate
+  unit: req/s
+  color: '#3274D9'
+  fill_opacity: 30

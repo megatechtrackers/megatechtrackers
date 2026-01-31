@@ -1,0 +1,94 @@
+# ============================================================
+# ALARM SERVICE - FAILED MESSAGES (DLQ)
+# ============================================================
+# Dead Letter Queue monitoring and reprocessing
+# ============================================================
+
+title: Alarm Service - Failed Messages (DLQ)
+uid: dlq-monitoring
+tags:
+- alarm
+- dlq
+- dead-letter-queue
+refresh: 30s
+panels:
+- row: 📊 DLQ Overview
+- title: Current DLQ Size
+  width: 6
+  height: 5
+  query: dlq_size | Items
+  thresholds: $queue_depth
+  graph_mode: area
+- title: Total Items Ever
+  width: 6
+  height: 5
+  query: dlq_total_items | Total
+  color: '#FF9830'
+  graph_mode: none
+- title: Avg Age (sec)
+  width: 6
+  height: 5
+  query: dlq_average_age_ms / 1000 | Age
+  unit: s
+  thresholds: $latency
+  graph_mode: none
+- title: Max Attempts
+  width: 6
+  height: 5
+  query: dlq_max_attempts | Attempts
+  thresholds:
+  - 3:yellow
+  - 5:red
+  graph_mode: none
+
+- row: 📈 DLQ Trends
+- title: DLQ Size Over Time
+  type: timeseries
+  width: 12
+  height: 8
+  query: dlq_size | DLQ Items
+  thresholds: $queue_depth
+  fill_opacity: 20
+- title: Messages Sent to DLQ
+  type: timeseries
+  width: 12
+  height: 8
+  query: rabbitmq_message_dlq
+  transform: rate
+  unit: ops
+  color: '#FF9830'
+  fill_opacity: 20
+
+- row: 🔄 Reprocessing
+- title: Reprocessing Rate
+  type: timeseries
+  width: 12
+  height: 8
+  query: dlq_reprocessed_total
+  transform: rate
+  unit: ops
+  color: '#73BF69'
+  fill_opacity: 20
+- title: Reprocessing Errors
+  type: timeseries
+  width: 12
+  height: 8
+  query: dlq_reprocess_error
+  transform: rate
+  unit: ops
+  color: '#F2495C'
+  fill_opacity: 20
+
+- row: 📦 Batch Processing
+- title: Batches Reprocessed
+  width: 12
+  height: 5
+  query: dlq_batch_reprocessed | Reprocessed
+  color: '#73BF69'
+  graph_mode: area
+- title: Batches Failed
+  width: 12
+  height: 5
+  query: dlq_batch_failed | Failed
+  thresholds: $error_count
+  graph_mode: area

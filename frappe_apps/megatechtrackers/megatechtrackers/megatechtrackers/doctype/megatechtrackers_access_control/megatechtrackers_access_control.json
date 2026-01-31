@@ -1,0 +1,139 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ac_user",
+  "ac_user_type",
+  "ac_parent_company",
+  "ac_parent_department",
+  "section_break_forms",
+  "ac_assigned_forms",
+  "section_break_reports",
+  "ac_assigned_reports",
+  "section_break_context",
+  "ac_assigned_vehicles",
+  "ac_assigned_companies",
+  "ac_assigned_departments"
+ ],
+ "fields": [
+  {
+   "fieldname": "ac_user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "ac_user_type",
+   "fieldtype": "Select",
+   "label": "User Type",
+   "options": "Internal\nClient - Single User\nClient - Company\nClient - Sub-Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ac_parent_company",
+   "fieldtype": "Link",
+   "label": "Parent Company",
+   "options": "AC Company",
+   "depends_on": "eval:in_list(['Client - Company', 'Client - Sub-Company'], doc.ac_user_type)",
+   "description": "Parent company for company/sub-company user types"
+  },
+  {
+   "fieldname": "ac_parent_department",
+   "fieldtype": "Link",
+   "label": "Parent Department",
+   "options": "AC Department",
+   "depends_on": "eval:in_list(['Client - Sub-Company'], doc.ac_user_type)",
+   "description": "Parent department for sub-company user type"
+  },
+  {
+   "fieldname": "section_break_forms",
+   "fieldtype": "Section Break",
+   "label": "Form Assignments"
+  },
+  {
+   "fieldname": "ac_assigned_forms",
+   "fieldtype": "Table",
+   "label": "Assigned Forms",
+   "options": "AC Frappe Form Assignment"
+  },
+  {
+   "fieldname": "section_break_reports",
+   "fieldtype": "Section Break",
+   "label": "Report Assignments"
+  },
+  {
+   "fieldname": "ac_assigned_reports",
+   "fieldtype": "Table",
+   "label": "Assigned Reports",
+   "options": "AC Grafana Report Assignment"
+  },
+  {
+   "fieldname": "section_break_context",
+   "fieldtype": "Section Break",
+   "label": "Context Assignments"
+  },
+  {
+   "fieldname": "ac_assigned_vehicles",
+   "fieldtype": "Table",
+   "label": "Assigned Vehicles",
+   "options": "AC Vehicle Assignment"
+  },
+  {
+   "fieldname": "ac_assigned_companies",
+   "fieldtype": "Table",
+   "label": "Assigned Companies",
+   "options": "AC Company Assignment"
+  },
+  {
+   "fieldname": "ac_assigned_departments",
+   "fieldtype": "Table",
+   "label": "Assigned Departments",
+   "options": "AC Department Assignment"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-12-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Megatechtrackers",
+ "name": "Megatechtrackers Access Control",
+ "naming_rule": "By ac_user",
+ "title_field": "ac_user",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

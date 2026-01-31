@@ -1,0 +1,54 @@
+FROM frappe/bench:latest
+
+# Set working directory
+WORKDIR /home/frappe
+
+# Install sudo for permission handling
+USER root
+RUN apt-get update && apt-get install -y sudo && \
+    echo "frappe ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    rm -rf /var/lib/apt/lists/*
+USER frappe
+
+# Pre-install Frappe bench during image build (not at runtime)
+# This only runs once when building the image
+RUN echo "📦 Pre-installing Frappe bench in Docker image..." && \
+    bench init frappe-bench --frappe-branch version-14 --no-procfile --no-backups --skip-redis-config-generation && \
+    echo "✅ Frappe bench pre-installed in image"
+
+# Copy initialization script (only handles app installation now)
+COPY init-frappe.sh /home/frappe/init-frappe.sh
+
+# Performance optimization scripts and assets
+COPY optimize-frappe.sh /home/frappe/optimize-frappe.sh
+COPY disable-animations.css /home/frappe/disable-animations.css
+COPY disable-animations.js /home/frappe/disable-animations.js
+
+# Provisioning scripts (called by docker-start scripts)
+COPY create_test_data.py /home/frappe/create_test_data.py
+COPY create_test_webpage.py /home/frappe/create_test_webpage.py
+COPY provision_frappe_keys.py /home/frappe/provision_frappe_keys.py
+COPY provision_grafana.py /home/frappe/provision_grafana.py
+COPY sync_grafana_reports_to_frappe.py /home/frappe/sync_grafana_reports_to_frappe.py
+
+# Set correct permissions and ownership for scripts
+USER root
+RUN chmod +x /home/frappe/init-frappe.sh && \
+    chmod +x /home/frappe/optimize-frappe.sh && \
+    chown frappe:frappe /home/frappe/init-frappe.sh && \
+    chown frappe:frappe /home/frappe/optimize-frappe.sh && \
+    chown frappe:frappe /home/frappe/create_test_webpage.py && \
+    chown frappe:frappe /home/frappe/disable-animations.css && \
+    chown frappe:frappe /home/frappe/disable-animations.js && \
+    chown frappe:frappe /home/frappe/create_test_data.py && \
+    chown frappe:frappe /home/frappe/provision_frappe_keys.py && \
+    chown frappe:frappe /home/frappe/provision_grafana.py && \
+    chown frappe:frappe /home/frappe/sync_grafana_reports_to_frappe.py
+USER frappe
+
+# Expose ports
+EXPOSE 8000 9000
+
+# Entrypoint runs the init script
+ENTRYPOINT ["/bin/bash", "/home/frappe/init-frappe.sh"]
+

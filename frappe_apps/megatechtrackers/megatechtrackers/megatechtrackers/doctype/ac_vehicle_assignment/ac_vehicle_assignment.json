@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ac_vehicle"
+ ],
+ "fields": [
+  {
+   "fieldname": "ac_vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vehicle",
+   "options": "AC Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "parent",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "parenttype",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "parentfield",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Parent Field",
+   "read_only": 1
+  },
+  {
+   "fieldname": "idx",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Idx",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_child_table": 1,
+ "links": [],
+ "modified": "2025-12-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Megatechtrackers",
+ "name": "AC Vehicle Assignment",
+ "naming_rule": "By fieldname",
+ "title_field": "ac_vehicle",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

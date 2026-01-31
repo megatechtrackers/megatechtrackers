@@ -1,0 +1,38 @@
+{
+  "database": {
+    "host": "postgres-primary",
+    "port": 5432,
+    "name": "tracking_db",
+    "user": "postgres",
+    "password": "postgres",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for SMS Gateway Service (Docker: postgres-primary, Local: localhost)"
+  },
+  "polling": {
+    "outbox_interval_seconds": 5,
+    "inbox_interval_seconds": 10,
+    "batch_size": 10,
+    "description": "Polling intervals - outbox_interval: check for new SMS commands, inbox_interval: check for incoming SMS"
+  },
+  "timeouts": {
+    "max_retries": 3,
+    "outbox_timeout_minutes": 1,
+    "reply_timeout_minutes": 2,
+    "cleanup_interval_seconds": 60,
+    "description": "Timeout configuration - max_retries: retry attempts, outbox_timeout: time before command marked failed"
+  },
+  "modem": {
+    "health_check_interval_seconds": 60,
+    "request_timeout_seconds": 30,
+    "ssl_verify": false,
+    "description": "RUT200 modem configuration - health_check_interval: modem health check, ssl_verify: verify SSL certificates"
+  },
+  "logging": {
+    "log_file": "logs/sms_gateway_node.log",
+    "level": "INFO",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false,
+    "description": "Logging configuration"
+  }
+}

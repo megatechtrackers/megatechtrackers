@@ -1,0 +1,37 @@
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY parser_nodes/teltonika/requirements.txt requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Remove any existing parser_nodes/teltonika/config.json and copy Docker config
+RUN rm -rf /app/parser_nodes/teltonika/config.json
+COPY docker/config/parser.docker.json /app/parser_nodes/teltonika/config.json
+
+# Copy entrypoint script
+COPY docker/entrypoint-parser.sh /usr/local/bin/entrypoint-parser.sh
+RUN chmod +x /usr/local/bin/entrypoint-parser.sh
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose parser port
+EXPOSE 5027
+
+# Use entrypoint to process config before running
+ENTRYPOINT ["/usr/local/bin/entrypoint-parser.sh"]
+# Default command
+CMD ["python", "parser_nodes/teltonika/run.py"]

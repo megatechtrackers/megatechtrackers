@@ -1,0 +1,18 @@
+# Parser Node Dependencies
+
+# Async Database Drivers
+asyncpg>=0.29.0            # Async PostgreSQL driver
+sqlalchemy>=2.0.0          # SQLAlchemy 2.0 ORM (for database read operations: unit_io_mapping, commands, feedback)
+
+# RabbitMQ
+aio-pika>=9.0.0            # Async RabbitMQ client (for publishing parsed data)
+
+# File Operations
+aiofiles>=23.0.0           # Async file operations (for CSV saving)
+
+# HTTP Client (for load monitoring)
+aiohttp>=3.9.0             # Async HTTP client (for reporting metrics to monitoring server)
+psutil>=5.9.0               # System metrics (for load monitoring)
+
+# Utilities
+python-dateutil>=2.8.2     # Date/time utilities (for parsing datetime fields)

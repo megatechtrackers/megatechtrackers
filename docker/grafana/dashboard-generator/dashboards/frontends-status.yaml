@@ -1,0 +1,61 @@
+# ============================================================
+# FRONTENDS - STATUS (Web App & Ops Frontend)
+# ============================================================
+# Next.js frontends: web-app (frappe profile), ops-service-frontend.
+# Metrics: up(), web_app_*, ops_frontend_* (default + custom).
+# ============================================================
+
+title: Frontends - Status
+uid: frontends-status
+tags:
+- frontend
+- web-app
+- ops
+- monitoring
+refresh: 30s
+panels:
+- row: Service Health
+- title: Web App Up
+  width: 4
+  query: up{job="web-app"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+- title: Ops Frontend Up
+  width: 4
+  query: up{job="ops-service-frontend"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+
+- row: Web App (Next.js)
+- title: Web App - Request Rate
+  type: timeseries
+  width: 12
+  height: 6
+  query: sum(rate(web_app_http_requests_total[5m])) by (method, path)
+  unit: reqps
+  fill_opacity: 20
+- title: Web App - Process Memory
+  width: 6
+  query: web_app_process_resident_memory_bytes
+  unit: bytes
+  color: '#3274D9'
+  graph_mode: none
+
+- row: Ops Frontend (Next.js)
+- title: Ops Frontend - Request Rate
+  type: timeseries
+  width: 12
+  height: 6
+  query: sum(rate(ops_frontend_http_requests_total[5m])) by (method, path)
+  unit: reqps
+  fill_opacity: 20
+- title: Ops Frontend - Process Memory
+  width: 6
+  query: ops_frontend_process_resident_memory_bytes
+  unit: bytes
+  color: '#73BF69'
+  graph_mode: none

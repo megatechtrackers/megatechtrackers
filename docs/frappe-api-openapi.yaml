@@ -1,0 +1,833 @@
+openapi: 3.0.0
+info:
+  title: Megatechtrackers Frappe API
+  version: 1.0.0
+  description: |
+    API endpoints for Megatechtrackers access control system.
+    Provides user permissions, form assignments, report assignments, and Grafana integration.
+  contact:
+    name: API Support
+    email: support@megatechtrackers.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000/api/method
+    description: Development server
+  - url: https://your-frappe-site.com/api/method
+    description: Production server
+
+tags:
+  - name: Permissions
+    description: User permissions and access control
+  - name: Forms
+    description: Frappe form management and assignments
+  - name: Reports
+    description: Grafana report management and assignments
+  - name: Access Control
+    description: Megatechtrackers Access Control CRUD operations
+  - name: Grafana
+    description: Grafana integration endpoints
+
+paths:
+  /megatechtrackers.api.permissions.get_user_permissions:
+    get:
+      tags:
+        - Permissions
+      summary: Get user permissions
+      description: Get all permissions (forms, reports, context) for the current user or specified user
+      operationId: get_user_permissions
+      parameters:
+        - name: user
+          in: query
+          description: Username (optional, defaults to current user)
+          required: false
+          schema:
+            type: string
+            example: "user@example.com"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      forms:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FormPermission'
+                      reports:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReportPermission'
+                      context:
+                        $ref: '#/components/schemas/UserContext'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /megatechtrackers.api.permissions.get_user_forms:
+    get:
+      tags:
+        - Forms
+      summary: Get user forms
+      description: Get all forms assigned to the current user or specified user
+      operationId: get_user_forms
+      parameters:
+        - name: user
+          in: query
+          description: Username (optional, defaults to current user)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FormPermission'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.get_user_reports:
+    get:
+      tags:
+        - Reports
+      summary: Get user reports
+      description: Get all reports assigned to the current user or specified user
+      operationId: get_user_reports
+      parameters:
+        - name: user
+          in: query
+          description: Username (optional, defaults to current user)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReportPermission'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.get_user_context:
+    get:
+      tags:
+        - Permissions
+      summary: Get user context
+      description: Get context scope (vehicles, companies, departments) for the current user or specified user
+      operationId: get_user_context
+      parameters:
+        - name: user
+          in: query
+          description: Username (optional, defaults to current user)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: '#/components/schemas/UserContext'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.get_available_forms:
+    get:
+      tags:
+        - Forms
+      summary: Get available forms
+      description: Get all available Frappe forms with pagination
+      operationId: get_available_forms
+      parameters:
+        - name: page
+          in: query
+          description: Page number (default: 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page (max 100, default: 20)
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      forms:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "AC Company"
+                            label:
+                              type: string
+                              example: "Company"
+                            url:
+                              type: string
+                              example: "/app/ac-company"
+                            type:
+                              type: string
+                              enum: [doctype, web_form]
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      has_more:
+                        type: boolean
+
+  /megatechtrackers.api.permissions.validate_report_access:
+    post:
+      tags:
+        - Reports
+      summary: Validate report access
+      description: Validate if user has access to a specific report
+      operationId: validate_report_access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - report_id
+              properties:
+                user:
+                  type: string
+                  example: "user@example.com"
+                report_id:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      has_access:
+                        type: boolean
+                      report:
+                        $ref: '#/components/schemas/ReportPermission'
+                        nullable: true
+                      context:
+                        $ref: '#/components/schemas/UserContext'
+                        nullable: true
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.add_form_assignment:
+    post:
+      tags:
+        - Forms
+      summary: Add form assignment
+      description: Assign a form to a user (System Manager only)
+      operationId: add_form_assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - form_name
+              properties:
+                user:
+                  type: string
+                  example: "user@example.com"
+                form_name:
+                  type: string
+                  example: "AC Company"
+                form_label:
+                  type: string
+                  example: "Company"
+                form_url:
+                  type: string
+                  example: "/app/ac-company"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.remove_form_assignment:
+    post:
+      tags:
+        - Forms
+      summary: Remove form assignment
+      description: Remove a form assignment from a user (System Manager only)
+      operationId: remove_form_assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - form_name
+              properties:
+                user:
+                  type: string
+                form_name:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.add_report_assignment:
+    post:
+      tags:
+        - Reports
+      summary: Add report assignment
+      description: Assign a Grafana report to a user (System Manager only)
+      operationId: add_report_assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - report_id
+              properties:
+                user:
+                  type: string
+                report_id:
+                  type: integer
+                report_uid:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.remove_report_assignment:
+    post:
+      tags:
+        - Reports
+      summary: Remove report assignment
+      description: Remove a report assignment from a user (System Manager only)
+      operationId: remove_report_assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - report_id
+              properties:
+                user:
+                  type: string
+                report_id:
+                  type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.bulk_assign_forms:
+    post:
+      tags:
+        - Forms
+      summary: Bulk assign forms
+      description: Assign multiple forms to multiple users (System Manager only)
+      operationId: bulk_assign_forms
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - form_names
+                - user_filters
+              properties:
+                form_names:
+                  type: array
+                  items:
+                    type: string
+                user_filters:
+                  type: object
+                  properties:
+                    ac_user_type:
+                      type: string
+                    ac_parent_company:
+                      type: string
+                    ac_parent_department:
+                      type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      assigned_count:
+                        type: integer
+                      users_affected:
+                        type: integer
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.bulk_assign_reports:
+    post:
+      tags:
+        - Reports
+      summary: Bulk assign reports
+      description: Assign multiple reports to multiple users (System Manager only)
+      operationId: bulk_assign_reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - report_ids
+                - user_filters
+              properties:
+                report_ids:
+                  type: array
+                  items:
+                    type: integer
+                user_filters:
+                  type: object
+                  properties:
+                    ac_user_type:
+                      type: string
+                    ac_parent_company:
+                      type: string
+                    ac_parent_department:
+                      type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      assigned_count:
+                        type: integer
+                      users_affected:
+                        type: integer
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.create_megatechtrackers_access_control:
+    post:
+      tags:
+        - Access Control
+      summary: Create Megatechtrackers Access Control
+      description: Create a new Megatechtrackers Access Control record (System Manager only)
+      operationId: create_megatechtrackers_access_control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - user_type
+              properties:
+                user:
+                  type: string
+                  example: "user@example.com"
+                user_type:
+                  type: string
+                  enum:
+                    - Internal
+                    - Client - Single User
+                    - Client - Company
+                    - Client - Sub-Company
+                  example: "Internal"
+                parent_company:
+                  type: string
+                  nullable: true
+                parent_department:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      name:
+                        type: string
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /megatechtrackers.api.permissions.update_megatechtrackers_access_control:
+    post:
+      tags:
+        - Access Control
+      summary: Update Megatechtrackers Access Control
+      description: Update a Megatechtrackers Access Control record (System Manager only)
+      operationId: update_megatechtrackers_access_control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "MAC-00001"
+                user_type:
+                  type: string
+                parent_company:
+                  type: string
+                  nullable: true
+                parent_department:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.permissions.delete_megatechtrackers_access_control:
+    post:
+      tags:
+        - Access Control
+      summary: Delete Megatechtrackers Access Control
+      description: Delete a Megatechtrackers Access Control record (System Manager only)
+      operationId: delete_megatechtrackers_access_control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /megatechtrackers.api.grafana.get_available_reports:
+    get:
+      tags:
+        - Grafana
+      summary: Get available Grafana reports
+      description: Fetch all available reports from Grafana and sync to Frappe
+      operationId: get_available_reports
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        uid:
+                          type: string
+                        title:
+                          type: string
+                        name:
+                          type: string
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /megatechtrackers.api.grafana.generate_embed_url:
+    post:
+      tags:
+        - Grafana
+      summary: Generate Grafana embed URL
+      description: Generate authenticated embed URL via Access Gateway
+      operationId: generate_embed_url
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - report_id
+              properties:
+                report_id:
+                  type: integer
+                  example: 1
+                report_uid:
+                  type: string
+                  nullable: true
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "http://localhost:3000/d/abc123?token=TOKEN&kiosk=1&orgId=1&var-vehicle=V001&var-vehicle-locked=true"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  schemas:
+    FormPermission:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "AC Company"
+        label:
+          type: string
+          example: "Company"
+        url:
+          type: string
+          example: "/app/ac-company"
+        inherited:
+          type: boolean
+          example: false
+
+    ReportPermission:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        uid:
+          type: string
+          example: "abc123"
+        name:
+          type: string
+          example: "Sales Dashboard"
+        context:
+          type: object
+          additionalProperties: true
+
+    UserContext:
+      type: object
+      properties:
+        vehicles:
+          type: array
+          items:
+            type: string
+          example: ["V001", "V002"]
+        companies:
+          type: array
+          items:
+            type: string
+          example: ["Company A", "Company B"]
+        departments:
+          type: array
+          items:
+            type: string
+          example: ["Sales", "Marketing"]
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              exc_type:
+                type: string
+              exc:
+                type: string
+              message:
+                type: string
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              exc_type:
+                type: string
+              exc:
+                type: string
+              message:
+                type: string
+
+    ServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              exc_type:
+                type: string
+              exc:
+                type: string
+              message:
+                type: string
+
+  securitySchemes:
+    FrappeSession:
+      type: apiKey
+      in: cookie
+      name: sid
+      description: Frappe session cookie
+    FrappeAPIKey:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Frappe API key (format: token key:secret)
+
+security:
+  - FrappeSession: []
+  - FrappeAPIKey: []

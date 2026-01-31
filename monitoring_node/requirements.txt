@@ -1,0 +1,7 @@
+# Monitoring Node Dependencies
+
+# HTTP Server
+aiohttp>=3.9.0             # Async HTTP server for monitoring dashboard and API
+
+# System Metrics
+psutil>=5.9.0               # System metrics (CPU, RAM, disk usage)

@@ -1,0 +1,108 @@
+groups:
+  - name: ops_service_alerts
+    interval: 30s
+    rules:
+      # Service Health
+      - alert: OpsServiceDown
+        expr: up{job="ops-service-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: ops-service
+        annotations:
+          summary: "Operations Service backend is down"
+          description: "Operations Service backend {{ $labels.instance }} is not responding"
+
+      # Command Queue Alerts
+      - alert: OpsNodeOutboxBacklog
+        expr: ops_service_command_outbox_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "Command outbox backlog"
+          description: "{{ $value }} commands waiting in outbox queue"
+
+      - alert: OpsNodeOutboxCritical
+        expr: ops_service_command_outbox_depth > 500
+        for: 2m
+        labels:
+          severity: critical
+          service: ops-service
+        annotations:
+          summary: "Command outbox critical backlog"
+          description: "{{ $value }} commands in outbox - modem may be offline or overloaded"
+
+      - alert: OpsNodePendingCommandsHigh
+        expr: ops_service_command_sent_pending > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "Many commands awaiting reply"
+          description: "{{ $value }} commands sent but no reply received - devices may be offline"
+
+      # HTTP Performance
+      - alert: OpsNodeHighLatency
+        expr: histogram_quantile(0.95, rate(ops_service_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "High API latency detected"
+          description: "P95 latency is {{ $value }}s - performance degradation"
+
+      - alert: OpsNodeCriticalLatency
+        expr: histogram_quantile(0.95, rate(ops_service_http_request_duration_seconds_bucket[5m])) > 10
+        for: 2m
+        labels:
+          severity: critical
+          service: ops-service
+        annotations:
+          summary: "Critical API latency"
+          description: "P95 latency is {{ $value }}s - service may be failing"
+
+      # Database Errors
+      - alert: OpsNodeDBErrors
+        expr: rate(ops_service_db_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "Database errors detected"
+          description: "{{ $value }} database errors per second"
+
+      - alert: OpsNodeDBErrorsCritical
+        expr: rate(ops_service_db_errors_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+          service: ops-service
+        annotations:
+          summary: "Critical database error rate"
+          description: "{{ $value }} database errors per second - DB connection issues"
+
+      # Command Processing
+      - alert: OpsNodeCommandsExpiring
+        expr: rate(ops_service_cleanup_commands_expired_total[5m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "Commands expiring frequently"
+          description: "{{ $value }} commands/sec expiring without being sent - modem issues"
+
+      - alert: OpsNodeNoReplies
+        expr: rate(ops_service_cleanup_commands_expired_total{type="no_reply"}[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          service: ops-service
+        annotations:
+          summary: "Many commands getting no reply"
+          description: "{{ $value }} commands/sec timing out - devices may be unreachable"

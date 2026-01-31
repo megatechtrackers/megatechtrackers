@@ -1,0 +1,110 @@
+site_name: Megatechtrackers
+site_description: Complete documentation for Megatechtrackers fleet tracking platform - GPS tracking, access control, and real-time monitoring
+site_author: Megatechtrackers
+
+repo_name: megatechtrackers
+repo_url: https://github.com/megatechtrackers/megatechtrackers
+edit_uri: edit/main/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    # Light mode - matches Ops Service UI (dark header/sidebar via extra.css)
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quick Start:
+    - Quick Start: quick-start.md
+    - Setup Guide: setup.md
+    - Getting Started: start-here.md
+  - Docker Setup:
+    - Docker Guide: docker.md
+    - Quick Start Docker: quick-start-docker.md
+    - Frappe Setup: frappe-setup-guide.md
+    - Nginx Token Validation: nginx-token-validation.md
+  - API Documentation:
+    - API Overview: api.md
+    - Complete API Reference: api-complete.md
+    - OpenAPI Spec: frappe-api-openapi.yaml
+  - Component Guides:
+    - Frappe Setup: frappe-setup.md
+    - Access Gateway: access-gateway.md
+    - Web App: web-app.md
+    - Mobile App: mobile-app.md
+    - Android Build: android-build.md
+    - Frappe Nginx Setup: frappe-nginx-setup.md
+  - Services & Tools:
+    - Database Schema: database.md
+    - Operations Service: ops-service.md
+    - GPRS vs SMS Commands: gprs-vs-sms-commands.md
+    - Mock SMS Server: mock-sms-server.md
+    - Mock Tracker: mock-tracker.md
+    - Alertmanager: alertmanager.md
+  - Operations:
+    - Disk Management: disk-management.md
+    - Automatic Cleanup: automatic-cleanup-implementation.md
+    - Cleanup Quick Reference: cleanup-quick-reference.md
+  - Documentation:
+    - MkDocs Setup: mkdocs-setup.md
+    - Fix Line Endings: fix-line-endings.md
+    - Get Cert Fingerprint: get-cert-fingerprint.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/megatechtrackers/megatechtrackers

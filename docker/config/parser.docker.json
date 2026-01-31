@@ -1,0 +1,116 @@
+{
+  "data_transfer_mode": {
+    "mode": "RABBITMQ",
+    "description": "Data Transfer Mode: LOGS (CSV files) or RABBITMQ (publish to RabbitMQ)"
+  },
+  "parser_node": {
+    "node_id": "${NODE_ID:-teltonika-parser-1}",
+    "vendor": "${VENDOR:-teltonika}",
+    "node_index": ${NODE_INDEX:-0},
+    "total_nodes_for_vendor": ${TOTAL_NODES:-1},
+    "expected_trackers": 6250,
+    "listen_ip": "0.0.0.0",
+    "listen_port": 5027,
+    "description": "Parser service configuration (source: parser_nodes)"
+  },
+  "database": {
+    "host": "pgbouncer",
+    "port": 6432,
+    "name": "tracking_db",
+    "user": "parser_readonly",
+    "password": "readonly_password",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for parser services (read access for unit_io_mapping, commands, feedback). Using PgBouncer connection pooler for better connection management."
+  },
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "publisher_confirms": true,
+    "publisher_confirm_timeout": 5.0,
+    "message_persistence": true,
+    "description": "RabbitMQ configuration"
+  },
+  "system": {
+    "initial_capacity": 100000,
+    "deviceinfo_check_interval": 1,
+    "send_interval_time": 5000,
+    "development_mode": false,
+    "description": "System runtime parameters"
+  },
+  "teltonika_protocol": {
+    "connection_timeout": 300,
+    "read_timeout": 30,
+    "description": "Teltonika Protocol Configuration"
+  },
+  "tcp_server": {
+    "buffer_size": 8192,
+    "max_concurrent_connections": 5000,
+    "backlog": 1000,
+    "connection_reject_timeout": 1.0,
+    "connection_cleanup_timeout": 5.0,
+    "keepalive_idle": 60,
+    "keepalive_interval": 10,
+    "keepalive_count": 3,
+    "log_raw_packets": true,
+    "raw_packet_max_bytes": 256,
+    "max_packet_size": 10485760,
+    "description": "TCP Server Configuration"
+  },
+  "async_queues": {
+    "msg_received_capacity": 10000,
+    "msg_parse_capacity": 10000,
+    "queue_poll_timeout": 1.0,
+    "description": "Async Queue Configuration"
+  },
+  "ip_table": {
+    "check_interval": 300,
+    "description": "IP Table Configuration"
+  },
+  "database_connection": {
+    "connection_timeout": 30,
+    "description": "Database Connection Configuration"
+  },
+  "shutdown": {
+    "tcp_server_stop_timeout": 1.0,
+    "sms_listener_stop_timeout": 1.0,
+    "task_completion_timeout": 1.5,
+    "description": "Shutdown Configuration"
+  },
+  "async_operations": {
+    "buffer_wait_timeout": 1.0,
+    "feedback_wait_timeout": 1.0,
+    "description": "Async Operations Configuration"
+  },
+  "logging": {
+    "gateway_log_file": "logs/gateway.log",
+    "level": "INFO",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false,
+    "description": "Logging Configuration"
+  },
+  "unit_io_mapping": {
+    "cache_ttl_minutes": 30,
+    "cache_max_size": 10000,
+    "inactive_cleanup_hours": 24,
+    "check_db_changes": true,
+    "cleanup_interval_minutes": 60,
+    "description": "Unit IO Mapping Cache Configuration"
+  },
+  "load_monitoring": {
+    "enabled": true,
+    "report_interval_seconds": 10,
+    "api_endpoint": "http://monitoring-service:8080/api/parser-nodes/metrics",
+    "description": "Load monitoring configuration"
+  },
+  "sms_server": {
+    "enabled": false,
+    "ip": "192.168.1.27",
+    "port": 30338,
+    "description": "SMS Server Configuration"
+  }
+}

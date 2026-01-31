@@ -1,0 +1,197 @@
+/* Frappe Animation Disabler - Inject this CSS to disable all animations */
+/* This improves loading performance significantly */
+
+/* Disable all CSS animations and transitions */
+*,
+*::before,
+*::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+}
+
+/* Disable specific Frappe animations */
+.fade-in,
+.slide-in,
+.modal-backdrop,
+.toast,
+.alert,
+.progress-bar {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Disable page transitions */
+.page-wrapper,
+.content-wrapper {
+    transition: none !important;
+}
+
+/* Disable loading spinners animations (keep them visible but static) */
+.spinner,
+.loader,
+.fa-spin {
+    animation: none !important;
+}
+
+/* Disable hover transitions */
+.btn,
+.nav-link,
+.dropdown-item {
+    transition: none !important;
+}
+
+/* Disable form field animations */
+.form-control:focus,
+.form-select:focus {
+    transition: none !important;
+}
+
+/* Disable sidebar animations */
+.sidebar,
+.sidebar-overlay {
+    transition: none !important;
+}
+
+/* Disable modal animations */
+.modal,
+.modal-dialog,
+.modal-content {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Disable dropdown animations */
+.dropdown-menu {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Disable tooltip animations */
+.tooltip {
+    transition: none !important;
+}
+
+/* Disable alert animations */
+.alert {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Disable progress bar animations */
+.progress-bar {
+    transition: none !important;
+}
+
+/* Disable table row animations */
+.table tbody tr {
+    transition: none !important;
+}
+
+/* Disable card animations */
+.card {
+    transition: none !important;
+}
+
+/* Disable button animations */
+.btn {
+    transition: none !important;
+}
+
+/* Disable list animations */
+.list-group-item {
+    transition: none !important;
+}
+
+/* Disable badge animations */
+.badge {
+    transition: none !important;
+}
+
+/* Disable nav animations */
+.nav-link {
+    transition: none !important;
+}
+
+/* Disable tab animations */
+.nav-tabs .nav-link {
+    transition: none !important;
+}
+
+/* Disable accordion animations */
+.accordion-button {
+    transition: none !important;
+}
+
+/* Disable collapse animations */
+.collapse {
+    transition: none !important;
+}
+
+/* Disable carousel animations */
+.carousel-item {
+    transition: none !important;
+}
+
+/* Disable offcanvas animations */
+.offcanvas {
+    transition: none !important;
+}
+
+/* Disable backdrop animations */
+.backdrop {
+    transition: none !important;
+}
+
+/* Disable skeleton loader animations */
+.skeleton {
+    animation: none !important;
+}
+
+/* Disable shimmer effects */
+.shimmer {
+    animation: none !important;
+}
+
+/* Disable pulse animations */
+.pulse {
+    animation: none !important;
+}
+
+/* Disable fade animations */
+.fade {
+    transition: none !important;
+}
+
+/* Disable slide animations */
+.slide {
+    transition: none !important;
+}
+
+/* Disable zoom animations */
+.zoom {
+    transition: none !important;
+}
+
+/* Disable rotate animations */
+.rotate {
+    animation: none !important;
+}
+
+/* Disable bounce animations */
+.bounce {
+    animation: none !important;
+}
+
+/* Disable shake animations */
+.shake {
+    animation: none !important;
+}
+
+/* Disable wiggle animations */
+.wiggle {
+    animation: none !important;
+}
+

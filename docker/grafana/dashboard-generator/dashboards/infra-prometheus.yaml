@@ -1,0 +1,69 @@
+# ============================================================
+# INFRA - PROMETHEUS (METRICS)
+# ============================================================
+
+title: Infra - Prometheus (Metrics)
+uid: prometheus-overview
+tags:
+- prometheus
+- monitoring
+- infrastructure
+panels:
+- title: Scrape Duration
+  type: timeseries
+  query: prometheus_target_interval_length_seconds | {{job}} - {{instance}}
+  unit: s
+- title: Targets Up/Down
+  height: 8
+  query: up | Up
+  thresholds:
+  - 0:red
+- title: Targets Health
+  type: timeseries
+  width: 6
+  query: up | {{job}}/{{instance}}
+  thresholds:
+  - 0:red
+- title: Samples Scraped per Second
+  type: timeseries
+  query: prometheus_tsdb_head_samples_appended_total
+  transform: rate
+- title: Scrape Failures
+  type: timeseries
+  queries:
+  - expr: prometheus_target_scrapes_exceeded_sample_limit_total
+    legend: Exceeded Limit
+    transform: rate
+  - expr: prometheus_target_scrapes_sample_duplicate_timestamp_total
+    legend: Duplicate Timestamps
+    transform: rate
+- title: Storage Chunks
+  height: 8
+  query: prometheus_tsdb_head_chunks | Chunks
+- title: Storage Series
+  height: 8
+  query: prometheus_tsdb_head_series | Series
+- title: Storage Size
+  type: timeseries
+  query: prometheus_tsdb_storage_blocks_bytes | Storage Size
+  unit: bytes
+- title: Memory Usage
+  type: timeseries
+  queries:
+  - process_resident_memory_bytes{job="prometheus"} | RSS Memory
+  - go_memstats_alloc_bytes{job="prometheus"} | Heap Allocated
+  unit: bytes
+- title: CPU Usage
+  type: timeseries
+  query: process_cpu_seconds_total{job="prometheus"}
+  transform: rate
+  rate_multiplier: 100
+  unit: '%'
+- title: Query Rate
+  type: timeseries
+  query: prometheus_engine_query_duration_seconds_count
+  transform: rate
+- title: Rule Evaluation Duration
+  type: timeseries
+  query: prometheus_rule_evaluation_duration_seconds | p{{quantile}}
+  unit: s
