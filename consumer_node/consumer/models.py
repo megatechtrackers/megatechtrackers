@@ -8,7 +8,7 @@ from sqlalchemy import Column, BigInteger, DateTime, Float, Integer, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
 from typing import Dict, Any, Optional, List
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 import json
 import logging
 
@@ -26,32 +26,51 @@ IS_VALID_FALSE = 0
 DEFAULT_STATUS = 'Normal'
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure datetime is timezone-aware UTC. Naive datetimes are treated as UTC."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """
+    Convert datetime to naive UTC for binding to TIMESTAMP WITHOUT TIME ZONE.
+    AsyncPG rejects offset-aware datetimes for TIMESTAMP WITHOUT TIME ZONE columns.
+    """
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def parse_datetime_field(record: Dict[str, Any], field: str, default: Optional[datetime] = None) -> datetime:
     """
     Parse datetime field from record dictionary with fallback handling.
+    Returns UTC datetime. Naive datetimes from parser are treated as UTC.
     
     Args:
         record: Dictionary containing the field to parse
         field: Field name to extract from record
-        default: Default datetime to use if parsing fails (defaults to datetime.now())
+        default: Default datetime to use if parsing fails (defaults to datetime.now(timezone.utc))
         
     Returns:
-        Parsed datetime object
+        Parsed datetime object (UTC)
     """
     from dateutil import parser
     
     if default is None:
-        default = datetime.now()
+        default = datetime.now(timezone.utc)
     
     field_value = record.get(field, '')
     
     if isinstance(field_value, str):
         try:
-            return parser.parse(field_value)
+            parsed = parser.parse(field_value)
+            return _ensure_utc(parsed)
         except (ValueError, TypeError, AttributeError):
             return default
     elif isinstance(field_value, datetime):
-        return field_value
+        return _ensure_utc(field_value)
     else:
         return default
 
@@ -120,6 +139,7 @@ class TrackData(Base):
     satellites: Mapped[int] = mapped_column(Integer, default=0)
     speed: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(100), default='Normal')
+    vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
     passenger_seat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     main_battery: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     battery_voltage: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -180,6 +200,7 @@ class TrackData(Base):
                 'satellites': record.get('satellites', 0),
                 'speed': record.get('speed', 0),
                 'status': record.get('status', DEFAULT_STATUS),
+                'vendor': record.get('vendor', 'teltonika'),
                 'passenger_seat': parse_numeric_field(record, 'passenger_seat', float),
                 'main_battery': parse_numeric_field(record, 'main_battery', float),
                 'battery_voltage': parse_numeric_field(record, 'battery_voltage', float),
@@ -420,6 +441,9 @@ class Alarm(Base):
     satellites: Mapped[int] = mapped_column(Integer, default=0)
     speed: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(100), default='Normal')
+    vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
+    photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    video_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_sms: Mapped[int] = mapped_column(Integer, default=0)
     is_email: Mapped[int] = mapped_column(Integer, default=0)
     is_call: Mapped[int] = mapped_column(Integer, default=0)
@@ -453,9 +477,12 @@ class Alarm(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -463,6 +490,9 @@ class Alarm(Base):
                 'satellites': record.get('satellites', 0),
                 'speed': record.get('speed', 0),
                 'status': record.get('status', DEFAULT_STATUS),
+                'vendor': record.get('vendor', 'teltonika'),
+                'photo_url': record.get('photo_url'),
+                'video_url': record.get('video_url'),
                 'is_sms': record.get('is_sms', 0),
                 'is_email': record.get('is_email', 0),
                 'is_call': record.get('is_call', 0),
@@ -474,7 +504,7 @@ class Alarm(Base):
             # Build values dict for Core insert
             values = {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 **defaults
             }
 
@@ -505,7 +535,7 @@ class Alarm(Base):
                     try:
                         result = await session.execute(
                             text("SELECT id FROM alarms WHERE imei = :imei AND gps_time = :gps_time"),
-                            {'imei': imei_int, 'gps_time': gps_time}
+                            {'imei': imei_int, 'gps_time': gps_time_naive}
                         )
                         row = result.fetchone()
                         if row:
@@ -564,6 +594,9 @@ class Event(Base):
     satellites: Mapped[int] = mapped_column(Integer, default=0)
     speed: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(100), default='Normal')
+    vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
+    photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    video_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_valid: Mapped[int] = mapped_column(Integer, default=1)
     reference_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -592,6 +625,9 @@ class Event(Base):
                 'satellites': record.get('satellites', 0),
                 'speed': record.get('speed', 0),
                 'status': record.get('status', DEFAULT_STATUS),
+                'vendor': record.get('vendor', 'teltonika'),
+                'photo_url': record.get('photo_url'),
+                'video_url': record.get('video_url'),
                 'is_valid': record.get('is_valid', IS_VALID_TRUE),
                 'reference_id': parse_numeric_field(record, 'reference_id', int),
                 'distance': parse_numeric_field(record, 'distance', float)
@@ -684,13 +720,14 @@ class LastStatus(Base):
     speed: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     reference_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
     updateddate: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     @classmethod
     async def upsert(cls, imei: int, gps_time: Optional[datetime], server_time: Optional[datetime],
                      latitude: float, longitude: float, altitude: int, angle: int,
                      satellites: int, speed: int, reference_id: Optional[int] = None,
-                     distance: Optional[float] = None) -> None:
+                     distance: Optional[float] = None, vendor: str = 'teltonika') -> None:
         """
         Update or insert last status using SQLAlchemy Core.
         
@@ -706,6 +743,7 @@ class LastStatus(Base):
             speed: Speed in km/h
             reference_id: Optional reference location ID
             distance: Optional distance to reference in kilometers
+            vendor: Vendor name (teltonika, camera)
         """
         try:
             # Build values dict for Core insert
@@ -720,7 +758,8 @@ class LastStatus(Base):
                 'satellites': satellites,
                 'speed': speed,
                 'reference_id': reference_id,
-                'distance': distance
+                'distance': distance,
+                'vendor': vendor
             }
 
             # Use PostgreSQL-specific insert with ON CONFLICT DO UPDATE
@@ -771,3 +810,61 @@ class LocationReference(Base):
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
     reference: Mapped[str] = mapped_column(Text)
+
+
+class CameraAlarmConfig(Base):
+    """Camera alarm configuration - per-device config for camera events"""
+    __tablename__ = "camera_alarm_config"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    imei: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_sms: Mapped[int] = mapped_column(Integer, default=0)
+    is_email: Mapped[int] = mapped_column(Integer, default=0)
+    is_call: Mapped[int] = mapped_column(Integer, default=0)
+    priority: Mapped[int] = mapped_column(Integer, default=5)
+    start_time: Mapped[time] = mapped_column(Time, default=time(0, 0, 0))
+    end_time: Mapped[time] = mapped_column(Time, default=time(23, 59, 59))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    @classmethod
+    async def get_config(cls, imei: int, event_type: str) -> Optional['CameraAlarmConfig']:
+        """
+        Get camera alarm config for a specific device and event type.
+        Returns None if no config found.
+        """
+        try:
+            async with get_session() as session:
+                result = await session.execute(
+                    text("""
+                        SELECT id, imei, event_type, is_sms, is_email, is_call, priority,
+                               start_time, end_time, enabled
+                        FROM camera_alarm_config
+                        WHERE imei = :imei AND event_type = :event_type AND enabled = TRUE
+                    """),
+                    {'imei': imei, 'event_type': event_type}
+                )
+                row = result.fetchone()
+                
+                if row:
+                    # Return a simple object with the config
+                    class ConfigResult:
+                        def __init__(self, row):
+                            self.id = row[0]
+                            self.imei = row[1]
+                            self.event_type = row[2]
+                            self.is_sms = row[3]
+                            self.is_email = row[4]
+                            self.is_call = row[5]
+                            self.priority = row[6]
+                            self.start_time = row[7]
+                            self.end_time = row[8]
+                            self.enabled = row[9]
+                    
+                    return ConfigResult(row)
+                return None
+        except Exception as e:
+            logger.error(f"Error getting camera alarm config: {e}")
+            return None

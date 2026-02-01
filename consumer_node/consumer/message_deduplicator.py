@@ -6,7 +6,7 @@ Hybrid approach: In-memory cache (L1) + PostgreSQL (L2) for persistence
 import asyncio
 import logging
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Set
 from collections import OrderedDict
 
@@ -91,7 +91,7 @@ class MessageDeduplicator:
                         
                         if existing:
                             # Found in database - add to L1 cache and return duplicate
-                            self._processed[message_id] = datetime.now()
+                            self._processed[message_id] = datetime.now(timezone.utc)
                             self._db_hits += 1
                             self._hits += 1
                             logger.debug(f"Duplicate message detected (L2 database): {message_id}")
@@ -133,9 +133,10 @@ class MessageDeduplicator:
         try:
             async with get_session() as session:
                 table = ProcessedMessage.__table__
+                # Naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects offset-aware datetimes)
                 stmt = pg_insert(table).values(
                     message_id=message_id,
-                    processed_at=datetime.now()
+                    processed_at=datetime.now(timezone.utc).replace(tzinfo=None)
                 )
                 # Use ON CONFLICT DO NOTHING to handle race conditions
                 stmt = stmt.on_conflict_do_nothing(index_elements=['message_id'])
@@ -164,7 +165,7 @@ class MessageDeduplicator:
         """
         async with self._lock:
             # Add to in-memory cache
-            self._processed[message_id] = datetime.now()
+            self._processed[message_id] = datetime.now(timezone.utc)
             
             # Enforce max size
             if len(self._processed) > self.max_size:
@@ -194,7 +195,7 @@ class MessageDeduplicator:
     
     async def _cleanup_expired(self):
         """Remove expired message IDs from in-memory cache"""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         expired_keys = [
             msg_id for msg_id, timestamp in self._processed.items()
             if (now - timestamp).total_seconds() > self.ttl_seconds
@@ -213,7 +214,7 @@ class MessageDeduplicator:
         
         try:
             async with get_session() as session:
-                cutoff_time = datetime.now() - timedelta(seconds=self.ttl_seconds)
+                cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=self.ttl_seconds)
                 stmt = delete(ProcessedMessage).where(
                     ProcessedMessage.processed_at < cutoff_time
                 )
