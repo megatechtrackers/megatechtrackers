@@ -12,7 +12,7 @@ from datetime import datetime, time, timezone
 import json
 import logging
 
-from .sqlalchemy_base import Base, get_session
+from .sqlalchemy_base import Base, get_session, get_resilient_session, is_connection_error, record_failure, record_success
 from sqlalchemy.ext.asyncio import AsyncSession
 from .circuit_breaker import get_db_write_circuit_breaker, CircuitBreakerOpenError
 
@@ -179,6 +179,9 @@ class TrackData(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             # Parse dynamic_io
             dynamic_io = record.get('dynamic_io', '{}')
@@ -192,7 +195,7 @@ class TrackData(Base):
                 dynamic_io = {}
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -226,7 +229,7 @@ class TrackData(Base):
 
             return {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 'defaults': defaults
             }
         except Exception as e:
@@ -369,49 +372,70 @@ class TrackData(Base):
                         )
                         stats['failed'] += 1
                 
-                # Bulk insert/update using Core
+                # Bulk insert/update using Core with retry on connection errors
                 if batch_values:
-                    try:
-                        # IMPORTANT: Deduplicate records within batch to avoid
-                        # "ON CONFLICT DO UPDATE command cannot affect row a second time"
-                        # Keep last occurrence for each (imei, gps_time) key (most recent version)
-                        seen_keys = {}
-                        for values in batch_values:
-                            key = (values['imei'], values['gps_time'])
-                            seen_keys[key] = values  # Overwrites duplicates, keeping last
-                        
-                        deduplicated_values = list(seen_keys.values())
-                        duplicates_removed = len(batch_values) - len(deduplicated_values)
-                        
-                        if duplicates_removed > 0:
-                            logger.debug(f"Removed {duplicates_removed} duplicate records from batch (same imei+gps_time)")
-                        
-                        async with get_session() as session:
-                            try:
-                                stmt = pg_insert(table).values(deduplicated_values)
-                                
-                                update_dict = {
-                                    col.name: text(f'EXCLUDED.{col.name}')
-                                    for col in table.columns
-                                    if col.name not in ('imei', 'gps_time')
-                                }
-                                
-                                stmt = stmt.on_conflict_do_update(
-                                    index_elements=['imei', 'gps_time'],
-                                    set_=update_dict
-                                )
-                                
-                                await session.execute(stmt)
-                                await session.commit()
-                                
-                                stats['success'] += len(deduplicated_values)
-                            except Exception as db_error:
-                                await session.rollback()
-                                raise db_error
+                    # IMPORTANT: Deduplicate records within batch to avoid
+                    # "ON CONFLICT DO UPDATE command cannot affect row a second time"
+                    seen_keys = {}
+                    for values in batch_values:
+                        key = (values['imei'], values['gps_time'])
+                        seen_keys[key] = values  # Overwrites duplicates, keeping last
+                    
+                    deduplicated_values = list(seen_keys.values())
+                    duplicates_removed = len(batch_values) - len(deduplicated_values)
+                    
+                    if duplicates_removed > 0:
+                        logger.debug(f"Removed {duplicates_removed} duplicate records from batch (same imei+gps_time)")
+                    
+                    # Retry logic for transient connection errors
+                    max_retries = 3
+                    last_error = None
+                    
+                    for attempt in range(max_retries + 1):
+                        try:
+                            async with get_resilient_session() as session:
+                                try:
+                                    stmt = pg_insert(table).values(deduplicated_values)
+                                    
+                                    update_dict = {
+                                        col.name: text(f'EXCLUDED.{col.name}')
+                                        for col in table.columns
+                                        if col.name not in ('imei', 'gps_time')
+                                    }
+                                    
+                                    stmt = stmt.on_conflict_do_update(
+                                        index_elements=['imei', 'gps_time'],
+                                        set_=update_dict
+                                    )
+                                    
+                                    await session.execute(stmt)
+                                    await session.commit()
+                                    
+                                    stats['success'] += len(deduplicated_values)
+                                    record_success()  # Track successful operation
+                                    break  # Success - exit retry loop
+                                except Exception as db_error:
+                                    await session.rollback()
+                                    raise db_error
+                        except Exception as e:
+                            last_error = e
                             
-                    except Exception as e:
-                        logger.error(f"Error processing batch: {e}", exc_info=True)
-                        stats['failed'] += len(batch_values)
+                            if is_connection_error(e):
+                                record_failure()  # Track failure for engine reconnection
+                                
+                                if attempt < max_retries:
+                                    delay = 1.0 * (2 ** attempt)  # Exponential backoff
+                                    logger.warning(
+                                        f"Database connection error in batch (attempt {attempt + 1}/{max_retries + 1}): {e}. "
+                                        f"Retrying in {delay:.1f}s..."
+                                    )
+                                    await asyncio.sleep(delay)
+                                    continue
+                            
+                            # Either not a connection error, or all retries exhausted
+                            logger.error(f"Error processing batch: {e}", exc_info=True)
+                            stats['failed'] += len(batch_values)
+                            break
 
             return stats
         
@@ -509,8 +533,9 @@ class Alarm(Base):
             }
 
             # Use PostgreSQL-specific insert with ON CONFLICT DO UPDATE
+            # Use resilient session with automatic retry on connection errors
             table = cls.__table__
-            async with get_session() as session:
+            async with get_resilient_session(max_retries=3) as session:
                 try:
                     stmt = pg_insert(table).values(values)
                     
@@ -526,34 +551,27 @@ class Alarm(Base):
                         set_=update_dict
                     )
                     
-                    await session.execute(stmt)
+                    # Use RETURNING to reliably get the alarm ID (works for both INSERT and UPDATE)
+                    stmt = stmt.returning(table.c.id)
+                    result = await session.execute(stmt)
                     await session.commit()
                     
-                    # Get the inserted alarm ID (if available)
-                    # Query for the ID after insert (needed for alarm notification)
-                    alarm_id = None
-                    try:
-                        result = await session.execute(
-                            text("SELECT id FROM alarms WHERE imei = :imei AND gps_time = :gps_time"),
-                            {'imei': imei_int, 'gps_time': gps_time_naive}
-                        )
-                        row = result.fetchone()
-                        if row:
-                            alarm_id = row[0]
-                    except Exception:
-                        # If we can't get the ID, that's okay - notification will work without it
-                        pass
+                    # Get the inserted/updated alarm ID from RETURNING clause
+                    row = result.fetchone()
+                    alarm_id = row[0] if row else None
                     
                     # Publish to alarm_exchange for Alarm Service processing (non-blocking)
-                    # This is fire-and-forget and doesn't affect the main save flow
-                    # Errors are caught and logged but don't affect the return value
-                    try:
-                        from .alarm_notifier import notify_alarm_saved
-                        # Schedule notification in background (non-blocking, fire-and-forget)
-                        asyncio.create_task(notify_alarm_saved(record, alarm_id))
-                    except Exception as notify_error:
-                        # Log but don't raise - notification is non-critical
-                        logger.debug(f"Failed to schedule alarm notification (non-critical): {notify_error}")
+                    # Only send if we have a valid alarm_id (required by Alarm Service validation)
+                    if alarm_id is not None:
+                        try:
+                            from .alarm_notifier import notify_alarm_saved
+                            # Schedule notification in background (non-blocking, fire-and-forget)
+                            asyncio.create_task(notify_alarm_saved(record, alarm_id))
+                        except Exception as notify_error:
+                            # Log but don't raise - notification is non-critical
+                            logger.debug(f"Failed to schedule alarm notification (non-critical): {notify_error}")
+                    else:
+                        logger.warning(f"Alarm created but could not get ID for notification: imei={imei_int}")
                     
                     # Return minimal object for compatibility
                     class DummyAlarm:
@@ -615,9 +633,12 @@ class Event(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -636,7 +657,7 @@ class Event(Base):
             # Build values dict for Core insert
             values = {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 **defaults
             }
 
@@ -664,7 +685,7 @@ class Event(Base):
                     class DummyEvent:
                         def __init__(self):
                             self.imei = imei_int
-                            self.gps_time = gps_time
+                            self.gps_time = gps_time_naive
                     
                     return DummyEvent()
                 except Exception as db_error:
@@ -746,11 +767,14 @@ class LastStatus(Base):
             vendor: Vendor name (teltonika, camera)
         """
         try:
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            gps_time_naive = _to_naive_utc(gps_time) if gps_time is not None else None
+            server_time_naive = _to_naive_utc(server_time) if server_time is not None else None
             # Build values dict for Core insert
             values = {
                 'imei': imei,
-                'gps_time': gps_time,
-                'server_time': server_time,
+                'gps_time': gps_time_naive,
+                'server_time': server_time_naive,
                 'latitude': latitude,
                 'longitude': longitude,
                 'altitude': altitude,

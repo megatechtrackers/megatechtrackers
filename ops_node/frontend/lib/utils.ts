@@ -9,16 +9,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format date for display
+ * Format date/time for display. Uses working timezone if provided, else browser local.
+ * API returns UTC ISO strings; we show in selected timezone.
  */
-export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleString();
+export function formatDate(date: string | Date, timezone?: string): string {
+  const d = new Date(date);
+  if (timezone) {
+    return d.toLocaleString('en-US', { timeZone: timezone });
+  }
+  return d.toLocaleString();
 }
 
 /**
  * Format relative time
  */
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date, timezone?: string): string {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
@@ -30,28 +35,30 @@ export function formatRelativeTime(date: string | Date): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return formatDate(date);
+  return formatDate(date, timezone);
 }
 
 /**
- * Format date and time for display
+ * Format date and time for display. Uses working timezone if provided.
  */
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date, timezone?: string): string {
   const d = new Date(date);
-  return d.toLocaleString('en-US', {
+  const opts: Intl.DateTimeFormatOptions = {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
-  });
+  };
+  if (timezone) opts.timeZone = timezone;
+  return d.toLocaleString('en-US', opts);
 }
 
 /**
  * Format full date with time
  */
-export function formatFullDateTime(date: string | Date): string {
+export function formatFullDateTime(date: string | Date, timezone?: string): string {
   const d = new Date(date);
-  return d.toLocaleString('en-US', {
+  const opts: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -59,5 +66,7 @@ export function formatFullDateTime(date: string | Date): string {
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
-  });
+  };
+  if (timezone) opts.timeZone = timezone;
+  return d.toLocaleString('en-US', opts);
 }

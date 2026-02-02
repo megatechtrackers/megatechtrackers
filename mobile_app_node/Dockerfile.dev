@@ -2,9 +2,9 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Expo / RN dependencies occasionally need build tooling
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends git python3 make g++ \
+# Expo / RN dependencies occasionally need build tooling (with retries for network issues)
+RUN apt-get update -o Acquire::Retries=10 \
+  && apt-get install -y -o Acquire::Retries=10 --no-install-recommends git python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=development
@@ -13,7 +13,7 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 COPY package*.json ./
 # Expo/RN dependencies can have peer-dep constraints; prefer install that won't fail the whole stack.
-RUN npm install --legacy-peer-deps
+RUN npm config set fetch-retries 20 && npm config set fetch-retry-mintimeout 60000 && npm config set fetch-retry-maxtimeout 300000 && npm config set fetch-timeout 1200000 && npm install --legacy-peer-deps
 # Fix common Expo toolchain dependency mismatch (ajv-keywords expects ajv v8+)
 RUN npm install --legacy-peer-deps ajv@^8
 

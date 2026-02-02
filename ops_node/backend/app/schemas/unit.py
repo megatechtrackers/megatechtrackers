@@ -1,7 +1,9 @@
-"""Unit Schemas"""
+"""Unit Schemas. Datetime serialized as UTC with Z for API."""
 from pydantic import BaseModel
 from typing import Optional, Any
 from datetime import datetime
+
+from app.utils.datetime_utils import serialize_datetime_utc
 
 
 class UnitBase(BaseModel):
@@ -36,6 +38,7 @@ class UnitResponse(UnitBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class UnitSearchResponse(BaseModel):

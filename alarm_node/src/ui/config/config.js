@@ -1,4 +1,66 @@
 // Config UI JavaScript
+// Time-of-day: local (browser or working TZ) <-> UTC. Optional working TZ for managing devices in another region.
+
+const WORKING_TZ_KEY = 'alarm_working_timezone';
+
+function getWorkingTimezone() {
+    try { return localStorage.getItem(WORKING_TZ_KEY) || ''; } catch { return ''; }
+}
+
+function getOffsetMinutes(timeZone) {
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'shortOffset' });
+        const tz = formatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
+        const m = tz.match(/GMT([+-])(\d{1,2}):?(\d{2})?/);
+        if (!m) return 0;
+        const sign = m[1] === '-' ? 1 : -1;
+        return sign * (parseInt(m[2], 10) * 60 + parseInt(m[3] || '0', 10));
+    } catch { return 0; }
+}
+
+function timeLocalToUTC(localTime, timezone) {
+    const [h, m, s = 0] = localTime.split(':').map(Number);
+    if (!timezone) {
+        const d = new Date();
+        d.setHours(h, m, s, 0);
+        const uh = d.getUTCHours(), um = d.getUTCMinutes(), us = d.getUTCSeconds();
+        return `${String(uh).padStart(2, '0')}:${String(um).padStart(2, '0')}:${String(us).padStart(2, '0')}`;
+    }
+    const off = getOffsetMinutes(timezone) * 60;
+    const localSec = h * 3600 + m * 60 + s;
+    const utcSec = ((localSec - off) % 86400 + 86400) % 86400;
+    const uh = Math.floor(utcSec / 3600) % 24, um = Math.floor((utcSec % 3600) / 60), us = Math.floor(utcSec % 60);
+    return `${String(uh).padStart(2, '0')}:${String(um).padStart(2, '0')}:${String(us).padStart(2, '0')}`;
+}
+
+function timeUTCToLocal(utcTime, timezone) {
+    const [h, m, s = 0] = utcTime.split(':').map(Number);
+    if (!timezone) {
+        const d = new Date();
+        d.setUTCHours(h, m, s, 0);
+        const lh = d.getHours(), lm = d.getMinutes();
+        return `${String(lh).padStart(2, '0')}:${String(lm).padStart(2, '0')}`;
+    }
+    const off = getOffsetMinutes(timezone);
+    const utcMins = h * 60 + m + s / 60;
+    const localMins = ((utcMins + off) % 1440 + 1440) % 1440;
+    const lh = Math.floor(localMins / 60) % 24, lm = Math.floor(localMins % 60);
+    return `${String(lh).padStart(2, '0')}:${String(lm).padStart(2, '0')}`;
+}
+
+// Init working timezone from localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const sel = document.getElementById('working-timezone');
+    if (sel) {
+        sel.value = getWorkingTimezone();
+        sel.addEventListener('change', function() {
+            try { localStorage.setItem(WORKING_TZ_KEY, sel.value || ''); } catch (_) {}
+            if (typeof filterContacts === 'function') filterContacts();
+            if (typeof loadTemplates === 'function') loadTemplates();
+        });
+    }
+});
+
 // Tab switching
 initTabs();
 
@@ -103,7 +165,7 @@ async function loadSMSModems() {
                     const limit = parseInt(modem.sms_limit) || 0;
                     const usagePct = limit > 0 ? ((sentCount / limit) * 100).toFixed(2) : '0';
                     const remaining = limit - sentCount;
-                    const endDate = modem.package_end_date ? new Date(modem.package_end_date).toLocaleDateString() : 'Not set';
+                    const endDate = modem.package_end_date ? formatDateOnly(modem.package_end_date) : 'Not set';
                     const daysLeft = calculateDaysLeft(modem.package_end_date);
                     const isEnabled = modem.enabled;
                     // Format allowed services as badges
@@ -331,7 +393,7 @@ async function editModem(id) {
             document.getElementById('modem-sms-limit').value = modem.sms_limit || '';
             document.getElementById('modem-package-cost').value = modem.package_cost || '';
             document.getElementById('modem-package-currency').value = modem.package_currency || 'PKR';
-            document.getElementById('modem-package-end-date').value = modem.package_end_date ? new Date(modem.package_end_date).toISOString().split('T')[0] : '';
+            document.getElementById('modem-package-end-date').value = modem.package_end_date ? utcDateToLocalYYYYMMDD(modem.package_end_date, getWorkingTimezone()) : '';
             // Set service checkboxes
             const services = modem.allowed_services || ['alarms', 'commands'];
             document.getElementById('modem-service-alarms').checked = services.includes('alarms');
@@ -447,7 +509,7 @@ async function showPackageModal(modemId) {
             document.getElementById('package-sms-limit').value = modem.sms_limit || '';
             document.getElementById('package-cost').value = modem.package_cost || '';
             document.getElementById('package-currency').value = modem.package_currency || 'PKR';
-            document.getElementById('package-end-date').value = modem.package_end_date ? new Date(modem.package_end_date).toISOString().split('T')[0] : '';
+            document.getElementById('package-end-date').value = modem.package_end_date ? utcDateToLocalYYYYMMDD(modem.package_end_date, getWorkingTimezone()) : '';
             document.getElementById('package-modal').classList.add('active');
         }
     } catch (error) {
@@ -603,15 +665,60 @@ document.getElementById('template-form').addEventListener('submit', async (e) =>
 });
 
 // Email Settings
+async function loadEmailSettings() {
+    try {
+        const res = await fetch('/api/config/channels');
+        const data = await res.json();
+        if (!data.success || !data.configurations) return;
+        const configs = data.configurations;
+        const getVal = (key, mock) => {
+            const r = configs.find(c => c.channel_type === 'email' && c.config_key === key && c.is_mock === mock);
+            return r && r.config_value !== '***ENCRYPTED***' ? r.config_value : '';
+        };
+        document.getElementById('smtp-host').value = getVal('smtp_host', false);
+        document.getElementById('smtp-port').value = getVal('smtp_port', false);
+        document.getElementById('smtp-user').value = getVal('smtp_user', false);
+        document.getElementById('smtp-password').value = getVal('smtp_password', false) ? '********' : '';
+        document.getElementById('smtp-secure').value = getVal('smtp_secure', false) || 'false';
+        const tz = getVal('display_timezone', false);
+        const tzSel = document.getElementById('email-display-timezone');
+        if (tzSel) tzSel.value = tz || '';
+        document.getElementById('mock-smtp-host').value = getVal('smtp_host', true);
+        document.getElementById('mock-smtp-port').value = getVal('smtp_port', true);
+    } catch (error) {
+        console.error('Failed to load email settings:', error);
+    }
+}
+
+async function loadPushSettings() {
+    try {
+        const res = await fetch('/api/config/channels');
+        const data = await res.json();
+        if (!data.success || !data.configurations) return;
+        const configs = data.configurations;
+        const getVal = (key) => {
+            const r = configs.find(c => c.channel_type === 'push' && c.config_key === key && !c.is_mock);
+            return r && r.config_value !== '***ENCRYPTED***' ? r.config_value : '';
+        };
+        document.getElementById('firebase-project-id').value = getVal('firebase_project_id');
+        document.getElementById('firebase-client-email').value = getVal('firebase_client_email');
+        document.getElementById('firebase-private-key').value = getVal('firebase_private_key') ? '********' : '';
+    } catch (error) {
+        console.error('Failed to load push settings:', error);
+    }
+}
+
 document.getElementById('email-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const pw = document.getElementById('smtp-password').value;
     const configs = [
         { channel_type: 'email', config_key: 'smtp_host', config_value: document.getElementById('smtp-host').value, is_mock: false },
         { channel_type: 'email', config_key: 'smtp_port', config_value: document.getElementById('smtp-port').value, is_mock: false },
         { channel_type: 'email', config_key: 'smtp_user', config_value: document.getElementById('smtp-user').value, is_mock: false },
-        { channel_type: 'email', config_key: 'smtp_password', config_value: document.getElementById('smtp-password').value, is_mock: false },
-        { channel_type: 'email', config_key: 'smtp_secure', config_value: document.getElementById('smtp-secure').value, is_mock: false }
+        { channel_type: 'email', config_key: 'smtp_secure', config_value: document.getElementById('smtp-secure').value, is_mock: false },
+        { channel_type: 'email', config_key: 'display_timezone', config_value: (document.getElementById('email-display-timezone')?.value || ''), is_mock: false }
     ];
+    if (pw && pw !== '********') configs.push({ channel_type: 'email', config_key: 'smtp_password', config_value: pw, is_mock: false });
     
     try {
         for (const config of configs) {
@@ -721,8 +828,9 @@ function renderContacts(contacts) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-center">No contacts found. Click "Add Contact" to get started.</td></tr>';
     } else {
         tbody.innerHTML = pageContacts.map(contact => {
+            const tz = getWorkingTimezone();
             const quietHours = contact.quiet_hours_start && contact.quiet_hours_end 
-                ? `${contact.quiet_hours_start.slice(0,5)} - ${contact.quiet_hours_end.slice(0,5)}`
+                ? `${timeUTCToLocal(contact.quiet_hours_start, tz)} - ${timeUTCToLocal(contact.quiet_hours_end, tz)}`
                 : '-';
             
             return `
@@ -775,7 +883,6 @@ function showAddContactModal() {
     document.getElementById('contact-phone').value = '';
     document.getElementById('contact-type').value = 'primary';
     document.getElementById('contact-priority').value = '1';
-    document.getElementById('contact-timezone').value = 'UTC';
     document.getElementById('contact-quiet-start').value = '';
     document.getElementById('contact-quiet-end').value = '';
     document.getElementById('contact-notes').value = '';
@@ -795,9 +902,9 @@ function editContact(id) {
     document.getElementById('contact-phone').value = contact.phone || '';
     document.getElementById('contact-type').value = contact.contact_type;
     document.getElementById('contact-priority').value = contact.priority;
-    document.getElementById('contact-timezone').value = contact.timezone || 'UTC';
-    document.getElementById('contact-quiet-start').value = contact.quiet_hours_start?.slice(0,5) || '';
-    document.getElementById('contact-quiet-end').value = contact.quiet_hours_end?.slice(0,5) || '';
+    const tz = getWorkingTimezone();
+    document.getElementById('contact-quiet-start').value = contact.quiet_hours_start ? timeUTCToLocal(contact.quiet_hours_start, tz) : '';
+    document.getElementById('contact-quiet-end').value = contact.quiet_hours_end ? timeUTCToLocal(contact.quiet_hours_end, tz) : '';
     document.getElementById('contact-notes').value = contact.notes || '';
     document.getElementById('contact-active').value = String(contact.active);
     document.getElementById('contact-modal').classList.add('active');
@@ -840,9 +947,9 @@ document.getElementById('contact-form').addEventListener('submit', async (e) => 
         phone: phone || null,
         contact_type: document.getElementById('contact-type').value,
         priority: parseInt(document.getElementById('contact-priority').value),
-        timezone: document.getElementById('contact-timezone').value,
-        quiet_hours_start: document.getElementById('contact-quiet-start').value || null,
-        quiet_hours_end: document.getElementById('contact-quiet-end').value || null,
+        timezone: 'UTC',
+        quiet_hours_start: document.getElementById('contact-quiet-start').value ? timeLocalToUTC(document.getElementById('contact-quiet-start').value + ':00', getWorkingTimezone()) : null,
+        quiet_hours_end: document.getElementById('contact-quiet-end').value ? timeLocalToUTC(document.getElementById('contact-quiet-end').value + ':00', getWorkingTimezone()) : null,
         notes: document.getElementById('contact-notes').value || null,
         active: document.getElementById('contact-active').value === 'true'
     };
@@ -898,7 +1005,7 @@ async function loadAlertRecipients() {
                 <td>${escapeHtml(r.name || '-')}</td>
                 <td><span class="badge ${r.severity_filter === 'critical' ? 'badge-danger' : r.severity_filter === 'warning' ? 'badge-warning' : 'badge-secondary'}">${r.severity_filter || 'all'}</span></td>
                 <td>${r.enabled ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>'}</td>
-                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>${formatDateOnly(r.created_at)}</td>
                 <td>
                     <div class="action-buttons">
                         <button class="btn btn-secondary" onclick="editRecipient(${r.id})">Edit</button>

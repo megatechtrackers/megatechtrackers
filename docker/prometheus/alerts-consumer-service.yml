@@ -1,0 +1,100 @@
+groups:
+  - name: consumer_service_alerts
+    interval: 30s
+    rules:
+      # Consumer DLQ Alerts (RabbitMQ dead letter queues)
+      - alert: ConsumerDLQGrowing
+        expr: rabbitmq_queue_messages{queue=~".*dlq.*"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "Consumer DLQ growing"
+          description: "Dead letter queue {{ $labels.queue }} has {{ $value }} messages - check consumer processing"
+
+      - alert: ConsumerDLQCritical
+        expr: rabbitmq_queue_messages{queue=~".*dlq.*"} > 1000
+        for: 2m
+        labels:
+          severity: critical
+          service: consumer-service
+        annotations:
+          summary: "Consumer DLQ critical"
+          description: "Dead letter queue {{ $labels.queue }} has {{ $value }} messages - immediate attention required"
+
+      # Message Retry Count Alerts
+      - alert: HighMessageRetryCount
+        expr: count(message_retry_counts) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "High number of retrying messages"
+          description: "{{ $value }} messages are being retried - check for systematic issues"
+
+      # Consumer Processing Alerts
+      - alert: ConsumerNotProcessing
+        expr: rate(consumer_messages_processed_total[5m]) == 0 AND rabbitmq_queue_messages{queue=~"trackdata.*|alarms.*|events.*"} > 0
+        for: 3m
+        labels:
+          severity: critical
+          service: consumer-service
+        annotations:
+          summary: "Consumer not processing messages"
+          description: "Consumer is not processing messages but queue has {{ $value }} messages waiting"
+
+      # Data Quality Alerts
+      - alert: HighInvalidDataRate
+        expr: rate(consumer_invalid_records_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "High invalid data rate"
+          description: "{{ $value }} invalid records per second - check data source quality"
+
+      - alert: ValidationFailuresSpike
+        expr: increase(consumer_validation_failures_total[5m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "Validation failures spike"
+          description: "{{ $value }} validation failures in last 5 minutes - investigate data source"
+
+      # Database Write Failures
+      - alert: ConsumerDBWriteFailures
+        expr: rate(consumer_db_write_failures_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "Consumer database write failures"
+          description: "{{ $value }} DB write failures per second - check database connectivity"
+
+      # Consumer Service Down
+      - alert: ConsumerServiceDown
+        expr: up{job=~"consumer.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: consumer-service
+        annotations:
+          summary: "Consumer service is down"
+          description: "Consumer service {{ $labels.instance }} is down"
+
+      # Batch Processing Lag
+      - alert: ConsumerBatchProcessingLag
+        expr: consumer_batch_processing_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: consumer-service
+        annotations:
+          summary: "Consumer batch processing slow"
+          description: "Batch processing taking {{ $value }} seconds (expected < 5s)"

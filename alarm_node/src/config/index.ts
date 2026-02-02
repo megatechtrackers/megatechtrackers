@@ -33,6 +33,8 @@ const config: Config = {
       pass: process.env.EMAIL_PASSWORD || '',
     },
     from: process.env.EMAIL_FROM || 'noreply@tracking.com',
+    /** Timezone for formatting dates in alarm email templates. Empty = UTC. */
+    displayTimezone: process.env.EMAIL_DISPLAY_TIMEZONE || '',
   },
   
   sms: {

@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (with retries for network issues)
+RUN apt-get update -o Acquire::Retries=10 && apt-get install -y -o Acquire::Retries=10 --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY parser_nodes/camera/requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir --retries 20 --timeout 1200 -r requirements.txt
+
+# Copy application code
+COPY parser_nodes/camera/ .
+
+# Copy Docker config (overrides default config.json)
+COPY docker/config/camera-parser.docker.json /app/config.json
+
+# Set Python path
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Run the camera parser
+CMD ["python", "run.py"]

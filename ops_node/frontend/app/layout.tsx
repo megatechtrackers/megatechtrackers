@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { TimezoneProvider } from "@/lib/TimezoneContext";
 
 export const metadata: Metadata = {
   title: "Device Service",
@@ -21,8 +22,10 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen bg-slate-50 text-slate-900 antialiased`}
       >
         <ErrorBoundary>
-          <Navigation />
-          <main className="relative pt-14 sm:pt-16">{children}</main>
+          <TimezoneProvider>
+            <Navigation />
+            <main className="relative pt-14 sm:pt-16">{children}</main>
+          </TimezoneProvider>
         </ErrorBoundary>
       </body>
     </html>

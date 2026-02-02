@@ -37,11 +37,12 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 -- DATABASE CONFIGURATION
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
--- Set database timezone to Asia/Karachi (PKT, UTC+5)
--- This ensures all timestamps are stored and retrieved in local time
+-- Set database timezone to UTC for consistency across all services.
+-- All application connections also set session timezone to UTC (belt-and-suspenders).
+-- Display in user local time is handled at application/frontend layer.
 DO $$
 BEGIN
-    EXECUTE format('ALTER DATABASE %I SET timezone TO ''Asia/Karachi''', current_database());
+    EXECUTE format('ALTER DATABASE %I SET timezone TO ''UTC''', current_database());
 EXCEPTION
     WHEN OTHERS THEN
         RAISE NOTICE 'Could not set timezone: %', SQLERRM;
@@ -66,8 +67,8 @@ END $$;
 -- Main tracking data table
 CREATE TABLE IF NOT EXISTS trackdata (
     imei BIGINT NOT NULL,
-    server_time TIMESTAMP NOT NULL,
-    gps_time TIMESTAMP NOT NULL,
+    server_time TIMESTAMPTZ NOT NULL,
+    gps_time TIMESTAMPTZ NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     altitude INTEGER DEFAULT 0,
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS trackdata (
     satellites INTEGER DEFAULT 0,
     speed INTEGER DEFAULT 0,
     status VARCHAR(100) DEFAULT 'Normal',
+    vendor VARCHAR(50) DEFAULT 'teltonika',
     passenger_seat DOUBLE PRECISION NULL,
     main_battery DOUBLE PRECISION NULL,
     battery_voltage DOUBLE PRECISION NULL,
@@ -124,6 +126,8 @@ CREATE INDEX IF NOT EXISTS idx_trackdata_imei_server_time ON trackdata (imei, se
 CREATE INDEX IF NOT EXISTS idx_trackdata_valid ON trackdata (imei, gps_time DESC) WHERE is_valid = 1;
 -- Index for status filtering (if frequently queried)
 CREATE INDEX IF NOT EXISTS idx_trackdata_status ON trackdata (status) WHERE status != 'Normal';
+-- Index for vendor filtering (camera vs teltonika)
+CREATE INDEX IF NOT EXISTS idx_trackdata_vendor ON trackdata (vendor);
 
 -- Enable compression on the hypertable
 DO $$
@@ -157,8 +161,8 @@ END $$;
 CREATE TABLE IF NOT EXISTS alarms (
     id BIGSERIAL,
     imei BIGINT NOT NULL,
-    server_time TIMESTAMP NOT NULL,
-    gps_time TIMESTAMP NOT NULL,
+    server_time TIMESTAMPTZ NOT NULL,
+    gps_time TIMESTAMPTZ NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     altitude INTEGER DEFAULT 0,
@@ -166,6 +170,9 @@ CREATE TABLE IF NOT EXISTS alarms (
     satellites INTEGER DEFAULT 0,
     speed INTEGER DEFAULT 0,
     status VARCHAR(100) DEFAULT 'Normal',
+    vendor VARCHAR(50) DEFAULT 'teltonika',
+    photo_url TEXT,
+    video_url TEXT,
     is_sms INTEGER DEFAULT 0,
     is_email INTEGER DEFAULT 0,
     is_call INTEGER DEFAULT 0,
@@ -173,17 +180,17 @@ CREATE TABLE IF NOT EXISTS alarms (
     reference_id INTEGER NULL,
     distance DOUBLE PRECISION NULL,
     sms_sent BOOLEAN DEFAULT FALSE,
-    sms_sent_at TIMESTAMP NULL,
+    sms_sent_at TIMESTAMPTZ NULL,
     email_sent BOOLEAN DEFAULT FALSE,
-    email_sent_at TIMESTAMP NULL,
+    email_sent_at TIMESTAMPTZ NULL,
     call_sent BOOLEAN DEFAULT FALSE,
-    call_sent_at TIMESTAMP NULL,
+    call_sent_at TIMESTAMPTZ NULL,
     retry_count INTEGER DEFAULT 0,
-    scheduled_at TIMESTAMP DEFAULT NOW(),
+    scheduled_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     priority INTEGER DEFAULT 5,  -- 1=highest, 10=lowest
     state JSONB DEFAULT '{}'::jsonb,
     category VARCHAR(50) DEFAULT 'general',
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     PRIMARY KEY (imei, gps_time)
 );
 
@@ -213,6 +220,8 @@ CREATE INDEX IF NOT EXISTS idx_alarms_unsent_email ON alarms (id) WHERE is_valid
 -- Composite index for priority-based processing
 CREATE INDEX IF NOT EXISTS idx_alarms_priority_scheduled ON alarms(priority, scheduled_at) 
     WHERE is_valid = 1 AND (sms_sent = FALSE OR email_sent = FALSE OR call_sent = FALSE);
+-- Index for vendor filtering (camera vs teltonika)
+CREATE INDEX IF NOT EXISTS idx_alarms_vendor ON alarms (vendor);
 
 -- Enable compression on the hypertable
 DO $$
@@ -245,8 +254,8 @@ END $$;
 -- Events table (all events where status != 'Normal')
 CREATE TABLE IF NOT EXISTS events (
     imei BIGINT NOT NULL,
-    server_time TIMESTAMP NOT NULL,
-    gps_time TIMESTAMP NOT NULL,
+    server_time TIMESTAMPTZ NOT NULL,
+    gps_time TIMESTAMPTZ NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     altitude INTEGER DEFAULT 0,
@@ -254,6 +263,9 @@ CREATE TABLE IF NOT EXISTS events (
     satellites INTEGER DEFAULT 0,
     speed INTEGER DEFAULT 0,
     status VARCHAR(100) DEFAULT 'Normal',
+    vendor VARCHAR(50) DEFAULT 'teltonika',
+    photo_url TEXT,
+    video_url TEXT,
     is_valid INTEGER DEFAULT 1,
     reference_id INTEGER NULL,
     distance DOUBLE PRECISION NULL,
@@ -279,6 +291,8 @@ CREATE INDEX IF NOT EXISTS idx_events_imei_time ON events (imei, gps_time DESC);
 CREATE INDEX IF NOT EXISTS idx_events_reference_id ON events (reference_id);
 -- Partial index for valid records (most common query pattern)
 CREATE INDEX IF NOT EXISTS idx_events_valid ON events (imei, gps_time DESC) WHERE is_valid = 1;
+-- Index for vendor filtering (camera vs teltonika)
+CREATE INDEX IF NOT EXISTS idx_events_vendor ON events (vendor);
 
 -- Enable compression on the hypertable
 DO $$
@@ -326,8 +340,8 @@ CREATE TABLE IF NOT EXISTS unit_io_mapping (
     is_sms INTEGER DEFAULT 0,  -- 0 or 1
     is_email INTEGER DEFAULT 0,  -- 0 or 1
     is_call INTEGER DEFAULT 0,  -- 0 or 1
-    createddate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updateddate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    createddate TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    updateddate TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
 );
 
 -- Create indexes for unit_io_mapping queries
@@ -355,8 +369,8 @@ CREATE TABLE IF NOT EXISTS device_io_mapping (
     is_sms INTEGER DEFAULT 0,  -- 0 or 1
     is_email INTEGER DEFAULT 0,  -- 0 or 1
     is_call INTEGER DEFAULT 0,  -- 0 or 1
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
     CONSTRAINT uq_device_io_mapping UNIQUE(device_name, io_id, value)
 );
 
@@ -379,8 +393,8 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_tables WHERE tablename = 'laststatus') THEN
         CREATE TABLE laststatus (
             imei BIGINT NOT NULL,
-            gps_time TIMESTAMP NULL,
-            server_time TIMESTAMP NULL,
+            gps_time TIMESTAMPTZ NULL,
+            server_time TIMESTAMPTZ NULL,
             latitude DOUBLE PRECISION NULL,
             longitude DOUBLE PRECISION NULL,
             altitude INTEGER NULL,
@@ -389,7 +403,8 @@ BEGIN
             speed INTEGER NULL,
             reference_id INTEGER NULL,
             distance DOUBLE PRECISION NULL,
-            updateddate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            vendor VARCHAR(50) DEFAULT 'teltonika',
+            updateddate TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
             PRIMARY KEY (imei)
         ) PARTITION BY HASH (imei);
         
@@ -413,10 +428,14 @@ BEGIN
     END IF;
 END $$;
 
+-- Add vendor column to existing laststatus table (for migrations)
+ALTER TABLE laststatus ADD COLUMN IF NOT EXISTS vendor VARCHAR(50) DEFAULT 'teltonika';
+
 -- Indexes on partitioned table
 CREATE INDEX IF NOT EXISTS idx_laststatus_imei ON laststatus (imei);
 CREATE INDEX IF NOT EXISTS idx_laststatus_reference_id ON laststatus (reference_id);
 CREATE INDEX IF NOT EXISTS idx_laststatus_updateddate ON laststatus (updateddate);
+CREATE INDEX IF NOT EXISTS idx_laststatus_vendor ON laststatus (vendor);
 
 -- Location reference table (POI/landmarks)
 CREATE TABLE IF NOT EXISTS location_reference (
@@ -465,8 +484,8 @@ CREATE TABLE IF NOT EXISTS device_config (
     parameters_json JSONB,
     
     command_id INT,                              -- CommandMaster.ID - correlation key for unit_config
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 -- Index for fast lookups by device + command
@@ -487,8 +506,8 @@ CREATE TABLE IF NOT EXISTS unit (
     sim_no VARCHAR(50),                           -- SIM card number (for SMS routing)
     device_name VARCHAR(100) NOT NULL,            -- Device type (links to device_config.device_name)
     modem_id INTEGER,                             -- Modem ID from ERP
-    created_date TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_date TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 -- Indexes
@@ -505,7 +524,7 @@ CREATE TABLE IF NOT EXISTS unit_config (
     command_id INT NOT NULL,                      -- CommandMaster.ID - identifies which setting
     value TEXT NOT NULL,                          -- Current saved value (JSON array format)
     modified_by VARCHAR(100),                     -- Who last updated
-    modified_date TIMESTAMP DEFAULT NOW(),
+    modified_date TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     
     -- One value per (mega_id, device_name, command_id) combination
     CONSTRAINT uq_unit_config UNIQUE(mega_id, device_name, command_id)
@@ -527,7 +546,7 @@ CREATE TABLE IF NOT EXISTS command_outbox (
     user_id VARCHAR(100),                         -- Who initiated
     send_method VARCHAR(10) DEFAULT 'sms',        -- 'sms' or 'gprs'
     retry_count INT DEFAULT 0,                    -- Number of send attempts
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 -- Index for polling (FIFO order)
@@ -551,8 +570,8 @@ CREATE TABLE IF NOT EXISTS command_sent (
     response_text TEXT,                           -- Device response (for GPRS)
     modem_id INTEGER,                             -- ID of modem used (FK to alarms_sms_modems.id)
     modem_name VARCHAR(100),                      -- Name of modem used for SMS
-    created_at TIMESTAMP,                         -- When originally queued (from outbox)
-    sent_at TIMESTAMP DEFAULT NOW()               -- When actually sent
+    created_at TIMESTAMPTZ,                         -- When originally queued (from outbox)
+    sent_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')               -- When actually sent
 );
 
 -- Indexes
@@ -562,6 +581,9 @@ CREATE INDEX IF NOT EXISTS idx_sent_sim_no ON command_sent(sim_no);
 CREATE INDEX IF NOT EXISTS idx_sent_created ON command_sent(sent_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sent_send_method ON command_sent(send_method);
 
+COMMENT ON COLUMN command_sent.modem_id IS 'ID of modem used for SMS (FK to alarms_sms_modems.id)';
+COMMENT ON COLUMN command_sent.modem_name IS 'Name of modem used for SMS';
+
 -- Command Inbox (Incoming SMS from devices)
 -- Flow: SMS Gateway Service receives SMS → Inserts here → Matches to command_sent → Updates sent status
 CREATE TABLE IF NOT EXISTS command_inbox (
@@ -569,7 +591,7 @@ CREATE TABLE IF NOT EXISTS command_inbox (
     sim_no VARCHAR(50) NOT NULL,                  -- From phone number (device's SIM)
     imei VARCHAR(50),                             -- Matched to unit (if found)
     message_text TEXT NOT NULL,                   -- Raw SMS content
-    received_at TIMESTAMP DEFAULT NOW(),
+    received_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     processed BOOLEAN DEFAULT FALSE               -- Has been matched to sent command?
 );
 
@@ -592,9 +614,9 @@ CREATE TABLE IF NOT EXISTS command_history (
     user_id VARCHAR(100),                         -- Who initiated (outgoing only)
     modem_id INTEGER,                             -- ID of modem used (FK to alarms_sms_modems.id)
     modem_name VARCHAR(100),                      -- Name of modem used for SMS
-    created_at TIMESTAMP,                         -- Original queue time (outgoing) or received time (incoming)
-    sent_at TIMESTAMP,                            -- When sent (outgoing only)
-    archived_at TIMESTAMP DEFAULT NOW()           -- When moved to history
+    created_at TIMESTAMPTZ,                         -- Original queue time (outgoing) or received time (incoming)
+    sent_at TIMESTAMPTZ,                            -- When sent (outgoing only)
+    archived_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')           -- When moved to history
 );
 
 -- Indexes for history queries
@@ -603,6 +625,9 @@ CREATE INDEX IF NOT EXISTS idx_history_imei_date ON command_history(imei, create
 CREATE INDEX IF NOT EXISTS idx_history_direction ON command_history(direction);
 CREATE INDEX IF NOT EXISTS idx_history_created ON command_history(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_history_archived ON command_history(archived_at);
+
+COMMENT ON COLUMN command_history.modem_id IS 'ID of modem used for SMS (FK to alarms_sms_modems.id)';
+COMMENT ON COLUMN command_history.modem_name IS 'Name of modem used for SMS';
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -620,14 +645,14 @@ CREATE TABLE IF NOT EXISTS alarms_contacts (
     contact_type VARCHAR(50) DEFAULT 'primary',  -- primary, secondary, emergency
     priority INTEGER DEFAULT 1,                   -- Lower number = higher priority
     active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     notes TEXT,
     quiet_hours_start TIME,
     quiet_hours_end TIME,
     timezone VARCHAR(50) DEFAULT 'UTC',
     bounce_count INT DEFAULT 0,
-    last_bounce_at TIMESTAMP,
+    last_bounce_at TIMESTAMPTZ,
     CONSTRAINT valid_contact CHECK (email IS NOT NULL OR phone IS NOT NULL)
 );
 
@@ -645,12 +670,12 @@ COMMENT ON COLUMN alarms_contacts.priority IS 'Notification priority (1=highest,
 CREATE TABLE IF NOT EXISTS alarms_history (
     id SERIAL PRIMARY KEY,
     imei BIGINT NOT NULL,
-    alarm_gps_time TIMESTAMP NOT NULL,
+    alarm_gps_time TIMESTAMPTZ NOT NULL,
     notification_type VARCHAR(20) NOT NULL,  -- 'sms', 'email', or 'call'
     recipient VARCHAR(255) NOT NULL,         -- Phone number or email
     status VARCHAR(20) NOT NULL,             -- 'sent', 'failed', 'pending'
     attempt_number INTEGER DEFAULT 1,
-    sent_at TIMESTAMP DEFAULT NOW(),
+    sent_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     error_message TEXT,
     response_data JSONB,
     alarm_id BIGINT,
@@ -660,7 +685,7 @@ CREATE TABLE IF NOT EXISTS alarms_history (
     delivered_at TIMESTAMPTZ,
     bounce_type VARCHAR(50),
     bounce_reason TEXT,
-    delivery_confirmed_at TIMESTAMP,
+    delivery_confirmed_at TIMESTAMPTZ,
     delivery_error TEXT,
     modem_id INTEGER,                         -- ID of modem used for SMS (FK to alarms_sms_modems.id)
     modem_name VARCHAR(100)                   -- Name of modem used for SMS
@@ -679,6 +704,8 @@ CREATE INDEX IF NOT EXISTS idx_alarms_history_imei_status_time
     ON alarms_history(imei, status, sent_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alarms_history_modem ON alarms_history(modem_name) WHERE modem_name IS NOT NULL;
 
+COMMENT ON COLUMN alarms_history.modem_id IS 'ID of modem used for SMS (FK to alarms_sms_modems.id)';
+COMMENT ON COLUMN alarms_history.modem_name IS 'Name of modem used for SMS';
 COMMENT ON TABLE alarms_history IS 'Audit log of all sent alarm notifications';
 
 -- Dead Letter Queue Table
@@ -692,7 +719,7 @@ CREATE TABLE IF NOT EXISTS alarms_dlq (
     error_type VARCHAR(50),  -- 'VALIDATION', 'RATE_LIMIT', 'PROVIDER', 'NETWORK'
     attempts INT NOT NULL,
     last_attempt_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     reprocessed BOOLEAN DEFAULT FALSE,
     reprocessed_at TIMESTAMPTZ,
     reprocessed_by VARCHAR(255)
@@ -731,8 +758,8 @@ CREATE TABLE IF NOT EXISTS alarms_feature_flags (
     name VARCHAR(100) PRIMARY KEY,
     enabled BOOLEAN DEFAULT TRUE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE INDEX IF NOT EXISTS idx_alarms_feature_flags_enabled ON alarms_feature_flags(enabled);
@@ -743,8 +770,8 @@ CREATE TABLE IF NOT EXISTS alarms_workers (
     hostname VARCHAR(255) NOT NULL,
     pid INTEGER NOT NULL,
     status VARCHAR(50) DEFAULT 'active',  -- active, stale, dead
-    last_heartbeat TIMESTAMPTZ DEFAULT NOW(),
-    started_at TIMESTAMPTZ DEFAULT NOW(),
+    last_heartbeat TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    started_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     alarms_processed INTEGER DEFAULT 0,
     metadata JSONB DEFAULT '{}'::jsonb
 );
@@ -765,8 +792,8 @@ CREATE TABLE IF NOT EXISTS alarms_templates (
     version INTEGER DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
     variables JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     created_by VARCHAR(255),
     UNIQUE(name, channel, version)
 );
@@ -790,21 +817,21 @@ CREATE TABLE IF NOT EXISTS alarms_sms_modems (
     priority INTEGER DEFAULT 0,
     max_concurrent_sms INTEGER DEFAULT 5,
     health_status VARCHAR(20) DEFAULT 'unknown',  -- healthy, degraded, unhealthy, unknown, quota_exhausted
-    last_health_check TIMESTAMP,
+    last_health_check TIMESTAMPTZ,
     -- SMS Package Management
     sms_sent_count BIGINT DEFAULT 0,
     sms_limit BIGINT DEFAULT 110000,
     package_cost NUMERIC(10,2) DEFAULT 1500.00,
     package_currency VARCHAR(10) DEFAULT 'PKR',
-    package_start_date DATE,
-    package_end_date DATE,
-    last_count_reset TIMESTAMP DEFAULT NOW(),
+    package_start_date TIMESTAMPTZ,
+    package_end_date TIMESTAMPTZ,
+    last_count_reset TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     -- Service Assignment (which services can use this modem)
     -- Default: all services can use it. Empty array means disabled for all.
     -- Values: 'alarms', 'commands', 'otp', 'marketing'
     allowed_services TEXT[] DEFAULT ARRAY['alarms', 'commands'],
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE INDEX IF NOT EXISTS idx_alarms_sms_modems_enabled ON alarms_sms_modems(enabled);
@@ -815,13 +842,13 @@ COMMENT ON TABLE alarms_sms_modems IS 'Configuration for SMS modems (Teltonika R
 COMMENT ON COLUMN alarms_sms_modems.health_status IS 'Health status: healthy, degraded, unhealthy, unknown, quota_exhausted';
 COMMENT ON COLUMN alarms_sms_modems.allowed_services IS 'Services that can use this modem: alarms, commands, otp, marketing';
 
--- SMS Modem Daily Usage History
+-- SMS Modem Daily Usage History (date = UTC midnight for daily bucket)
 CREATE TABLE IF NOT EXISTS alarms_sms_modem_usage (
     id SERIAL PRIMARY KEY,
     modem_id INTEGER REFERENCES alarms_sms_modems(id) ON DELETE CASCADE,
-    date DATE NOT NULL,
+    date TIMESTAMPTZ NOT NULL,
     sms_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     UNIQUE(modem_id, date)
 );
 
@@ -837,8 +864,8 @@ CREATE TABLE IF NOT EXISTS alertmanager_recipients (
     name VARCHAR(100),
     severity_filter VARCHAR(20) DEFAULT 'all',  -- 'all', 'critical', 'warning'
     enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE INDEX IF NOT EXISTS idx_alertmanager_recipients_enabled ON alertmanager_recipients(enabled);
@@ -853,7 +880,7 @@ CREATE TABLE IF NOT EXISTS alarms_channel_config (
     config_value TEXT,
     encrypted BOOLEAN DEFAULT FALSE,
     is_mock BOOLEAN DEFAULT FALSE,
-    updated_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     UNIQUE(channel_type, config_key, is_mock)
 );
 
@@ -866,12 +893,12 @@ COMMENT ON TABLE alarms_channel_config IS 'Configuration for all notification ch
 CREATE TABLE IF NOT EXISTS alarms_state (
     id SERIAL PRIMARY KEY,
     state VARCHAR(20) NOT NULL DEFAULT 'running',  -- 'running', 'paused', 'restarting'
-    paused_at TIMESTAMP,
+    paused_at TIMESTAMPTZ,
     paused_by VARCHAR(100),
     reason TEXT,
     use_mock_sms BOOLEAN DEFAULT FALSE,
     use_mock_email BOOLEAN DEFAULT FALSE,
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE INDEX IF NOT EXISTS idx_alarms_state_state ON alarms_state(state);
@@ -885,8 +912,8 @@ CREATE TABLE IF NOT EXISTS alarms_push_tokens (
     device_token VARCHAR(500) NOT NULL UNIQUE,
     device_type VARCHAR(20) NOT NULL,  -- 'android', 'ios', 'web'
     device_name VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW(),
-    last_used_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    last_used_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
     active BOOLEAN DEFAULT TRUE
 );
 
@@ -903,17 +930,142 @@ CREATE INDEX IF NOT EXISTS idx_alarms_imei_status_created
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
+-- SECTION 4B: CAMERA/MDVR SYSTEM
+-- ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+-- CMS Servers Configuration Table
+-- Store multiple CMS server configurations (similar to alarms_sms_modems pattern)
+CREATE TABLE IF NOT EXISTS cms_servers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    host VARCHAR(255) NOT NULL,
+    port INTEGER DEFAULT 8080,
+    stream_port INTEGER DEFAULT 6604,
+    storage_port INTEGER DEFAULT 6611,
+    download_port INTEGER DEFAULT 6609,
+    username VARCHAR(100),
+    password_encrypted TEXT,
+    session_id VARCHAR(255),
+    session_expires_at TIMESTAMPTZ,
+    enabled BOOLEAN DEFAULT TRUE,
+    health_status VARCHAR(20) DEFAULT 'unknown',
+    last_health_check TIMESTAMPTZ,
+    poll_interval_seconds INTEGER DEFAULT 30,
+    device_count INTEGER DEFAULT 0,
+    timezone VARCHAR(10) DEFAULT '+00:00',  -- CMS server timezone offset (e.g., '+05:00' for PKT, '+00:00' for UTC)
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_servers_enabled ON cms_servers(enabled);
+CREATE INDEX IF NOT EXISTS idx_cms_servers_health ON cms_servers(health_status) WHERE enabled = TRUE;
+
+COMMENT ON TABLE cms_servers IS 'Configuration for CMS/MDVR servers to poll for camera device data';
+COMMENT ON COLUMN cms_servers.health_status IS 'Health status: healthy, degraded, unhealthy, unknown';
+COMMENT ON COLUMN cms_servers.session_id IS 'Cached CMS session ID (jsession)';
+COMMENT ON COLUMN cms_servers.stream_port IS 'Port for live video streaming (default 6604)';
+COMMENT ON COLUMN cms_servers.storage_port IS 'Port for storage server access (default 6611)';
+COMMENT ON COLUMN cms_servers.download_port IS 'Port for video download (default 6609)';
+COMMENT ON COLUMN cms_servers.timezone IS 'CMS server timezone offset (e.g., +05:00 for PKT). Used to convert CMS timestamps to UTC.';
+
+-- Camera Alarm Configuration Table
+-- Simple per-device config for which camera events should trigger alarms
+CREATE TABLE IF NOT EXISTS camera_alarm_config (
+    id SERIAL PRIMARY KEY,
+    imei BIGINT NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    is_sms INTEGER DEFAULT 0,
+    is_email INTEGER DEFAULT 0,
+    is_call INTEGER DEFAULT 0,
+    priority INTEGER DEFAULT 5,
+    start_time TIME DEFAULT '00:00:00',
+    end_time TIME DEFAULT '23:59:59',
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    UNIQUE(imei, event_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_camera_alarm_config_imei ON camera_alarm_config(imei);
+CREATE INDEX IF NOT EXISTS idx_camera_alarm_config_lookup ON camera_alarm_config(imei, event_type) WHERE enabled = TRUE;
+
+COMMENT ON TABLE camera_alarm_config IS 'Per-device configuration for which camera events should trigger alarms. imei=0 is the template for auto-provisioning new devices.';
+COMMENT ON COLUMN camera_alarm_config.imei IS 'Camera device IMEI (numeric device ID from CMS). 0 = template for new devices';
+COMMENT ON COLUMN camera_alarm_config.event_type IS 'Event type: Overspeeding, Distraction, Smoking, PhoneCalling, Fatigue, SeatBelt, Forward Collision, etc.';
+COMMENT ON COLUMN camera_alarm_config.priority IS 'Alarm priority (1=highest, 10=lowest)';
+COMMENT ON COLUMN camera_alarm_config.start_time IS 'Start of time window for this alarm (HH:MM:SS)';
+COMMENT ON COLUMN camera_alarm_config.end_time IS 'End of time window for this alarm (HH:MM:SS)';
+
+-- Template rows (imei=0) for auto-provisioning new camera devices
+-- When a new camera is discovered, template rows are copied to create device-specific config
+INSERT INTO camera_alarm_config (imei, event_type, is_sms, is_email, is_call, priority, start_time, end_time, enabled)
+VALUES 
+    (0, 'Overspeeding', 1, 1, 0, 5, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Distraction', 1, 0, 0, 3, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Smoking', 1, 0, 0, 3, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'PhoneCalling', 1, 0, 0, 3, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Fatigue', 0, 1, 0, 2, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'SeatBelt', 1, 0, 0, 4, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Forward Collision', 1, 1, 1, 5, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Backward Collision', 1, 1, 0, 5, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Lost Face', 0, 1, 0, 2, '00:00:00'::TIME, '23:59:59'::TIME, TRUE),
+    (0, 'Eyes Close', 1, 0, 0, 4, '00:00:00'::TIME, '23:59:59'::TIME, TRUE)
+ON CONFLICT (imei, event_type) DO NOTHING;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════════════════════
 -- SECTION 5: RABBITMQ DEDUPLICATION
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 -- Processed Message IDs table (for Consumer Service message deduplication)
 CREATE TABLE IF NOT EXISTS processed_message_ids (
     message_id VARCHAR(255) PRIMARY KEY,
-    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    processed_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
 );
 
 CREATE INDEX IF NOT EXISTS idx_processed_message_ids_processed_at 
     ON processed_message_ids(processed_at);
+
+-- Message Retry Counts table (tracks retry counts across restarts)
+-- Prevents infinite retry loops by persisting retry state to database
+CREATE TABLE IF NOT EXISTS message_retry_counts (
+    message_id VARCHAR(255) PRIMARY KEY,
+    queue_name VARCHAR(100) NOT NULL,
+    retry_count INTEGER DEFAULT 0,
+    last_error TEXT,
+    first_attempt_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    last_attempt_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+);
+
+CREATE INDEX IF NOT EXISTS idx_message_retry_counts_queue 
+    ON message_retry_counts(queue_name);
+CREATE INDEX IF NOT EXISTS idx_message_retry_counts_last_attempt 
+    ON message_retry_counts(last_attempt_at);
+
+COMMENT ON TABLE message_retry_counts IS 'Persists message retry counts across consumer restarts to prevent infinite retry loops';
+
+-- Invalid Data Queue table (stores records that failed validation for manual review)
+-- Allows recovery of data that couldn't be processed due to validation errors
+CREATE TABLE IF NOT EXISTS invalid_data_queue (
+    id BIGSERIAL PRIMARY KEY,
+    source_queue VARCHAR(100) NOT NULL,          -- Which queue the data came from
+    message_id VARCHAR(255),                      -- Original message ID
+    raw_payload JSONB NOT NULL,                   -- Original payload for recovery
+    validation_errors JSONB NOT NULL,             -- List of validation errors
+    imei VARCHAR(20),                             -- IMEI if extractable
+    created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    reviewed_at TIMESTAMPTZ,                      -- When manually reviewed
+    reviewed_by VARCHAR(100),                     -- Who reviewed it
+    action_taken VARCHAR(50),                     -- 'fixed', 'discarded', 'reprocessed'
+    notes TEXT                                    -- Reviewer notes
+);
+
+CREATE INDEX IF NOT EXISTS idx_invalid_data_queue_source ON invalid_data_queue(source_queue);
+CREATE INDEX IF NOT EXISTS idx_invalid_data_queue_created ON invalid_data_queue(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_invalid_data_queue_not_reviewed ON invalid_data_queue(created_at DESC) WHERE reviewed_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_invalid_data_queue_imei ON invalid_data_queue(imei) WHERE imei IS NOT NULL;
+
+COMMENT ON TABLE invalid_data_queue IS 'Stores invalid records for manual review and recovery - prevents data loss from validation failures';
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -924,7 +1076,7 @@ CREATE INDEX IF NOT EXISTS idx_processed_message_ids_processed_at
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at = (NOW() AT TIME ZONE 'UTC');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -948,6 +1100,26 @@ BEGIN
     END IF;
 END $$;
 
+-- Trigger for cms_servers updated_at
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_cms_servers_updated') THEN
+        CREATE TRIGGER trg_cms_servers_updated
+            BEFORE UPDATE ON cms_servers
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $$;
+
+-- Trigger for camera_alarm_config updated_at
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_camera_alarm_config_updated') THEN
+        CREATE TRIGGER trg_camera_alarm_config_updated
+            BEFORE UPDATE ON camera_alarm_config
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $$;
+
 -- Function to clean old command history
 CREATE OR REPLACE FUNCTION cleanup_old_command_history(days_to_keep INT DEFAULT 90)
 RETURNS INT AS $$
@@ -955,7 +1127,7 @@ DECLARE
     deleted_count INT;
 BEGIN
     DELETE FROM command_history
-    WHERE archived_at < NOW() - (days_to_keep || ' days')::INTERVAL;
+    WHERE archived_at < (NOW() AT TIME ZONE 'UTC') - (days_to_keep || ' days')::INTERVAL;
     
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     RETURN deleted_count;
@@ -969,6 +1141,56 @@ BEGIN
     RETURN cleanup_old_command_history(days_to_keep);
 END;
 $$ LANGUAGE plpgsql;
+
+-- Cleanup old alarm notification history (keeps dashboard/audit bounded; run via cron or alarm service)
+CREATE OR REPLACE FUNCTION cleanup_old_alarms_history(days_to_keep INT DEFAULT 365)
+RETURNS INT AS $$
+DECLARE
+    deleted_count INT;
+BEGIN
+    DELETE FROM alarms_history
+    WHERE sent_at < (NOW() AT TIME ZONE 'UTC') - (days_to_keep || ' days')::INTERVAL;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION cleanup_old_alarms_history(INT) IS 'Delete alarms_history rows older than days_to_keep (default 365). Run periodically (e.g. cron or alarm_node) to bound table size.';
+
+-- Cleanup old command inbox (incoming SMS); run by ops_node or sms_gateway to bound table size
+CREATE OR REPLACE FUNCTION cleanup_old_command_inbox(days_to_keep INT DEFAULT 90)
+RETURNS INT AS $$
+DECLARE deleted_count INT;
+BEGIN
+    DELETE FROM command_inbox WHERE received_at < (NOW() AT TIME ZONE 'UTC') - (days_to_keep || ' days')::INTERVAL;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION cleanup_old_command_inbox(INT) IS 'Delete command_inbox rows older than days_to_keep (default 90). Run periodically by ops_node to bound table size.';
+
+-- Cleanup old reprocessed DLQ rows (keep table bounded; run by alarm_node)
+CREATE OR REPLACE FUNCTION cleanup_old_alarms_dlq(days_to_keep INT DEFAULT 90)
+RETURNS INT AS $$
+DECLARE deleted_count INT;
+BEGIN
+    DELETE FROM alarms_dlq WHERE reprocessed = TRUE AND reprocessed_at < (NOW() AT TIME ZONE 'UTC') - (days_to_keep || ' days')::INTERVAL;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION cleanup_old_alarms_dlq(INT) IS 'Delete reprocessed alarms_dlq rows older than days_to_keep (default 90). Run periodically by alarm_node.';
+
+-- Cleanup old SMS modem daily usage (run by alarm_node or cron to bound table size)
+CREATE OR REPLACE FUNCTION cleanup_old_alarms_sms_modem_usage(days_to_keep INT DEFAULT 730)
+RETURNS INT AS $$
+DECLARE deleted_count INT;
+BEGIN
+    DELETE FROM alarms_sms_modem_usage WHERE date < (NOW() AT TIME ZONE 'UTC') - (days_to_keep || ' days')::INTERVAL;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION cleanup_old_alarms_sms_modem_usage(INT) IS 'Delete alarms_sms_modem_usage rows older than days_to_keep (default 730 = 2 years). Run periodically.';
 
 -- PostgreSQL Function for NOTIFY on alarm insert
 CREATE OR REPLACE FUNCTION notify_alarm_created()
@@ -1102,7 +1324,27 @@ INSERT INTO alarms_sms_modems (
     110000,
     1500.00,
     'PKR',
-    (CURRENT_DATE + INTERVAL '1 year')::DATE
+    (CURRENT_DATE + INTERVAL '1 year')::TIMESTAMPTZ
+) ON CONFLICT DO NOTHING;
+
+-- Primary CMS Server - ENABLED
+-- The camera parser reads from this table to determine which CMS servers to poll
+INSERT INTO cms_servers (
+    name, host, port, stream_port, storage_port, download_port,
+    username, password_encrypted, enabled, health_status, poll_interval_seconds, timezone
+) VALUES (
+    'Primary CMS',
+    '203.101.163.180',
+    8080,
+    6604,
+    6611,
+    6609,
+    'admin',
+    'Megamis.54321',
+    TRUE,
+    'unknown',
+    30,
+    '+05:00'  -- Pakistan Time (UTC+5)
 ) ON CONFLICT DO NOTHING;
 
 
@@ -1119,6 +1361,10 @@ GRANT ALL ON command_outbox TO PUBLIC;
 GRANT ALL ON command_sent TO PUBLIC;
 GRANT ALL ON command_inbox TO PUBLIC;
 GRANT ALL ON command_history TO PUBLIC;
+
+-- Grant permissions on camera/CMS tables
+GRANT ALL ON cms_servers TO PUBLIC;
+GRANT ALL ON camera_alarm_config TO PUBLIC;
 
 -- Grant sequence permissions for auto-increment columns
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO PUBLIC;

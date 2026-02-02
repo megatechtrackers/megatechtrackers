@@ -1,32 +1,38 @@
 """
 Migration Script: SQL Server (old system) -> PostgreSQL (new system)
 Migrates ALL data from the old normalized/cfg_ tables to the new simplified schema
-with progress indicators and batch processing
+with progress indicators and batch processing.
+
+Schema: Command-system tables (device_config, unit, unit_config, command_*) are
+created by the main database/schema.sql (e.g. via Docker). This script only
+verifies they exist and migrates data; it does not create or alter schema.
 
 USAGE:
-    # Option 1: Connect to Docker postgres-primary (default after Docker setup)
-    python migrate.py
-    
-    # Option 2: Set environment variables for custom connection
+    # After Docker setup (schema applied by database/schema.sql):
+    docker compose up -d postgres-primary
+    python ops_node/migration/migrate.py
+
+    # Custom PostgreSQL connection:
     set POSTGRES_HOST=localhost
     set POSTGRES_PORT=5432
     set POSTGRES_DB=tracking_db
     python migrate.py
-    
-    # Option 3: Skip schema recreation (tables already exist from database/schema.sql)
-    python migrate.py --skip-schema
-
-NOTE: Run this AFTER starting Docker services:
-    docker compose up -d postgres-primary
-    # Wait for PostgreSQL to be ready, then run:
-    python ops_node/migration/migrate.py --skip-schema
 """
 import pyodbc
 import psycopg2
 from psycopg2.extras import execute_values
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import time
+
+
+def _to_naive_utc(dt):
+    """Convert to naive UTC for PostgreSQL TIMESTAMP WITHOUT TIME ZONE."""
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
 import sys
 import os
 import argparse
@@ -93,9 +99,9 @@ def verify_postgres_schema(pg_conn):
     if missing_required:
         print(f"\n    ❌ ERROR: Missing required tables: {', '.join(missing_required)}")
         print(f"    Existing tables: {', '.join(existing_tables) if existing_tables else 'none'}")
-        print("\n    Please ensure Docker services are running:")
+        print("\n    Apply the main schema first (database/schema.sql), e.g.:")
         print("      docker compose up -d postgres-primary")
-        print("    And wait for the database to initialize (check with):")
+        print("    Then verify tables exist:")
         print("      docker exec postgres-primary psql -U postgres -d tracking_db -c '\\dt'")
         raise Exception(f"Schema verification failed - missing tables: {', '.join(missing_required)}")
     
@@ -108,286 +114,6 @@ def verify_postgres_schema(pg_conn):
     
     return existing_tables
 
-
-def recreate_postgres_schema(pg_conn):
-    """Drop and recreate PostgreSQL tables from schema file
-    
-    NOTE: This is typically NOT needed when running after Docker setup,
-    since database/schema.sql creates all tables automatically.
-    Use --skip-schema flag to skip this step.
-    """
-    import os
-    import re
-    from pathlib import Path
-    
-    print("\n" + "=" * 70)
-    print("STEP 0: Recreating PostgreSQL Schema (STANDALONE MODE)")
-    print("=" * 70)
-    print("  WARNING: This drops and recreates tables!")
-    print("  If running with Docker, use --skip-schema instead.")
-    
-    print("  Dropping and recreating tables...")
-    
-    # Use autocommit mode for schema creation to avoid transaction abort issues
-    pg_conn.autocommit = True
-    pg_cursor = pg_conn.cursor()
-    
-    # Define all schema statements directly (no file parsing needed)
-    schema_statements = [
-        # Drop tables in reverse dependency order
-        "DROP TABLE IF EXISTS command_history CASCADE",
-        "DROP TABLE IF EXISTS command_inbox CASCADE",
-        "DROP TABLE IF EXISTS command_sent CASCADE",
-        "DROP TABLE IF EXISTS command_outbox CASCADE",
-        "DROP TABLE IF EXISTS unit_config CASCADE",
-        "DROP TABLE IF EXISTS unit CASCADE",
-        "DROP TABLE IF EXISTS device_config CASCADE",
-        
-        # Create tables - matches original CommandConfigApi structure
-        """CREATE TABLE device_config (
-    id SERIAL PRIMARY KEY,
-    device_name VARCHAR(100) NOT NULL,
-    config_type VARCHAR(20) NOT NULL,
-    category_type_desc VARCHAR(50),
-    category VARCHAR(100),
-    profile VARCHAR(10),
-    command_name VARCHAR(200) NOT NULL,
-    description TEXT,
-    command_seprator VARCHAR(50),
-    command_syntax VARCHAR(500),
-    command_type VARCHAR(10),
-    command_parameters_json JSONB,
-    parameters_json JSONB,
-    command_id INT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-)""",
-        
-        """CREATE TABLE unit (
-    id SERIAL PRIMARY KEY,
-    mega_id VARCHAR(50),
-    imei VARCHAR(50) NOT NULL UNIQUE,
-    ffid VARCHAR(50),
-    sim_no VARCHAR(50),
-    device_name VARCHAR(100) NOT NULL,
-    modem_id INTEGER,
-    created_date TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-)""",
-        
-        """CREATE TABLE unit_config (
-    id SERIAL PRIMARY KEY,
-    mega_id VARCHAR(50) NOT NULL,
-    device_name VARCHAR(100) NOT NULL,
-    command_id INT NOT NULL,
-    value TEXT NOT NULL,
-    modified_by VARCHAR(100),
-    modified_date TIMESTAMP DEFAULT NOW(),
-    CONSTRAINT uq_unit_config UNIQUE(mega_id, device_name, command_id)
-)""",
-        
-        """CREATE TABLE command_outbox (
-    id SERIAL PRIMARY KEY,
-    imei VARCHAR(50) NOT NULL,
-    sim_no VARCHAR(50) NOT NULL,
-    command_text TEXT NOT NULL,
-    config_id INT REFERENCES device_config(id),
-    user_id VARCHAR(100),
-    send_method VARCHAR(10) DEFAULT 'sms',
-    retry_count INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
-)""",
-
-        """CREATE TABLE command_sent (
-    id SERIAL PRIMARY KEY,
-    imei VARCHAR(50) NOT NULL,
-    sim_no VARCHAR(50) NOT NULL,
-    command_text TEXT NOT NULL,
-    config_id INT REFERENCES device_config(id),
-    user_id VARCHAR(100),
-    send_method VARCHAR(10) DEFAULT 'sms',
-    status VARCHAR(20) DEFAULT 'sent',
-    error_message TEXT,
-    response_text TEXT,
-    created_at TIMESTAMP,
-    sent_at TIMESTAMP DEFAULT NOW()
-)""",
-
-        """CREATE TABLE command_inbox (
-    id SERIAL PRIMARY KEY,
-    sim_no VARCHAR(50) NOT NULL,
-    imei VARCHAR(50),
-    message_text TEXT NOT NULL,
-    received_at TIMESTAMP DEFAULT NOW(),
-    processed BOOLEAN DEFAULT FALSE
-)""",
-        
-        """CREATE TABLE command_history (
-    id SERIAL PRIMARY KEY,
-    imei VARCHAR(50),
-    sim_no VARCHAR(50),
-    direction VARCHAR(10) NOT NULL,
-    command_text TEXT NOT NULL,
-    config_id INT REFERENCES device_config(id),
-    status VARCHAR(20),
-    send_method VARCHAR(10),
-    user_id VARCHAR(100),
-    created_at TIMESTAMP,
-    sent_at TIMESTAMP,
-    archived_at TIMESTAMP DEFAULT NOW()
-)""",
-        
-        # Create indexes
-        "CREATE INDEX idx_device_config_lookup ON device_config(device_name, config_type, COALESCE(category, ''))",
-        "CREATE INDEX idx_device_config_device ON device_config(device_name)",
-        "CREATE INDEX idx_device_config_type ON device_config(config_type)",
-        "CREATE INDEX idx_device_config_category ON device_config(device_name, category)",
-        "CREATE INDEX idx_device_config_command_id ON device_config(command_id)",
-        "CREATE INDEX idx_unit_device ON unit(device_name)",
-        "CREATE INDEX idx_unit_sim ON unit(sim_no)",
-        "CREATE INDEX idx_unit_mega_id ON unit(mega_id)",
-        "CREATE INDEX idx_unit_config_mega_id ON unit_config(mega_id)",
-        "CREATE INDEX idx_unit_config_device_command ON unit_config(device_name, command_id)",
-        "CREATE INDEX idx_outbox_created ON command_outbox(created_at)",
-        "CREATE INDEX idx_outbox_imei ON command_outbox(imei)",
-        "CREATE INDEX idx_outbox_send_method ON command_outbox(send_method)",
-        "CREATE INDEX idx_sent_status ON command_sent(status)",
-        "CREATE INDEX idx_sent_imei ON command_sent(imei)",
-        "CREATE INDEX idx_sent_sim_no ON command_sent(sim_no)",
-        "CREATE INDEX idx_sent_created ON command_sent(sent_at DESC)",
-        "CREATE INDEX idx_sent_send_method ON command_sent(send_method)",
-        "CREATE INDEX idx_inbox_sim ON command_inbox(sim_no)",
-        "CREATE INDEX idx_inbox_received ON command_inbox(received_at DESC)",
-        "CREATE INDEX idx_inbox_processed ON command_inbox(processed)",
-        "CREATE INDEX idx_history_imei ON command_history(imei)",
-        "CREATE INDEX idx_history_imei_date ON command_history(imei, created_at DESC)",
-        "CREATE INDEX idx_history_direction ON command_history(direction)",
-        "CREATE INDEX idx_history_created ON command_history(created_at DESC)",
-        "CREATE INDEX idx_history_archived ON command_history(archived_at)",
-        
-        # Create functions
-        """CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql""",
-
-        """CREATE OR REPLACE FUNCTION cleanup_old_command_history(days_to_keep INT DEFAULT 90)
-RETURNS INT AS $$
-DECLARE
-    deleted_count INT;
-BEGIN
-    DELETE FROM command_history
-    WHERE created_at < NOW() - (days_to_keep || ' days')::INTERVAL;
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql""",
-
-        """CREATE OR REPLACE FUNCTION cleanup_old_history(days_to_keep INT DEFAULT 90)
-RETURNS INT AS $$
-BEGIN
-    RETURN cleanup_old_command_history(days_to_keep);
-END;
-$$ LANGUAGE plpgsql""",
-        
-        # Create triggers
-        "CREATE TRIGGER trg_device_config_updated BEFORE UPDATE ON device_config FOR EACH ROW EXECUTE FUNCTION update_updated_at()",
-        "CREATE TRIGGER trg_unit_updated BEFORE UPDATE ON unit FOR EACH ROW EXECUTE FUNCTION update_updated_at()",
-        "CREATE TRIGGER trg_unit_config_updated BEFORE UPDATE ON unit_config FOR EACH ROW EXECUTE FUNCTION update_updated_at()",
-        
-        # Grant permissions on command system tables to all users
-        # This ensures parser services and other services can access these tables
-        "GRANT ALL ON device_config TO PUBLIC",
-        "GRANT ALL ON unit TO PUBLIC",
-        "GRANT ALL ON unit_config TO PUBLIC",
-        "GRANT ALL ON command_outbox TO PUBLIC",
-        "GRANT ALL ON command_sent TO PUBLIC",
-        "GRANT ALL ON command_inbox TO PUBLIC",
-        "GRANT ALL ON command_history TO PUBLIC",
-        "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO PUBLIC",
-    ]
-    
-    # Execute each statement
-    success_count = 0
-    error_count = 0
-    failed_statements = []
-    
-    for i, statement in enumerate(schema_statements, 1):
-        try:
-            pg_cursor.execute(statement)
-            success_count += 1
-            if i <= 5 or i % 10 == 0 or i == len(schema_statements):
-                print(f"    Executed {i}/{len(schema_statements)} statements...", end='\r')
-        except Exception as e:
-            error_msg = str(e).lower()
-            is_drop = 'DROP' in statement.upper()
-            is_create = 'CREATE' in statement.upper()
-            
-            if is_drop and 'does not exist' in error_msg:
-                # Expected error for DROP IF EXISTS
-                success_count += 1
-            elif 'already exists' in error_msg:
-                # Expected for CREATE IF NOT EXISTS or duplicate indexes
-                success_count += 1
-            else:
-                error_count += 1
-                stmt_preview = statement[:150].replace('\n', ' ').strip()
-                if error_count <= 10 or is_create:
-                    print(f"\n    ⚠️  Error in statement {i}: {e}")
-                    if is_create:
-                        print(f"        ⚠️  CRITICAL: CREATE statement failed!")
-                    print(f"        Statement: {stmt_preview}...")
-                failed_statements.append((i, str(e), stmt_preview))
-    
-    # Restore normal transaction mode
-    pg_conn.autocommit = False
-    
-    print(f"\n    ✓ Executed {success_count}/{len(schema_statements)} statements successfully")
-    
-    # Verify that essential tables were created
-    # Make sure we're in a clean transaction state
-    try:
-        pg_conn.rollback()
-    except:
-        pass
-    
-    try:
-        pg_cursor.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name IN ('device_config', 'unit', 'unit_config', 'command_history', 'command_outbox')
-            ORDER BY table_name
-        """)
-    except Exception as e:
-        # If verification query fails due to transaction abort, rollback and retry
-        pg_conn.rollback()
-        pg_cursor.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name IN ('device_config', 'unit', 'unit_config', 'command_history', 'command_outbox')
-            ORDER BY table_name
-        """)
-    existing_tables = [row[0] for row in pg_cursor.fetchall()]
-    expected_tables = ['command_history', 'command_outbox', 'device_config', 'unit', 'unit_config']
-    missing_tables = [t for t in expected_tables if t not in existing_tables]
-    
-    if missing_tables:
-        print(f"\n    ❌ ERROR: Missing tables: {', '.join(missing_tables)}")
-        print(f"    Existing tables: {', '.join(existing_tables) if existing_tables else 'none'}")
-        if failed_statements:
-            print(f"\n    Failed statements:")
-            for stmt_num, error, stmt_preview in failed_statements[:5]:
-                print(f"      Statement {stmt_num}: {error}")
-                print(f"        {stmt_preview}...")
-        raise Exception(f"Schema recreation incomplete - missing tables: {', '.join(missing_tables)}")
-    
-    print("\n    ✓ Schema recreation completed successfully!")
-    print(f"    ✓ Created tables: {', '.join(sorted(existing_tables))}")
 
 def print_progress(message, current=None, total=None):
     """Print progress message"""
@@ -569,18 +295,15 @@ def migrate_device_configs(sql_conn, pg_conn):
     pg_conn.commit()
     elapsed = time.time() - start_time
 
-    # Recreate lookup index
+    # Ensure lookup index exists (schema: database/schema.sql)
     try:
-        pg_cursor.execute("DROP INDEX IF EXISTS idx_device_config_lookup")
+        pg_cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_device_config_lookup
+            ON device_config(device_name, config_type, COALESCE(category, ''))
+        """)
         pg_conn.commit()
-    except:
-        pass
-    
-    pg_cursor.execute("""
-        CREATE INDEX idx_device_config_lookup
-        ON device_config(device_name, config_type, COALESCE(category, ''))
-    """)
-    pg_conn.commit()
+    except Exception:
+        pg_conn.rollback()
     
     if HAS_TQDM:
         print()  # New line after progress bar
@@ -762,7 +485,7 @@ def migrate_units(sql_conn, pg_conn):
     
     print(f"\n✓ Migrated {processed:,} units in {elapsed:.2f}s")
     if truncated_imeis > 0:
-        print(f"  ⚠ {truncated_imeis:,} IMEIs were truncated to fit VARCHAR(20) constraint")
+        print(f"  ⚠ {truncated_imeis:,} IMEIs were truncated to fit VARCHAR(50) constraint")
     if errors > 0:
         print(f"  ⚠ {errors} errors encountered")
 
@@ -886,7 +609,7 @@ def migrate_unit_configs(sql_conn, pg_conn, config_id_map):
     if errors > 0:
         print(f"  ⚠ Errors: {errors:,}")
 
-def migrate_command_history(sql_conn, pg_conn):
+def migrate_command_history(sql_conn, pg_conn, config_id_map=None):
     """Migrate ALL command history with progress"""
     print("\n" + "=" * 70)
     print("STEP 4: Migrating Command History (ALL RECORDS)")
@@ -928,8 +651,9 @@ def migrate_command_history(sql_conn, pg_conn):
     
     pg_cursor = pg_conn.cursor()
     
+    # Schema: database/schema.sql - imei, sim_no, direction, command_text, config_id, status, send_method, user_id, created_at, sent_at
     insert_sql = """
-        INSERT INTO command_history (imei, sim_no, direction, command_text, status, user_id, created_at)
+        INSERT INTO command_history (imei, sim_no, direction, command_text, config_id, status, send_method, user_id, created_at, sent_at)
         VALUES %s
     """
     
@@ -942,25 +666,26 @@ def migrate_command_history(sql_conn, pg_conn):
     else:
         iterator = rows
     
+    config_id_map = config_id_map or {}
     for row in iterator:
         imei, sim_no, command_sent, status, sent_by, sent_date, fk_config_id = row
-        
-        # All records in history are outgoing (sent commands)
-        # Map old config_id to new if we have it in our map
-        new_config_id = None
-        if fk_config_id:
-            # Try to find the config - we'd need to query it, but for now set to None
-            # The config_id in history is optional anyway
-            pass
-        
+
+        # Map old config_id to new (schema: config_id links to device_config)
+        new_config_id = config_id_map.get(fk_config_id) if fk_config_id else None
+        # Naive UTC for TIMESTAMP WITHOUT TIME ZONE
+        sent_date_naive = _to_naive_utc(sent_date)
+
         batch.append((
             imei,
             sim_no,
             'outgoing',  # All are outgoing commands
-            command_sent,  # CommandSent column
+            command_sent,
+            new_config_id,
             status,
-            sent_by,  # SentBy column
-            sent_date
+            'sms',  # Historical records assumed SMS (send_method)
+            sent_by,
+            sent_date_naive,  # created_at
+            sent_date_naive   # sent_at (same for outgoing)
         ))
         
         if len(batch) >= BATCH_SIZE:
@@ -1060,17 +785,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 USAGE EXAMPLES:
-    # After Docker setup (recommended):
-    python migrate.py --skip-schema
-    
-    # Standalone mode (creates own tables):
+    # After Docker setup (schema from database/schema.sql):
     python migrate.py
-    
+
     # With custom PostgreSQL connection:
     set POSTGRES_HOST=192.168.1.100
     set POSTGRES_PORT=5432
     set POSTGRES_DB=tracking_db
-    python migrate.py --skip-schema
+    python migrate.py
 
 ENVIRONMENT VARIABLES:
     SQLSERVER_CONN    - SQL Server connection string
@@ -1080,11 +802,6 @@ ENVIRONMENT VARIABLES:
     POSTGRES_USER     - PostgreSQL user (default: postgres)
     POSTGRES_PASSWORD - PostgreSQL password (default: postgres)
         """
-    )
-    parser.add_argument(
-        '--skip-schema', 
-        action='store_true',
-        help='Skip schema recreation (use when tables already exist from Docker setup)'
     )
     parser.add_argument(
         '--skip-history',
@@ -1100,10 +817,7 @@ ENVIRONMENT VARIABLES:
     print("Full Data Migration with Progress Tracking")
     print("=" * 70)
     print(f"\nPostgreSQL Target: {POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
-    if args.skip_schema:
-        print("Mode: --skip-schema (tables must already exist from Docker)")
-    else:
-        print("Mode: Standalone (will create tables)")
+    print("Schema: Tables must exist (apply database/schema.sql first, e.g. via Docker)")
     
     try:
         print("\n[1/2] Connecting to SQL Server...")
@@ -1114,13 +828,8 @@ ENVIRONMENT VARIABLES:
         pg_conn = get_postgres_connection()
         print("  ✓ Connected to PostgreSQL")
         
-        # Schema handling
-        if args.skip_schema:
-            # Just verify tables exist (Docker should have created them)
-            verify_postgres_schema(pg_conn)
-        else:
-            # Recreate PostgreSQL schema (standalone mode)
-            recreate_postgres_schema(pg_conn)
+        # Verify command-system tables exist (created by database/schema.sql)
+        verify_postgres_schema(pg_conn)
         
         # Run migrations
         config_id_map = migrate_device_configs(sql_conn, pg_conn)
@@ -1128,7 +837,7 @@ ENVIRONMENT VARIABLES:
         migrate_unit_configs(sql_conn, pg_conn, config_id_map)
         
         if not args.skip_history:
-            migrate_command_history(sql_conn, pg_conn)
+            migrate_command_history(sql_conn, pg_conn, config_id_map)
         else:
             print("\n" + "=" * 70)
             print("STEP 4: Skipping Command History (--skip-history flag)")

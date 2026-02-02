@@ -19,6 +19,8 @@ rule_files:
   - "alerts-sms-quota.yml"
   - "alerts-ops-service.yml"
   - "alerts-sms-gateway-service.yml"
+  - "alerts-camera-service.yml"
+  - "alerts-consumer-service.yml"
 
 scrape_configs:
   # Prometheus itself
@@ -87,12 +89,12 @@ scrape_configs:
           service: 'alarm-service'
     metrics_path: '/metrics'
 
-  # Alarm Service (Test)
+  # Alarm Service (Test) - listens on 3200 (same as production for Alertmanager)
   - job_name: 'alarm-service-test'
     scrape_interval: 15s
     scrape_timeout: 5s
     static_configs:
-      - targets: ['alarm-service-test:3100']
+      - targets: ['alarm-service-test:3200']
         labels:
           instance: 'alarm-service-test'
           service: 'alarm-service'

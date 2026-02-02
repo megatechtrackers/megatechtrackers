@@ -257,7 +257,7 @@ export default function HomePage() {
             </div>
           </button>
           <button
-            onClick={() => router.push('/admin/location-references')}
+            onClick={() => router.push('/admin/location_references')}
             className="p-3 sm:p-4 bg-white hover:bg-rose-50 rounded-xl border border-slate-200 hover:border-rose-300 transition-all text-left group shadow-sm"
           >
             <div className="flex items-center gap-2 sm:gap-3">

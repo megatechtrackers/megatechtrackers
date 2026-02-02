@@ -2,17 +2,18 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install system dependencies for build
-RUN apk add --no-cache \
-    postgresql-client \
-    tzdata
+# Install system dependencies for build (with retries for network issues)
+RUN for i in $(seq 1 20); do \
+    apk add --no-cache postgresql-client tzdata && break || \
+    echo "Retry $i failed, waiting 60s..." && sleep 60; \
+    done
 
 # Copy package files
 COPY alarm_node/package*.json ./alarm_node/
 
 # Install all dependencies (including dev dependencies for TypeScript build)
 WORKDIR /app/alarm_node
-RUN npm ci
+RUN npm config set fetch-retries 20 && npm config set fetch-retry-mintimeout 60000 && npm config set fetch-retry-maxtimeout 300000 && npm config set fetch-timeout 1200000 && npm ci
 
 # Copy application source code
 WORKDIR /app
@@ -27,19 +28,18 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache \
-    postgresql-client \
-    tzdata \
-    netcat-openbsd \
-    wget
+# Install system dependencies (with retries for network issues)
+RUN for i in $(seq 1 20); do \
+    apk add --no-cache postgresql-client tzdata netcat-openbsd wget && break || \
+    echo "Retry $i failed, waiting 60s..." && sleep 60; \
+    done
 
 # Copy package files
 COPY alarm_node/package*.json ./alarm_node/
 
 # Install only production dependencies
 WORKDIR /app/alarm_node
-RUN npm ci --only=production
+RUN npm config set fetch-retries 20 && npm config set fetch-retry-mintimeout 60000 && npm config set fetch-retry-maxtimeout 300000 && npm config set fetch-timeout 1200000 && npm ci --only=production
 
 # Copy built application from builder stage
 WORKDIR /app

@@ -24,6 +24,8 @@ import {
   Unit,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { timeUTCToLocal, timeLocalToUTC } from '@/lib/timeUtils';
+import { useWorkingTimezone } from '@/lib/TimezoneContext';
 
 // IO Type labels
 const IO_TYPES: Record<number, string> = {
@@ -50,6 +52,7 @@ export default function UnitIOMappingPage() {
 
 function UnitIOMappingPageContent() {
   const router = useRouter();
+  const { workingTimezone } = useWorkingTimezone();
   const [activeTab, setActiveTab] = useState<'device-templates' | 'tracker-mappings'>('device-templates');
   
   // Device templates state
@@ -589,7 +592,7 @@ function UnitIOMappingPageContent() {
                           <td className="px-4 py-3 text-slate-600">{mapping.value ?? 'N/A'}</td>
                           <td className="px-4 py-3 text-slate-600">{TARGET_TYPES[mapping.target]}</td>
                           <td className="px-4 py-3 text-slate-600 text-xs font-mono">
-                            {mapping.start_time?.slice(0, 5)} - {mapping.end_time?.slice(0, 5)}
+                            {mapping.start_time ? timeUTCToLocal(mapping.start_time, workingTimezone) : '-'} - {mapping.end_time ? timeUTCToLocal(mapping.end_time, workingTimezone) : '-'}
                           </td>
                           <td className="px-4 py-3">
                             {mapping.is_alarm ? (
@@ -768,13 +771,14 @@ function UnitIOMappingPageContent() {
 // IO Mapping Editor Modal Component
 interface IOMappingEditorModalProps {
   mapping: DeviceIOMapping | UnitIOMapping | null;
+  workingTimezone?: string;
   isDeviceTemplate: boolean;
   deviceName: string | null;
   onSave: (data: any) => void;
   onClose: () => void;
 }
 
-function IOMappingEditorModal({ mapping, isDeviceTemplate, deviceName, onSave, onClose }: IOMappingEditorModalProps) {
+function IOMappingEditorModal({ mapping, workingTimezone = '', isDeviceTemplate, deviceName, onSave, onClose }: IOMappingEditorModalProps) {
   const [formData, setFormData] = useState({
     io_id: mapping?.io_id || 1,
     io_multiplier: mapping?.io_multiplier || 1.0,
@@ -784,8 +788,8 @@ function IOMappingEditorModal({ mapping, isDeviceTemplate, deviceName, onSave, o
     value: mapping?.value ?? '',
     target: mapping?.target || 0,
     column_name: mapping?.column_name || '',
-    start_time: mapping?.start_time?.slice(0, 5) || '00:00',
-    end_time: mapping?.end_time?.slice(0, 5) || '23:59',
+    start_time: mapping?.start_time ? timeUTCToLocal(mapping.start_time, workingTimezone) : '00:00',
+    end_time: mapping?.end_time ? timeUTCToLocal(mapping.end_time, workingTimezone) : '23:59',
     is_alarm: mapping?.is_alarm || 0,
     is_sms: mapping?.is_sms || 0,
     is_email: mapping?.is_email || 0,
@@ -797,8 +801,8 @@ function IOMappingEditorModal({ mapping, isDeviceTemplate, deviceName, onSave, o
     onSave({
       ...formData,
       value: formData.value === '' ? null : Number(formData.value),
-      start_time: formData.start_time + ':00',
-      end_time: formData.end_time + ':59',
+      start_time: timeLocalToUTC(formData.start_time + ':00', workingTimezone),
+      end_time: timeLocalToUTC(formData.end_time + ':59', workingTimezone),
     });
   };
 

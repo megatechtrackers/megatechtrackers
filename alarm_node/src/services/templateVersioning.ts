@@ -1,6 +1,7 @@
 import db from '../db';
 import logger from '../utils/logger';
 import config from '../config';
+import configurationService from './configurationService';
 import { Alarm } from '../types';
 import Handlebars from 'handlebars';
 // @ts-ignore - mjml doesn't have type definitions
@@ -146,8 +147,8 @@ class TemplateVersioningService {
     return this.renderTemplateData(template, alarm);
   }
 
-  private renderTemplateData(template: Template, alarm: Alarm): { subject?: string; body: string } {
-    const context = this.buildTemplateContext(alarm);
+  private async renderTemplateData(template: Template, alarm: Alarm): Promise<{ subject?: string; body: string }> {
+    const context = await this.buildTemplateContext(alarm);
     
     // Compile and render body
     const cacheKey = `${template.channel}:${template.template_type}:${template.version}`;
@@ -181,12 +182,19 @@ class TemplateVersioningService {
     return { subject, body };
   }
 
-  private buildTemplateContext(alarm: Alarm): Record<string, any> {
-    // Format dates for display
+  private async buildTemplateContext(alarm: Alarm): Promise<Record<string, any>> {
+    // Format dates for email display. Use display_timezone from DB (Email Settings), else env, else UTC.
+    let tz = config.email.displayTimezone || 'UTC';
+    try {
+      const emailConfig = await configurationService.getChannelConfigByMode('email', false);
+      if (emailConfig.display_timezone) tz = emailConfig.display_timezone;
+    } catch {
+      // keep env/UTC fallback
+    }
     const formatDate = (date: Date | string | undefined): string => {
       if (!date) return '';
       const d = date instanceof Date ? date : new Date(date);
-      return d.toLocaleString();
+      return d.toLocaleString('en-US', { timeZone: tz });
     };
 
     return {

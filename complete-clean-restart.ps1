@@ -30,7 +30,7 @@ Write-Host ""
 Write-Host "=== Step 2: Removing all containers ===" -ForegroundColor Yellow
 # docker-compose down should have removed containers, but force remove any remaining
 $containers = docker ps -a --format "{{.Names}}" | Where-Object { 
-    $_ -match "parser-service|consumer-service-|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
+    $_ -match "parser-service|camera-parser|consumer-service-|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
 }
 if ($containers) {
     $containers | ForEach-Object {
@@ -45,8 +45,8 @@ if ($containers) {
 Write-Host ""
 Write-Host "=== Step 3: Removing all volumes ===" -ForegroundColor Yellow
 # Use docker-compose to get project name and remove volumes
-Write-Host "  Removing volumes with docker-compose..." -ForegroundColor Gray
-docker-compose down -v 2>&1 | Out-Null
+Write-Host "  Removing volumes with docker compose..." -ForegroundColor Gray
+docker compose down -v 2>&1 | Out-Null
 # Also manually remove any volumes that might remain
 $allVolumes = docker volume ls --format "{{.Name}}"
 $projectVolumes = $allVolumes | Where-Object { 
@@ -128,18 +128,64 @@ if ($pruneSystem -eq "y" -or $pruneSystem -eq "Y") {
 }
 
 Write-Host ""
-Write-Host "=== Step 7: Rebuilding Docker images (including frappe) ===" -ForegroundColor Yellow
-docker-compose --profile frappe build --no-cache
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error rebuilding images" -ForegroundColor Red
-    exit 1
+Write-Host "=== Step 7: Rebuilding Docker images (one at a time to prevent throttling) ===" -ForegroundColor Yellow
+
+# Build services sequentially to prevent network throttling
+$services = @(
+    "postgres-primary",
+    "pgbouncer",
+    "parser-service-1",
+    "consumer-service-database",
+    "consumer-service-alarm",
+    "monitoring-service",
+    "sms-gateway-service",
+    "camera-parser",
+    "ops-service-backend",
+    "ops-service-frontend",
+    "access-gateway",
+    "web-app",
+    "docs",
+    "frappe",
+    "mobile-app"
+)
+
+$totalServices = $services.Count
+$currentService = 0
+$failedServices = @()
+
+foreach ($service in $services) {
+    $currentService++
+    Write-Host "  [$currentService/$totalServices] Building $service..." -ForegroundColor Cyan
+    docker compose build --no-cache $service 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "    ⚠ Failed to build $service (will retry later)" -ForegroundColor Yellow
+        $failedServices += $service
+    } else {
+        Write-Host "    ✓ $service built successfully" -ForegroundColor Green
+    }
 }
-Write-Host "Images rebuilt successfully" -ForegroundColor Green
+
+# Retry failed services once
+if ($failedServices.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Retrying $($failedServices.Count) failed service(s)..." -ForegroundColor Yellow
+    foreach ($service in $failedServices) {
+        Write-Host "  Retrying $service..." -ForegroundColor Cyan
+        docker compose build --no-cache $service
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "    ✗ $service failed again" -ForegroundColor Red
+        } else {
+            Write-Host "    ✓ $service built successfully on retry" -ForegroundColor Green
+        }
+    }
+}
+
+Write-Host "Image building complete" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=== Step 8: Starting core services (PostgreSQL, RabbitMQ, Redis) ===" -ForegroundColor Yellow
 # Start core infrastructure first (WITHOUT pgbouncer - it depends on postgres-primary being healthy)
-docker-compose up -d postgres-primary postgres-replica rabbitmq-1 rabbitmq-2 rabbitmq-3 rabbitmq-lb redis
+docker compose up -d postgres-primary postgres-replica rabbitmq-1 rabbitmq-2 rabbitmq-3 rabbitmq-lb redis
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error starting core services" -ForegroundColor Red
     exit 1
@@ -169,7 +215,7 @@ if (-not $primaryHealthy) {
 
 # Now start pgbouncer (depends on postgres-primary)
 Write-Host "Starting pgbouncer..." -ForegroundColor Cyan
-docker-compose up -d pgbouncer
+docker compose up -d pgbouncer
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Warning: pgbouncer may have failed to start" -ForegroundColor Yellow
 }
@@ -178,11 +224,12 @@ Write-Host "Core services started" -ForegroundColor Green
 Write-Host ""
 Write-Host "=== Step 8b: Starting remaining core services ===" -ForegroundColor Yellow
 # Stop test alarm service if running (shouldn't be, but just in case)
-docker-compose stop alarm-service-test 2>&1 | Out-Null
-docker-compose rm -f alarm-service-test 2>&1 | Out-Null
+docker compose stop alarm-service-test 2>&1 | Out-Null
+docker compose rm -f alarm-service-test 2>&1 | Out-Null
 
-# Start parsers, consumers, haproxy, monitoring-service, alarm-service, sms-gateway-service, ops-service
-docker-compose up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 consumer-service-database consumer-service-alarm monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
+# Start parsers (Teltonika + camera), consumers, haproxy, monitoring-service, alarm-service, sms-gateway-service, ops-service
+# Use --profile production so alarm-service (which has that profile) is started
+docker-compose --profile production up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error starting core services" -ForegroundColor Red
     exit 1
@@ -196,7 +243,7 @@ Start-Sleep -Seconds 10
 Write-Host ""
 Write-Host "=== Step 8c: Starting monitoring stack ===" -ForegroundColor Yellow
 # Start monitoring stack (Prometheus, Grafana, exporters)
-docker-compose up -d prometheus alertmanager grafana postgres-exporter postgres-exporter-replica node-exporter pgbouncer-exporter rabbitmq-exporter
+docker compose up -d prometheus alertmanager grafana postgres-exporter postgres-exporter-replica node-exporter pgbouncer-exporter rabbitmq-exporter
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Warning: Some monitoring services may have failed to start" -ForegroundColor Yellow
 } else {
@@ -457,7 +504,7 @@ Write-Host ""
 Write-Host "=== Step 13: Final Verification ===" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Container Status:" -ForegroundColor Cyan
-docker-compose ps
+docker compose ps
 
 Write-Host ""
 Write-Host "PostgreSQL Replica Status:" -ForegroundColor Cyan
@@ -819,7 +866,7 @@ if ($startFrappe -eq "y" -or $startFrappe -eq "Y") {
     Write-Host "    - Web App:         http://localhost:3002" -ForegroundColor White
     Write-Host "    - Grafana (direct): http://localhost:3000 (admin/admin)" -ForegroundColor White
     Write-Host "    - Grafana (proxy): http://localhost:3200 (token required)" -ForegroundColor White
-    Write-Host "    - Docs:            http://localhost:8001" -ForegroundColor White
+    Write-Host "    - Docs:            http://localhost:8002" -ForegroundColor White
     if ($startMobile -eq "y" -or $startMobile -eq "Y") {
         Write-Host "    - Mobile (Expo):   http://localhost:19000" -ForegroundColor White
     }
@@ -857,6 +904,6 @@ Write-Host "To start Frappe layer later:" -ForegroundColor Cyan
 Write-Host "  docker compose --profile frappe up -d" -ForegroundColor White
 Write-Host ""
 Write-Host "If you see any issues, check:" -ForegroundColor Yellow
-Write-Host "  - docs/ folder for documentation (http://localhost:8001 if docs started)" -ForegroundColor White
+Write-Host "  - docs/ folder for documentation (http://localhost:8002 if docs started)" -ForegroundColor White
 Write-Host "  - docker compose logs <service-name>" -ForegroundColor White
 Write-Host ""

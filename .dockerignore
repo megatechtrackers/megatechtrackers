@@ -1,3 +1,12 @@
+# Dependencies and build artifacts (keep context small)
+node_modules/
+.next/
+.turbo/
+.nuxt/
+.output/
+coverage/
+.cache/
+*.tsbuildinfo
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,8 +21,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Only root-level lib/lib64 (Python venv), not e.g. ops_node/frontend/lib
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -21,6 +31,18 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Secrets (never send to build context)
+.env
+.env.local
+.env.*.local
+
+# Logs and DB files
+logs/
+*.db
+*.sqlite
+
+# IDE and OS
 .vscode/
 .idea/
 *.swp
@@ -28,13 +50,21 @@ wheels/
 *~
 .DS_Store
 Thumbs.db
-*.db
-*.sqlite
+
+# Git (not needed in image)
 .git/
 .gitignore
+
+# App dirs not used by any root-context Dockerfile (consumer/alarm/parser/camera/sms-gateway/monitoring/mock-*)
+# They use their own build context or are standalone; excluding shrinks context for root builds.
+access_control_node/
+fleet-monitor/
+frappe_apps/
+mobile_app_node/
+ops_node/
+web_app_node/
+
+# Docs (exclude most; allow specific ones if a Dockerfile needs them)
 *.md
 !README.md
-!DOCKER_SETUP.md
-!PROJECT_SETUP.md
-!IMPLEMENTATION_STATUS.md
-!RABBITMQ_INTEGRATION_PLAN_FINAL.md
+

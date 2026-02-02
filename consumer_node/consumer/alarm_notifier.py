@@ -6,7 +6,7 @@ import asyncio
 import logging
 import json
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import aio_pika
 from aio_pika import ExchangeType
 
@@ -149,7 +149,7 @@ async def notify_alarm_saved(alarm_record: Dict[str, Any], alarm_id: Optional[in
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                 priority=priority,
                 message_id=f"alarm-{alarm_id}" if alarm_id else None,
-                timestamp=int(datetime.now().timestamp()),
+                timestamp=int(datetime.now(timezone.utc).timestamp()),
                 headers={
                     'alarm-type': message.get('status', 'Normal'),
                     'imei': str(message.get('imei', '')),

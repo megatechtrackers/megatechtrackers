@@ -1,6 +1,6 @@
 # Quick Start
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2026-02-01
 
 ## 5-Minute Setup
 
@@ -18,7 +18,14 @@ docker compose --profile frappe logs -f frappe
 
 # 3. Done
 ```
-For the full tracking stack (Postgres, RabbitMQ, parsers, alarm, ops service): `.\complete-clean-restart.ps1` (Windows).
+**Complete clean restart (full stack):**
+
+| Mode       | Windows (PowerShell)              | Linux/macOS (Bash)                 |
+|-----------|------------------------------------|------------------------------------|
+| **Test**  | `.\complete-clean-restart-test.ps1` | `./complete-clean-restart-test.sh` |
+| **Prod**  | `.\complete-clean-restart.ps1`     | `./complete-clean-restart.sh`      |
+
+Test mode adds Mock Tracker, MailHog, Mock SMS, and alarm-service-test. Make scripts executable: `chmod +x *.sh`.
 
 ### Option 2: Local Frappe
 

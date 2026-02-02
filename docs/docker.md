@@ -228,3 +228,29 @@ If you modify the `megatechtrackers` app:
 
 The start scripts generate a root `.env` automatically (Grafana + Frappe keys).
 You can override any value in `.env` and re-run the start script.
+
+## Troubleshooting
+
+### "lookup registry-1.docker.io: no such host" when building
+
+Your machine can reach the internet, but **Docker Desktop’s network cannot resolve** `registry-1.docker.io`. Builds fail when pulling base images (e.g. `node:20-alpine`, `alpine:3.19`, `python:3.11-slim-bookworm`).
+
+**Fix: give Docker a working DNS**
+
+1. Open **Docker Desktop** → **Settings** (gear icon).
+2. Go to **Docker Engine**.
+3. In the JSON, add a `"dns"` key (or merge with existing keys). Example:
+   ```json
+   {
+     "builder": { ... },
+     "dns": ["8.8.8.8", "8.8.4.4"]
+   }
+   ```
+   Use **Apply and restart**.
+4. Retry the build (e.g. `docker compose build` or your clean-restart script).
+
+If the error persists:
+
+- **Resources → Network**: check if there is a DNS override and set it to `8.8.8.8` (or your preferred resolver).
+- **WSL 2**: ensure Windows has a working DNS (e.g. adapter DNS `8.8.8.8` / `8.8.4.4`) so the WSL/Docker VM gets it.
+- Restart Docker Desktop after changing DNS.

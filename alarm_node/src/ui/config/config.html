@@ -20,7 +20,21 @@
                 </div>
                 <div class="header-subtitle">Alarm Service Configuration Panel</div>
             </div>
-            <div class="header-actions">
+            <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+                <span class="timezone-row" title="Working timezone for quiet hours (device region)" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <label for="working-timezone" style="font-size: 12px; color: #94a3b8; margin: 0;">Time:</label>
+                    <select id="working-timezone" class="form-select" style="padding: 4px 8px; font-size: 12px; vertical-align: middle;">
+                        <option value="">My browser</option>
+                        <option value="Asia/Karachi">Pakistan</option>
+                        <option value="America/New_York">US Eastern</option>
+                        <option value="America/Chicago">US Central</option>
+                        <option value="America/Denver">US Mountain</option>
+                        <option value="America/Los_Angeles">US Pacific</option>
+                        <option value="Europe/London">UK</option>
+                        <option value="Asia/Dubai">UAE</option>
+                        <option value="UTC">UTC</option>
+                    </select>
+                </span>
                 <span id="system-status-indicator"></span>
                 <a href="/" class="btn btn-secondary">← Back to Dashboard</a>
             </div>
@@ -297,6 +311,21 @@
                             <option value="true">Yes (TLS/SSL)</option>
                             <option value="false">No</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" title="Time zone for formatting dates in alarm email templates (server_time, gps_time)">Email Display Timezone</label>
+                        <select class="form-select" id="email-display-timezone">
+                            <option value="">UTC</option>
+                            <option value="Asia/Karachi">Pakistan (PKT)</option>
+                            <option value="America/New_York">US Eastern (ET)</option>
+                            <option value="America/Chicago">US Central (CT)</option>
+                            <option value="America/Denver">US Mountain (MT)</option>
+                            <option value="America/Los_Angeles">US Pacific (PT)</option>
+                            <option value="Europe/London">UK (GMT/BST)</option>
+                            <option value="Europe/Paris">Europe Central (CET)</option>
+                            <option value="Asia/Dubai">UAE (GST)</option>
+                        </select>
+                        <p class="text-muted">Used to format dates in alarm emails. Set to your fleet/operations region for readable local time.</p>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Email Settings</button>
                 </form>
@@ -582,26 +611,17 @@
                         <input type="number" class="form-input" id="contact-priority" min="1" max="10" value="1">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Timezone</label>
-                    <select class="form-select" id="contact-timezone">
-                        <option value="UTC">UTC</option>
-                        <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
-                        <option value="America/New_York">America/New_York (EST)</option>
-                        <option value="Europe/London">Europe/London (GMT)</option>
-                        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-                    </select>
-                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label class="form-label">Quiet Hours Start</label>
-                        <input type="time" class="form-input" id="contact-quiet-start">
+                        <input type="time" class="form-input" id="contact-quiet-start" title="Your local time">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Quiet Hours End</label>
-                        <input type="time" class="form-input" id="contact-quiet-end">
+                        <input type="time" class="form-input" id="contact-quiet-end" title="Your local time">
                     </div>
                 </div>
+                <p class="text-muted" style="font-size: 12px; margin-top: -8px;">Times are in your browser's local timezone.</p>
                 <div class="form-group">
                     <label class="form-label">Notes</label>
                     <textarea class="form-input" id="contact-notes" rows="2" placeholder="Optional notes about this contact"></textarea>

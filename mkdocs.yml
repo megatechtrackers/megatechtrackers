@@ -99,6 +99,9 @@ nav:
     - Disk Management: disk-management.md
     - Automatic Cleanup: automatic-cleanup-implementation.md
     - Cleanup Quick Reference: cleanup-quick-reference.md
+    - Resilience & Self-Healing: resilience.md
+  - Conventions:
+    - Date/Time Convention: date-time-convention.md
   - Documentation:
     - MkDocs Setup: mkdocs-setup.md
     - Fix Line Endings: fix-line-endings.md

@@ -7,9 +7,16 @@
 | **Daily 2:00 AM** | WAL Archives | 7 days | `cleanup-wal-archives.sh` |
 | **Daily 3:00 AM** | PostgreSQL Logs | 7 days | `cleanup-postgres-logs.sh` |
 | **Continuous** | TimescaleDB Data | 12 months (trackdata/events)<br>24 months (alarms) | Built-in retention policy |
+| **Hourly** | command_history | 90 days | ops_node backend (`cleanup_old_history`) |
+| **Hourly** | command_inbox | 90 days | ops_node backend (`cleanup_old_command_inbox`) |
+| **Daily** | alarms_history | 365 days | alarm_node (`cleanup_old_alarms_history`) |
+| **Daily** | alarms_dlq (reprocessed) | 90 days | alarm_node (`cleanup_old_alarms_dlq`) |
+| **Daily** | alarms_sms_modem_usage | 730 days | alarm_node (`cleanup_old_alarms_sms_modem_usage`) |
+| **Every 5 min** | processed_message_ids | TTL-based | consumer_node dedup cleanup |
 | **Continuous** | RabbitMQ Messages | 1 hour (trackdata)<br>24 hours (alarms/events) | Built-in TTL |
 | **Continuous** | Application Logs | 10MB × 5 backups = 50MB | Log rotation |
 | **Continuous** | Prometheus Metrics | 30 days | Built-in retention |
+| **Continuous** | alarms_workers (stale) | Heartbeat-based | alarm_node worker registry cleanup |
 | **On-demand** | Grafana Data | 90 days | `cleanup-monitoring-data.sh` |
 | **On-demand** | RabbitMQ Disk | Monitor at 80% | `monitor-rabbitmq-disk.sh` |
 

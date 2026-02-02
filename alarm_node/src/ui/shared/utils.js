@@ -17,9 +17,45 @@ function showAlert(containerId, message, type = 'success') {
     }, 5000);
 }
 
-function formatDate(dateString) {
+const ALARM_WORKING_TZ_KEY = 'alarm_working_timezone';
+
+function getWorkingTimezone() {
+    try { return localStorage.getItem(ALARM_WORKING_TZ_KEY) || ''; } catch { return ''; }
+}
+
+function formatDate(dateString, timezone) {
     if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleString();
+    const d = new Date(dateString);
+    const tz = timezone !== undefined ? timezone : getWorkingTimezone();
+    if (tz) {
+        return d.toLocaleString('en-US', { timeZone: tz });
+    }
+    return d.toLocaleString();
+}
+
+function formatDateOnly(dateString, timezone) {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const tz = timezone !== undefined ? timezone : getWorkingTimezone();
+    const opts = { year: 'numeric', month: 'short', day: 'numeric' };
+    if (tz) opts.timeZone = tz;
+    return d.toLocaleDateString('en-US', opts);
+}
+
+/**
+ * Return YYYY-MM-DD for a UTC ISO date string in local/working timezone.
+ * Use when loading a date-only value (e.g. package_end_date) into an <input type="date"> so the
+ * user sees the correct calendar day in their timezone (API stores UTC).
+ */
+function utcDateToLocalYYYYMMDD(isoString, timezone) {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    const tz = timezone !== undefined ? timezone : getWorkingTimezone();
+    if (tz) {
+        return d.toLocaleDateString('en-CA', { timeZone: tz });
+    }
+    const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 function formatNumber(num) {

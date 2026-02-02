@@ -44,6 +44,7 @@ export function getDashboardHTML(): string {
   
   // Read modular files
   const sharedCSS = readFile('ui/shared/styles.css');
+  const sharedUtilsJS = readFile('ui/shared/utils.js');
   const dashboardCSS = readFile('ui/dashboard/dashboard.css');
   let dashboardJS = readFile('ui/dashboard/dashboard.js');
   
@@ -63,6 +64,12 @@ export function getDashboardHTML(): string {
   html = html.replace(
     '<link rel="stylesheet" href="/ui/dashboard/dashboard.css">',
     `<style>${dashboardCSS}</style>`
+  );
+  
+  // Inline utils.js first so formatDate etc. are available before dashboard.js
+  html = html.replace(
+    '<script src="/ui/shared/utils.js"></script>',
+    sharedUtilsJS ? `<script>${sharedUtilsJS}</script>` : '<!-- utils.js not found -->'
   );
   
   // Replace UPDATE_INTERVAL placeholder in JS

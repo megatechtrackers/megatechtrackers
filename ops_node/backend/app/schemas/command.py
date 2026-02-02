@@ -1,7 +1,9 @@
-"""Command Schemas"""
+"""Command Schemas. Datetime fields serialized as UTC with Z for API (see date-time-convention)."""
 from pydantic import BaseModel
 from typing import Optional, Union, List, Dict
 from datetime import datetime
+
+from app.utils.datetime_utils import serialize_datetime_utc
 
 
 class SendCommandRequest(BaseModel):
@@ -35,6 +37,7 @@ class CommandOutboxResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class CommandSentResponse(BaseModel):
@@ -52,6 +55,7 @@ class CommandSentResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class CommandInboxResponse(BaseModel):
@@ -65,6 +69,7 @@ class CommandInboxResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class CommandHistoryResponse(BaseModel):
@@ -83,3 +88,4 @@ class CommandHistoryResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}

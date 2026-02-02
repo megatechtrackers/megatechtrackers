@@ -11,7 +11,7 @@ import aio_pika
 from aio_pika import IncomingMessage, ExchangeType
 
 from config import Config, ServerParams
-from .message_deduplicator import get_deduplicator
+from .message_deduplicator import get_deduplicator, increment_retry_count, clear_retry_count
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +111,14 @@ class BatchAccumulator:
             # This ensures laststatus table is updated even with batch processing
             try:
                 from consumer.models import LastStatus
-                from datetime import datetime
+                from datetime import datetime, timezone
                 from dateutil import parser
-                
+
+                def _ensure_utc(dt):
+                    if dt.tzinfo is None:
+                        return dt.replace(tzinfo=timezone.utc)
+                    return dt.astimezone(timezone.utc)
+
                 # Update LastStatus for each record in the batch
                 for record in batch:
                     try:
@@ -123,28 +128,28 @@ class BatchAccumulator:
                         
                         imei_int = int(imei_str)
                         
-                        # Parse timestamps
+                        # Parse timestamps (ensure UTC for consistency)
                         gps_time_str = record.get('gps_time', '')
                         if isinstance(gps_time_str, str):
                             try:
-                                gps_time = parser.parse(gps_time_str)
+                                gps_time = _ensure_utc(parser.parse(gps_time_str))
                             except (ValueError, TypeError, AttributeError):
-                                gps_time = datetime.now()
+                                gps_time = datetime.now(timezone.utc)
                         elif isinstance(gps_time_str, datetime):
-                            gps_time = gps_time_str
+                            gps_time = _ensure_utc(gps_time_str)
                         else:
-                            gps_time = datetime.now()
+                            gps_time = datetime.now(timezone.utc)
                         
                         server_time_str = record.get('server_time', '')
                         if isinstance(server_time_str, str):
                             try:
-                                server_time = parser.parse(server_time_str)
+                                server_time = _ensure_utc(parser.parse(server_time_str))
                             except (ValueError, TypeError, AttributeError):
-                                server_time = datetime.now()
+                                server_time = datetime.now(timezone.utc)
                         elif isinstance(server_time_str, datetime):
-                            server_time = server_time_str
+                            server_time = _ensure_utc(server_time_str)
                         else:
-                            server_time = datetime.now()
+                            server_time = datetime.now(timezone.utc)
                         
                         # Update LastStatus
                         await LastStatus.upsert(
@@ -158,7 +163,8 @@ class BatchAccumulator:
                             satellites=record.get('satellites', 0),
                             speed=record.get('speed', 0),
                             reference_id=record.get('reference_id'),
-                            distance=record.get('distance')
+                            distance=record.get('distance'),
+                            vendor=record.get('vendor', 'teltonika')
                         )
                     except Exception as e:
                         logger.debug(f"Error updating LastStatus for record: {e}")
@@ -243,7 +249,8 @@ class RabbitMQConsumer:
         self._consuming = False
         self._processed = 0
         self._errors = 0
-        self._message_retries: Dict[str, int] = defaultdict(int)  # Track retry count per message
+        # Note: Retry counts are now persisted to database (message_retry_counts table)
+        # This survives restarts and prevents infinite retry loops
     
     async def connect(self, retry: bool = True):
         """
@@ -471,8 +478,11 @@ class RabbitMQConsumer:
             # This ensures that if handler fails, message can be redelivered
             await deduplicator.mark_processed(message_id)
             
-            # Remove from retry tracking on success
-            self._message_retries.pop(message_id, None)
+            # Clear retry count from database on success (non-blocking)
+            try:
+                await clear_retry_count(message_id)
+            except Exception:
+                pass  # Non-critical, don't fail the message
             
             # CRITICAL: Acknowledge message to RabbitMQ ONLY after DB write succeeded
             # This ensures message won't be lost - if we crash before ACK, RabbitMQ will redeliver
@@ -499,16 +509,10 @@ class RabbitMQConsumer:
         except Exception as e:
             self._errors += 1
             
-            # Track retry count for this message
-            # Use message_id for tracking, and also check RabbitMQ redelivered flag
-            base_retry_count = self._message_retries.get(message_id, 0)
-            if message.redelivered:
-                # Message was redelivered by RabbitMQ (already retried at least once)
-                retry_count = base_retry_count + 1
-            else:
-                # First attempt at processing this message
-                retry_count = base_retry_count + 1
-            self._message_retries[message_id] = retry_count
+            # Track retry count in DATABASE (survives restarts)
+            # This prevents infinite retry loops if consumer keeps restarting
+            error_message = str(e)[:500] if e else None
+            retry_count = await increment_retry_count(message_id, self.queue_name, error_message)
             
             if retry_count >= self.max_retries:
                 # Max retries exceeded - reject without requeue (sends to DLQ)
@@ -517,8 +521,11 @@ class RabbitMQConsumer:
                     f"Message ID: {message_id}, Error: {e}",
                     exc_info=True
                 )
-                # Remove from retry tracking (message going to DLQ)
-                self._message_retries.pop(message_id, None)
+                # Clear retry count (message going to DLQ, no longer needed)
+                try:
+                    await clear_retry_count(message_id)
+                except Exception:
+                    pass
                 # Reject without requeue - this sends message to DLQ
                 try:
                     await message.nack(requeue=False)

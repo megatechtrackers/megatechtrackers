@@ -3,9 +3,9 @@ FROM frappe/bench:latest
 # Set working directory
 WORKDIR /home/frappe
 
-# Install sudo for permission handling
+# Install sudo for permission handling (with retries for network issues)
 USER root
-RUN apt-get update && apt-get install -y sudo && \
+RUN apt-get update -o Acquire::Retries=10 && apt-get install -y -o Acquire::Retries=10 sudo && \
     echo "frappe ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     rm -rf /var/lib/apt/lists/*
 USER frappe

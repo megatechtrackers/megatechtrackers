@@ -66,8 +66,8 @@ class FeatureFlagsService {
         name VARCHAR(100) PRIMARY KEY,
         enabled BOOLEAN DEFAULT TRUE,
         description TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC'),
+        updated_at TIMESTAMPTZ DEFAULT (NOW() AT TIME ZONE 'UTC')
       );
       
       CREATE INDEX IF NOT EXISTS idx_alarms_feature_flags_enabled ON alarms_feature_flags(enabled);

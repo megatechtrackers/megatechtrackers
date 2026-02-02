@@ -4,7 +4,6 @@ import logger from '../utils/logger';
 import metrics from '../utils/metrics';
 import * as os from 'os';
 import { Alarm, Contact } from '../types';
-import moment from 'moment-timezone';
 
 interface DedupResult {
   id: number;
@@ -24,6 +23,11 @@ class Database {
   private readonly MAX_POOL_SIZE: number;
   private readonly TARGET_POOL_SIZE: number;
   private readonly POOL_MONITOR_INTERVAL: number;
+  private consecutiveFailures: number = 0;
+  private isRecreatingPool: boolean = false;
+  private lastPoolRecreation: number = 0;
+  private readonly POOL_RECREATION_COOLDOWN: number = 10000; // 10 seconds
+  private readonly FAILURE_THRESHOLD: number = 5;
 
   constructor() {
     this.MIN_POOL_SIZE = config.dbPool.min;
@@ -31,6 +35,13 @@ class Database {
     this.TARGET_POOL_SIZE = config.dbPool.target;
     this.POOL_MONITOR_INTERVAL = config.dbPool.monitorInterval;
     
+    this.pool = this.createPool();
+    
+    // Start pool monitoring
+    this.startPoolMonitoring();
+  }
+  
+  private createPool(): Pool {
     const poolConfig = {
       ...config.database,
       min: this.MIN_POOL_SIZE,
@@ -39,22 +50,76 @@ class Database {
       connectionTimeoutMillis: config.database.connectionTimeoutMillis,
     };
     
-    this.pool = new Pool(poolConfig);
-    this.pool.on('error', (err) => {
+    const pool = new Pool(poolConfig);
+    pool.on('error', (err) => {
       logger.error('Unexpected error on idle client', err);
       metrics.incrementCounter('db_pool_error');
+      this.handlePoolError();
     });
     
-    this.pool.on('connect', () => {
+    pool.on('connect', (client) => {
       metrics.incrementCounter('db_pool_connect');
+      this.consecutiveFailures = 0; // Reset on successful connect
+      client.query("SET timezone = 'UTC'").catch((err) => {
+        logger.warn('Failed to set session timezone to UTC', { error: err });
+      });
     });
     
-    this.pool.on('remove', () => {
+    pool.on('remove', () => {
       metrics.incrementCounter('db_pool_remove');
     });
     
-    // Start pool monitoring
-    this.startPoolMonitoring();
+    return pool;
+  }
+  
+  private handlePoolError(): void {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= this.FAILURE_THRESHOLD) {
+      this.recreatePool();
+    }
+  }
+  
+  private async recreatePool(): Promise<void> {
+    const now = Date.now();
+    
+    // Prevent concurrent recreation and enforce cooldown
+    if (this.isRecreatingPool || (now - this.lastPoolRecreation) < this.POOL_RECREATION_COOLDOWN) {
+      return;
+    }
+    
+    this.isRecreatingPool = true;
+    this.lastPoolRecreation = now;
+    
+    logger.warn('Recreating database pool due to consecutive failures...');
+    metrics.incrementCounter('db_pool_recreation');
+    
+    try {
+      // End old pool gracefully
+      const oldPool = this.pool;
+      try {
+        await oldPool.end();
+      } catch (err) {
+        logger.debug('Error ending old pool:', err);
+      }
+      
+      // Create new pool
+      this.pool = this.createPool();
+      
+      // Test new pool
+      const client = await this.pool.connect();
+      await client.query('SELECT 1');
+      client.release();
+      
+      this.consecutiveFailures = 0;
+      logger.info('Database pool recreated successfully');
+      metrics.setGauge('db_pool_healthy', 1);
+    } catch (err) {
+      logger.error('Failed to recreate database pool:', err);
+      metrics.setGauge('db_pool_healthy', 0);
+      // Will retry on next failure
+    } finally {
+      this.isRecreatingPool = false;
+    }
   }
   
   private startPoolMonitoring(): void {
@@ -74,12 +139,26 @@ class Database {
       metrics.setGauge('db_pool_idle', idleCount);
       metrics.setGauge('db_pool_waiting', waitingCount);
       
-      // Health check: test a connection
-      const client = await this.pool.connect();
-      await client.query('SELECT 1');
-      client.release();
+      // Health check: test a connection with timeout
+      const healthCheckPromise = (async () => {
+        const client = await this.pool.connect();
+        try {
+          await client.query('SELECT 1');
+          return true;
+        } finally {
+          client.release();
+        }
+      })();
+      
+      // Timeout for health check (5 seconds)
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error('Health check timeout')), 5000);
+      });
+      
+      await Promise.race([healthCheckPromise, timeoutPromise]);
       
       metrics.setGauge('db_pool_healthy', 1);
+      this.consecutiveFailures = 0; // Reset on successful health check
       
       // Auto-tune: adjust pool if needed (basic implementation)
       if (waitingCount > 0 && totalCount < this.MAX_POOL_SIZE) {
@@ -92,6 +171,7 @@ class Database {
     } catch (error) {
       logger.error('Error monitoring pool health:', error);
       metrics.setGauge('db_pool_healthy', 0);
+      this.handlePoolError(); // Trigger pool recovery if needed
     }
   }
 
@@ -415,7 +495,7 @@ class Database {
 
   async isInQuietHours(imei: number | string): Promise<boolean> {
     const query = `
-      SELECT quiet_hours_start, quiet_hours_end, timezone
+      SELECT quiet_hours_start, quiet_hours_end
       FROM alarms_contacts
       WHERE imei = $1 AND active = TRUE
         AND quiet_hours_start IS NOT NULL
@@ -430,12 +510,11 @@ class Database {
       }
       
       const contact = result.rows[0];
-      const tz = contact.timezone || 'UTC';
-      const now = moment().tz(tz);
-      const currentTime = now.format('HH:mm:ss');
-      
       const quietStart = contact.quiet_hours_start;
       const quietEnd = contact.quiet_hours_end;
+      
+      const now = new Date();
+      const currentTime = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
       
       if (quietStart <= quietEnd) {
         return currentTime >= quietStart && currentTime <= quietEnd;

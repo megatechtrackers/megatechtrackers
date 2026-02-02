@@ -132,7 +132,7 @@ fi
 # Load location reference data from CSV (if CSV file exists and table is empty)
 # This ensures data is loaded on fresh restarts
 LOC_CSV_FILE="/docker-entrypoint-initdb.d/location_reference.csv"
-if [ -f "$REF_CSV_FILE" ]; then
+if [ -f "$LOC_CSV_FILE" ]; then
     echo "Checking if location reference data needs to be loaded..."
     # Check if location reference table exists and has data
     REF_COUNT=$(psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -t -c "SELECT COUNT(*) FROM location_reference;" 2>/dev/null | tr -d ' ' || echo "0")

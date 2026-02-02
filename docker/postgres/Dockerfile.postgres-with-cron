@@ -3,10 +3,10 @@
 
 FROM timescale/timescaledb-ha:pg15
 
-# Install cron as root
+# Install cron as root (with retries for network issues)
 USER root
-RUN apt-get update && \
-    apt-get install -y cron && \
+RUN apt-get update -o Acquire::Retries=10 && \
+    apt-get install -y -o Acquire::Retries=10 cron && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /var/log/postgresql && \
     chown -R postgres:postgres /var/log/postgresql

@@ -52,10 +52,6 @@ interface TokenData {
  *                   type: integer
  *                 error:
  *                   type: string
- * GET /api/validate-embed-token
- * 
- * Validates embed token for Nginx auth_request
- * Called by Nginx before forwarding requests to Grafana
  */
 router.get('/validate-embed-token', async (req: Request, res: Response): Promise<void> => {
   // Get token from query params (should be available from original request)

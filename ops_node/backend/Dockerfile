@@ -6,7 +6,7 @@ WORKDIR /app
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --retries 20 --timeout 1200 -r requirements.txt
 
 # Copy application
 COPY app/ ./app/

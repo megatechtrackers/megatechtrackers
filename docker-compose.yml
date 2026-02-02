@@ -42,7 +42,8 @@ services:
     # No depends_on - primary starts independently
     # Other services will retry connections when they come online
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -c 'SELECT 1' -d tracking_db"]
+      # Require postgres + tracking_writer + parser_readonly so PgBouncer can extract hashes (ensure-users.sh has run)
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -d tracking_db -t -A -c \"SELECT COUNT(*) FROM pg_roles WHERE rolname IN ('postgres','tracking_writer','parser_readonly');\" 2>/dev/null | grep -q '^3$'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -113,11 +114,12 @@ services:
       postgres-primary:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U postgres || exit 1"]
+      # pg_isready not available; use psql to verify PgBouncer can proxy to PostgreSQL
+      test: ["CMD-SHELL", "PGPASSWORD=postgres psql -h localhost -p 6432 -U postgres -d tracking_db -c 'SELECT 1' -t -q || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
 
@@ -470,6 +472,57 @@ services:
     restart: unless-stopped
     command: python parser_nodes/teltonika/run.py
 
+  # Camera Parser Service (MDVR/CMS)
+  # Polls CMS servers for camera device data and publishes to RabbitMQ
+  camera-parser:
+    build:
+      context: .
+      dockerfile: Dockerfile.camera-parser
+    image: megatechtrackers-camera-parser:latest
+    container_name: camera-parser
+    environment:
+      NODE_ID: camera-parser
+      VENDOR: camera
+      # CRITICAL: Set to RABBITMQ for production (publishes to RabbitMQ)
+      # LOGS mode writes to CSV files only (for testing)
+      DATA_TRANSFER_MODE: RABBITMQ
+      DATABASE_URL: postgresql://postgres:postgres@postgres-primary:5432/tracking_db
+      RABBITMQ_HOST: rabbitmq-lb
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: tracking_user
+      RABBITMQ_PASS: tracking_password
+      RABBITMQ_VHOST: tracking_gateway
+      # CMS Server Configuration
+      CMS_HOST: 203.101.163.180
+      CMS_WEB_PORT: 8080
+      CMS_STREAM_PORT: 6604
+      CMS_STORAGE_PORT: 6611
+      CMS_DOWNLOAD_PORT: 6609
+      CMS_USERNAME: admin
+      CMS_PASSWORD: Megamis.54321
+      # Monitoring configuration
+      LOAD_MONITORING_ENABLED: "true"
+      LOAD_MONITORING_INTERVAL: "30"
+      LOAD_MONITORING_ENDPOINT: http://monitoring-service:8080/api/parser-nodes/metrics
+      # Health check port
+      HEALTH_CHECK_PORT: "8080"
+      PYTHONUNBUFFERED: 1
+      TZ: Asia/Karachi
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tracking-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health/live')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # No depends_on - service starts independently and retries connections
+    # Application code handles retries with exponential backoff
+    restart: unless-stopped
+
   # Consumer Service - database writer
   consumer-service-database:
     build:
@@ -552,6 +605,8 @@ services:
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@megatechtrackers.com}
+      # Timezone for dates in alarm email templates (e.g. Asia/Karachi). Empty = UTC
+      EMAIL_DISPLAY_TIMEZONE: ${EMAIL_DISPLAY_TIMEZONE:-}
       # Operations Service / SMS Gateway
       SMS_API_URL: ${SMS_API_URL:-https://api.sms-provider.com/send}
       SMS_API_KEY: ${SMS_API_KEY:-your-sms-api-key}
@@ -1025,7 +1080,7 @@ services:
     image: megatechtrackers-alarm-service-test:latest
     container_name: alarm-service-test
     ports:
-      - "13100:3100"  # Different port to avoid conflict with production (3100) and Windows reserved ports
+      - "13100:3200"  # Host 13100 -> container 3200 (same as production for Alertmanager webhook)
     environment:
       TZ: Asia/Karachi
       # External Service URLs for Dashboard Links
@@ -1054,6 +1109,8 @@ services:
       EMAIL_USER: test@megatechtrackers.com
       EMAIL_PASSWORD: testpassword
       EMAIL_FROM: alarms@megatechtrackers.com
+      # Timezone for dates in alarm email templates. Empty = UTC
+      EMAIL_DISPLAY_TIMEZONE: ${EMAIL_DISPLAY_TIMEZONE:-}
       # Operations Service - Point to Mock SMS Server
       SMS_API_URL: http://mock-sms-server:8086/sms/send
       SMS_API_KEY: test-api-key-12345
@@ -1077,8 +1134,8 @@ services:
       # Default contacts (fallback)
       DEFAULT_ALARM_EMAIL: ${DEFAULT_ALARM_EMAIL:-admin@example.com}
       DEFAULT_ALARM_PHONE: "${DEFAULT_ALARM_PHONE:-+1234567890}"
-      # Health Check
-      HEALTH_PORT: 3100
+      # Health Check (use 3200 so Alertmanager can use same URL alarm-service:3200 for test and production)
+      HEALTH_PORT: 3200
       # Auto-reprocessing on startup (automatically reprocesses pending alarms)
       AUTO_REPROCESS_ON_STARTUP: "true"
       STARTUP_REPROCESS_LIMIT: 50
@@ -1134,8 +1191,6 @@ services:
       NODE_ENV: development
     volumes:
       - ./logs:/app/logs
-    networks:
-      - tracking-network
     profiles:
       - testing
     depends_on:
@@ -1150,12 +1205,16 @@ services:
       mock-sms-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3200/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    networks:
+      tracking-network:
+        aliases:
+          - alarm-service  # Alertmanager uses alarm-service:3200 for both test and production
 
   # Mock Teltonika Tracker - Simulates GPS trackers for system testing
   # Use: docker-compose --profile testing up -d mock-tracker
@@ -1270,6 +1329,7 @@ services:
     restart: unless-stopped
 
   # Nginx reverse proxy for Frappe (fixes Content-Length mismatch issues)
+  # Host 8000 = Frappe only. Do not use 8000 for docs/mkdocs.
   frappe-nginx:
     image: nginx:alpine
     container_name: frappe-proxy
@@ -1403,7 +1463,7 @@ services:
       - tracking-network
     restart: unless-stopped
 
-  # MkDocs - Internal documentation server
+  # MkDocs - Internal documentation server (host 8002 to avoid conflict with Frappe on 8000)
   docs:
     build:
       context: .
@@ -1413,7 +1473,7 @@ services:
     profiles:
       - frappe
     ports:
-      - "8001:8000"
+      - "8002:8000"
     environment:
       TZ: Asia/Karachi
     volumes:

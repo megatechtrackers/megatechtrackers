@@ -28,8 +28,10 @@ $pythonDirs = @(
     "ops_node/migration",
     "monitoring_node",
     "parser_nodes/teltonika",
+    "parser_nodes/camera",
     "sms_gateway_node",
     "frappe_apps/megatechtrackers",
+    "fleet-monitor",
     "tools",
     "tools/mock_sms_server",
     "tools/mock_tracker",
@@ -89,12 +91,16 @@ Write-Host "  Python Summary: $pySuccess dirs passed ($totalPyFiles files), $pyF
 Write-Host "`n[2/2] TYPESCRIPT/NODE BUILDS" -ForegroundColor Yellow
 Write-Host ("-" * 50)
 
+# Resilient npm (retry/timeout for flaky networks)
+npm config set fetch-retries 5 2>$null; npm config set fetch-retry-mintimeout 20000 2>$null; npm config set fetch-timeout 300000 2>$null
+
+# LegacyPeerDeps = $true only for projects that need it (keeps others' package-lock in sync for npm ci)
 $nodeProjects = @(
-    @{ Path = "ops_node/frontend"; Name = "Operations Service Frontend (Next.js)"; Cmd = "npm run build" },
-    @{ Path = "alarm_node"; Name = "Alarm Service (TypeScript)"; Cmd = "npm run build" },
-    @{ Path = "access_control_node"; Name = "Access Gateway (TypeScript)"; Cmd = "npm run build" },
-    @{ Path = "web_app_node"; Name = "Web App (Next.js)"; Cmd = "npm run build" },
-    @{ Path = "mobile_app_node"; Name = "Mobile App (Expo)"; Cmd = "npx expo export --platform web" }
+    @{ Path = "ops_node/frontend"; Name = "Operations Service Frontend (Next.js)"; Cmd = "npm run build"; LegacyPeerDeps = $false },
+    @{ Path = "alarm_node"; Name = "Alarm Service (TypeScript)"; Cmd = "npm run build"; LegacyPeerDeps = $false },
+    @{ Path = "access_control_node"; Name = "Access Gateway (TypeScript)"; Cmd = "npm run build"; LegacyPeerDeps = $false },
+    @{ Path = "web_app_node"; Name = "Web App (Next.js)"; Cmd = "npm run build"; LegacyPeerDeps = $false },
+    @{ Path = "mobile_app_node"; Name = "Mobile App (Expo)"; Cmd = "npx expo export --platform web"; LegacyPeerDeps = $true }
 )
 
 $nodeSuccess = 0
@@ -106,19 +112,26 @@ foreach ($project in $nodeProjects) {
     $packageJson = Join-Path $fullPath "package.json"
     
     if (Test-Path $packageJson) {
-        Write-Host "  Building: $($project.Name) ... " -NoNewline
-        
         Push-Location $fullPath
         try {
-            # Check if node_modules exists, if not skip
             $nodeModules = Join-Path $fullPath "node_modules"
             if (-not (Test-Path $nodeModules)) {
-                Write-Host "SKIP (run npm install first)" -ForegroundColor DarkYellow
-                $nodeSkipped++
-                Pop-Location
-                continue
+                $useLegacy = $project.LegacyPeerDeps -eq $true
+                $installArgs = if ($useLegacy) { "npm install --legacy-peer-deps" } else { "npm install" }
+                Write-Host "  Installing: $($project.Name) ($installArgs) ... " -NoNewline
+                $installOutput = if ($useLegacy) { npm install --legacy-peer-deps 2>&1 | Out-String } else { npm install 2>&1 | Out-String }
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "FAILED" -ForegroundColor Red
+                    $nodeFailed++
+                    $errorLine = ($installOutput -split "`n" | Where-Object { $_ -match "error|Error|ERROR" } | Select-Object -First 1)
+                    $errors += "Node [$($project.Path)]: npm install failed - $(if ($errorLine) { $errorLine.Trim() } else { 'check output' })"
+                    Pop-Location
+                    continue
+                }
+                Write-Host "OK" -ForegroundColor Green
             }
             
+            Write-Host "  Building: $($project.Name) ... " -NoNewline
             # Capture output and errors
             $output = Invoke-Expression "$($project.Cmd) 2>&1" | Out-String
             if ($LASTEXITCODE -eq 0) {

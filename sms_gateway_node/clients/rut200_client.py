@@ -10,7 +10,7 @@ import ssl
 import hashlib
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -294,12 +294,13 @@ class RUT200Client:
                     messages = []
                     for msg in data.get('data', []):
                         try:
-                            # Parse date - Teltonika format may vary
+                            # Parse date - Teltonika format may vary. Store as UTC (convention: backend UTC 0).
                             date_str = msg.get('date', '')
                             try:
-                                received_at = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                                dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                                received_at = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
                             except (ValueError, AttributeError):
-                                received_at = datetime.now()
+                                received_at = datetime.now(timezone.utc)
                             
                             messages.append(InboxMessage(
                                 message_id=str(msg.get('id', '')),

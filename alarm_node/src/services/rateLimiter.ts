@@ -24,32 +24,90 @@ interface RateLimitResult {
 class RateLimiter {
   private redis!: Redis;
   private enabled: boolean;
+  private configuredUrl: string | undefined;
+  private _reconnectAttempts: number = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS: number = 10;
+  private reconnectTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.enabled = !!process.env.REDIS_URL;
+    this.configuredUrl = process.env.REDIS_URL;
+    this.enabled = !!this.configuredUrl;
     
     if (this.enabled) {
-      this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-        retryStrategy: (times) => {
-          if (times > 3) {
-            logger.error('Redis connection failed, disabling rate limiter');
-            this.enabled = false;
-            return null;
-          }
-          return Math.min(times * 100, 3000);
-        }
-      });
-
-      this.redis.on('error', (error) => {
-        logger.error('Redis error:', error);
-      });
-
-      this.redis.on('connect', () => {
-        logger.info('Redis connected for rate limiting');
-      });
+      this.createRedisConnection();
     } else {
       logger.warn('Rate limiter disabled - REDIS_URL not configured');
     }
+  }
+  
+  private createRedisConnection(): void {
+    this.redis = new Redis(this.configuredUrl || 'redis://localhost:6379', {
+      retryStrategy: (times) => {
+        this._reconnectAttempts = times;
+        
+        if (times > this.MAX_RECONNECT_ATTEMPTS) {
+          logger.error(`Redis connection failed after ${this._reconnectAttempts} attempts, will retry in 60s`);
+          // Schedule a reconnection attempt after 60 seconds
+          this.scheduleReconnect();
+          return null; // Stop ioredis internal retries
+        }
+        
+        const delay = Math.min(times * 500, 10000); // Max 10 seconds
+        logger.warn(`Redis connection attempt ${times}, retrying in ${delay}ms...`);
+        return delay;
+      },
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: true,
+      lazyConnect: false,
+    });
+
+    this.redis.on('error', (error) => {
+      logger.error('Redis error:', error.message);
+    });
+
+    this.redis.on('connect', () => {
+        this._reconnectAttempts = 0;
+        this.enabled = true;
+      logger.info('Redis connected for rate limiting');
+    });
+    
+    this.redis.on('close', () => {
+      logger.warn('Redis connection closed');
+    });
+    
+    this.redis.on('reconnecting', () => {
+      logger.debug('Redis reconnecting...');
+    });
+  }
+  
+  private scheduleReconnect(): void {
+    if (this.reconnectTimeout) return;
+    
+    this.reconnectTimeout = setTimeout(async () => {
+      this.reconnectTimeout = null;
+      
+      if (!this.configuredUrl) return;
+      
+      logger.info('Attempting to reconnect to Redis...');
+      
+      try {
+        // Close old connection
+        if (this.redis) {
+          try {
+            await this.redis.quit();
+          } catch (e) {
+            // Ignore close errors
+          }
+        }
+        
+        // Create new connection
+        this._reconnectAttempts = 0;
+        this.createRedisConnection();
+      } catch (error) {
+        logger.error('Failed to reconnect to Redis:', error);
+        this.scheduleReconnect(); // Retry again
+      }
+    }, 60000); // Retry after 60 seconds
   }
 
   /**

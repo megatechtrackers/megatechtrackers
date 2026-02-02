@@ -16,7 +16,7 @@ This document lists every component that exposes Prometheus metrics, the metric 
 | node-exporter | node-exporter:9100 | default | node-exporter (host metrics) |
 | **monitoring-service** | monitoring-service:8080 | /metrics/prometheus | monitoring_node |
 | **alarm-service** | alarm-service:3200 | /metrics | alarm_node |
-| **alarm-service-test** | alarm-service-test:3100 | /metrics | alarm_node (test profile) |
+| **alarm-service-test** | alarm-service-test:3200 | /metrics | alarm_node (test profile) |
 | **ops-service-backend** | ops-service-backend:8000 | /metrics | ops_node/backend |
 | **sms-gateway-service** | sms-gateway-service:8080 | /metrics | sms_gateway_node |
 | **access-gateway** | access-gateway:3001 | /metrics | access_control_node |
@@ -47,7 +47,7 @@ This document lists every component that exposes Prometheus metrics, the metric 
 
 ## 2. Alarm Service (alarm_node)
 
-**Endpoint:** `GET /metrics` (port 3200 prod, 3100 test)  
+**Endpoint:** `GET /metrics` (port 3200 for both prod and test)  
 **Scrape job:** `alarm-service`, `alarm-service-test`
 
 ### Counters
@@ -399,7 +399,37 @@ These are standard exporter metric names; do not rename.
 
 ---
 
-## 13. Optional improvements
+## 13. Long-term resilience: metrics and counts
+
+As cumulative counts (e.g. alarms processed, messages sent) grow, the system behaves as follows.
+
+### In-process Prometheus counters (alarm_node, consumer_node, ops_node, sms_gateway, etc.)
+
+| Concern | Impact | Resilient? |
+|--------|--------|------------|
+| **Counter value size** | Node: `prom-client` uses JavaScript `Number` (64-bit float; integers exact up to 2^53 ≈ 9e15). Python: `prometheus_client` uses 64-bit. | **Yes** – Counts would need to reach billions/trillions before any practical limit; alarms/messages per second are far below that. |
+| **Process restart** | Counters reset to 0. | **Yes** – Prometheus treats counters as cumulative; it stores scraped values and uses `rate()` / `increase()` from deltas. Restarts are normal. |
+| **Prometheus storage** | Prometheus keeps each scrape (counter value per time). | **Yes** – Bounded by **retention**. Docker Compose sets `--storage.tsdb.retention.time=30d`; older data is dropped. Disk usage does not grow without bound. |
+
+So **in-process metrics and Prometheus** are resilient: counters can grow large, and storage is capped by retention.
+
+### Database tables that grow over time
+
+| Table / data | Retention / cleanup | Long-term impact |
+|--------------|---------------------|-------------------|
+| **trackdata, alarms, events** | TimescaleDB retention (12–24 months in schema). | **Resilient** – Old chunks dropped automatically. |
+| **command_history** | `cleanup_old_history(days_to_keep)` (default 90 days); ops_node runs it hourly. | **Resilient** – Table size bounded. |
+| **alarms_history** | **None** in current schema or app. | **Risk** – Append-only audit log; table and indexes grow forever. Queries like `ORDER BY sent_at DESC LIMIT N` stay OK, but full scans (e.g. count, analytics) and storage grow. |
+| **alarms_dlq** | **None** (failed items until reprocessed or manually cleaned). | **Lower risk** – Volume usually small; can add retention or manual purge if needed. |
+| **DB columns** (e.g. `alarms_sms_modems.sms_sent_count` BIGINT) | Not applicable (single value per row). | **Resilient** – BIGINT max ~9e18; no overflow in practice. |
+
+**Recommendation:** Add retention for **alarms_history** (e.g. keep 12–24 months, or configurable days). Options: (1) PostgreSQL function `cleanup_old_alarms_history(days_to_keep)` + cron or alarm_node periodic job, or (2) convert to TimescaleDB hypertable with retention policy. That keeps dashboard history queries fast and storage bounded.
+
+**Implemented:** `cleanup_old_alarms_history(days_to_keep INT DEFAULT 365)` is in `database/schema.sql`. Run it periodically (e.g. daily cron: `SELECT cleanup_old_alarms_history(365);` as a DB user with delete rights, or add a background task in alarm_node that calls it hourly/daily).
+
+---
+
+## 14. Optional improvements
 
 1. **Access Gateway:** ✅ Implemented. Prometheus scrape job `access-gateway` added; gateway metrics are scraped from `access-gateway:3001/metrics`. Optionally add a metric prefix (e.g. `access_gateway_*`) for clarity in the future.
 2. **Alarm Service prefix:** Alarm metrics have no prefix. If desired, consider a prefix like `alarm_service_` for new metrics only (existing names are widely used in dashboards/alerts).

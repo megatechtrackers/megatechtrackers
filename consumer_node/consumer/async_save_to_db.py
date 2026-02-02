@@ -6,7 +6,7 @@ import asyncio
 import logging
 import socket
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from consumer.orm_init import init_orm
 from consumer.models import TrackData, LastStatus, Alarm, Event
@@ -122,30 +122,35 @@ class AsyncSaveToDB:
             try:
                 imei_int = int(imei_str) if imei_str != 'UNKNOWN' else 0
                 from dateutil import parser
-                
+
+                def _ensure_utc(dt):
+                    if dt.tzinfo is None:
+                        return dt.replace(tzinfo=timezone.utc)
+                    return dt.astimezone(timezone.utc)
+
                 gps_time_str = record.get('gps_time', '')
                 if isinstance(gps_time_str, str):
                     try:
-                        gps_time = parser.parse(gps_time_str)
+                        gps_time = _ensure_utc(parser.parse(gps_time_str))
                     except (ValueError, TypeError, AttributeError) as e:
                         logger.debug(f"Could not parse gps_time '{gps_time_str}', using current time: {e}")
-                        gps_time = datetime.now()
+                        gps_time = datetime.now(timezone.utc)
                 elif isinstance(gps_time_str, datetime):
-                    gps_time = gps_time_str
+                    gps_time = _ensure_utc(gps_time_str)
                 else:
-                    gps_time = datetime.now()
-                
+                    gps_time = datetime.now(timezone.utc)
+
                 server_time_str = record.get('server_time', '')
                 if isinstance(server_time_str, str):
                     try:
-                        server_time = parser.parse(server_time_str)
+                        server_time = _ensure_utc(parser.parse(server_time_str))
                     except (ValueError, TypeError, AttributeError) as e:
                         logger.debug(f"Could not parse server_time '{server_time_str}', using current time: {e}")
-                        server_time = datetime.now()
+                        server_time = datetime.now(timezone.utc)
                 elif isinstance(server_time_str, datetime):
-                    server_time = server_time_str
+                    server_time = _ensure_utc(server_time_str)
                 else:
-                    server_time = datetime.now()
+                    server_time = datetime.now(timezone.utc)
                 
                 await LastStatus.upsert(
                     imei=imei_int,

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import json
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import aio_pika
 from aio_pika import ExchangeType, DeliveryMode
 import aio_pika.exceptions
@@ -311,7 +311,7 @@ class RabbitMQProducer:
                 message_body,
                 delivery_mode=DeliveryMode.PERSISTENT,
                 priority=priority,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             
             # Publish and wait for confirmation with timeout

@@ -280,7 +280,7 @@ SETUPEOF
     # This ensures the package is importable when frappe.init() runs during install-app
     echo "   Installing app as editable package..."
     source env/bin/activate
-    pip install -e ./apps/megatechtrackers --no-cache-dir 2>&1 | tail -5
+    pip install -e ./apps/megatechtrackers --no-cache-dir --retries 5 --timeout 300 2>&1 | tail -5
     echo "✅ App installed as editable package"
     
     # CRITICAL: Verify the package is importable BEFORE proceeding

@@ -153,6 +153,7 @@ class ConfigurationService {
         smtp_user: process.env.EMAIL_USER || '',
         smtp_password: process.env.EMAIL_PASSWORD || '',
         from_address: process.env.EMAIL_FROM || 'noreply@megatechtrackers.com',
+        display_timezone: process.env.EMAIL_DISPLAY_TIMEZONE || '',
       };
     }
     

@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from contextlib import asynccontextmanager
 import traceback
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.config import get_settings
 from app.database import init_db, async_session
@@ -35,22 +35,23 @@ async def cleanup_old_commands():
     """Background task to clean up stuck commands"""
     from sqlalchemy import select, delete
     from app.models import CommandOutbox, CommandSent, CommandHistory
+    from app.utils.datetime_utils import to_naive_utc
     
     while True:
         try:
             async with async_session() as db:
-                now = datetime.now()
+                now_naive = to_naive_utc(datetime.now(timezone.utc))
                 cleaned = 0
                 
-                # 1. Timeout old OUTBOX commands (modem unavailable)
-                outbox_cutoff = now - timedelta(minutes=OUTBOX_TIMEOUT_MINUTES)
+                # 1. Timeout old OUTBOX commands (modem unavailable); naive UTC for TIMESTAMP binding
+                outbox_cutoff = now_naive - timedelta(minutes=OUTBOX_TIMEOUT_MINUTES)
                 result = await db.execute(
                     select(CommandOutbox).where(CommandOutbox.created_at < outbox_cutoff)
                 )
                 old_outbox = result.scalars().all()
                 
                 for cmd in old_outbox:
-                    # Add to history as failed
+                    # Add to history as failed (naive UTC for TIMESTAMP WITHOUT TIME ZONE)
                     history = CommandHistory(
                         imei=cmd.imei,
                         sim_no=cmd.sim_no,
@@ -61,7 +62,7 @@ async def cleanup_old_commands():
                         send_method=cmd.send_method,
                         user_id=cmd.user_id,
                         created_at=cmd.created_at,
-                        sent_at=now
+                        sent_at=now_naive
                     )
                     db.add(history)
                     await db.delete(cmd)
@@ -70,7 +71,7 @@ async def cleanup_old_commands():
                     print(f"[Cleanup] Outbox timeout ({cmd.send_method}): {cmd.imei} -> {cmd.sim_no} marked as 'failed'")
                 
                 # 2. Timeout old SENT commands (no reply)
-                sent_cutoff = now - timedelta(minutes=REPLY_TIMEOUT_MINUTES)
+                sent_cutoff = now_naive - timedelta(minutes=REPLY_TIMEOUT_MINUTES)
                 result = await db.execute(
                     select(CommandSent).where(
                         CommandSent.status == "sent",
@@ -124,27 +125,31 @@ async def cleanup_old_commands():
 
 
 async def cleanup_old_history():
-    """Background task to clean old history records (runs every hour)"""
+    """Background task to clean old history and command_inbox records (runs every hour). Self-healing, no manual intervention."""
     from sqlalchemy import text
     
     while True:
         try:
             async with async_session() as db:
-                # Use the PostgreSQL function to clean old history
+                # Command history (outgoing/incoming archive)
                 result = await db.execute(
                     text(f"SELECT cleanup_old_history({HISTORY_RETENTION_DAYS})")
                 )
                 deleted_count = result.scalar()
                 await db.commit()
-                
                 if deleted_count and deleted_count > 0:
                     record_cleanup_history_deleted(deleted_count)
-                    print(f"[History Cleanup] Deleted {deleted_count} records older than {HISTORY_RETENTION_DAYS} days")
-                    
+                    print(f"[History Cleanup] Deleted {deleted_count} command_history records older than {HISTORY_RETENTION_DAYS} days")
+                # Command inbox (incoming SMS) - keep table bounded
+                result_inbox = await db.execute(
+                    text(f"SELECT cleanup_old_command_inbox({HISTORY_RETENTION_DAYS})")
+                )
+                deleted_inbox = result_inbox.scalar()
+                await db.commit()
+                if deleted_inbox and deleted_inbox > 0:
+                    print(f"[Inbox Cleanup] Deleted {deleted_inbox} command_inbox records older than {HISTORY_RETENTION_DAYS} days")
         except Exception as e:
             print(f"[History Cleanup] Error: {e}")
-        
-        # Wait before next cleanup (hourly)
         await asyncio.sleep(HISTORY_CLEANUP_INTERVAL)
 
 

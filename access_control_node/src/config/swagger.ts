@@ -97,7 +97,7 @@ const swaggerDefinition: SwaggerDefinition = {
           expiresAt: {
             type: 'string',
             format: 'date-time',
-            example: '2025-12-23T12:00:00.000Z'
+            example: '2026-02-01T12:00:00.000Z'
           }
         }
       },
@@ -214,7 +214,7 @@ const swaggerDefinition: SwaggerDefinition = {
           timestamp: {
             type: 'string',
             format: 'date-time',
-            example: '2025-12-23T12:00:00.000Z'
+            example: '2026-02-01T12:00:00.000Z'
           },
           version: {
             type: 'string',

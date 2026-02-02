@@ -11,22 +11,25 @@ POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-tracking_db}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 
-# Wait for PostgreSQL to be ready before extracting hashes
+# Wait for PostgreSQL port to be open before attempting hash extraction
 echo "Waiting for PostgreSQL to be ready..."
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-    if (timeout 1 sh -c "echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT" 2>/dev/null) || \
-       (command -v nc >/dev/null 2>&1 && nc -z "$POSTGRES_HOST" "$POSTGRES_PORT" 2>/dev/null); then
+PORT_WAIT_ATTEMPTS=30
+port_attempt=1
+while [ $port_attempt -le $PORT_WAIT_ATTEMPTS ]; do
+    if (timeout 2 sh -c "echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT" 2>/dev/null) || \
+       (command -v nc >/dev/null 2>&1 && nc -z -w 2 "$POSTGRES_HOST" "$POSTGRES_PORT" 2>/dev/null); then
         echo "PostgreSQL port is open"
         break
     fi
-    if [ $i -eq 15 ]; then
-        echo "Warning: PostgreSQL port check timeout, will retry hash extraction"
+    if [ $port_attempt -eq $PORT_WAIT_ATTEMPTS ]; then
+        echo "Warning: PostgreSQL port check timeout after ${PORT_WAIT_ATTEMPTS} attempts, will retry hash extraction"
     fi
     sleep 2
+    port_attempt=$((port_attempt + 1))
 done
 
-# Wait a bit more for PostgreSQL to be fully ready
-sleep 3
+# Give PostgreSQL and ensure-users.sh time to create tracking_writer and parser_readonly
+sleep 5
 
 # Extract SCRAM-SHA-256 hashes from PostgreSQL
 # Try to install postgresql-client if not available (Alpine-based image)
@@ -40,15 +43,14 @@ if ! command -v psql >/dev/null 2>&1; then
     fi
 fi
 
-# Extract hashes using psql if available
+# Extract hashes using psql if available (need postgres + tracking_writer + parser_readonly from ensure-users.sh)
 if command -v psql >/dev/null 2>&1; then
     echo "Extracting SCRAM-SHA-256 hashes from PostgreSQL..."
-    MAX_RETRIES=10
+    MAX_RETRIES=30
     RETRY_COUNT=0
     
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        # Try to extract hashes using psql
-        # Note: We need to connect as postgres user to read pg_authid
+        # Try to extract hashes using psql (all three users must exist; ensure-users.sh creates tracking_writer and parser_readonly)
         PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c "SELECT '\"' || rolname || '\" \"' || rolpassword || '\"' FROM pg_authid WHERE rolname IN ('postgres', 'tracking_writer', 'parser_readonly') ORDER BY rolname;" 2>/dev/null > /tmp/userlist_extracted.txt
         
         if [ -s /tmp/userlist_extracted.txt ] && [ $(wc -l < /tmp/userlist_extracted.txt) -ge 3 ]; then
@@ -59,11 +61,11 @@ if command -v psql >/dev/null 2>&1; then
         else
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "Waiting for PostgreSQL to be ready for hash extraction... (attempt $RETRY_COUNT/$MAX_RETRIES)"
-                sleep 3
+                echo "Waiting for PostgreSQL to be ready for hash extraction (postgres + tracking_writer + parser_readonly)... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+                sleep 5
             else
                 echo "ERROR: Could not extract hashes from PostgreSQL after $MAX_RETRIES attempts."
-                echo "PgBouncer cannot start without userlist.txt"
+                echo "PgBouncer cannot start without userlist.txt (need postgres, tracking_writer, parser_readonly from ensure-users.sh)"
                 echo "Please ensure PostgreSQL is running and accessible, then restart PgBouncer"
                 exit 1
             fi

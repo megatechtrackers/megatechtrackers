@@ -1,10 +1,12 @@
 """
-IO Mapping Schemas - Pydantic models for API validation
+IO Mapping Schemas - Pydantic models for API validation. Datetime serialized as UTC with Z.
 """
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import time, datetime
 from enum import IntEnum
+
+from app.utils.datetime_utils import serialize_datetime_utc
 
 
 class IOType(IntEnum):
@@ -74,6 +76,7 @@ class DeviceIOMappingResponse(DeviceIOMappingBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class DeviceIOMappingBulkCreate(BaseModel):
@@ -135,6 +138,7 @@ class UnitIOMappingResponse(UnitIOMappingBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class UnitIOMappingBulkCreate(BaseModel):

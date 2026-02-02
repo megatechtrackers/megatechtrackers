@@ -80,6 +80,8 @@ export interface Config {
       pass: string;
     };
     from: string;
+    /** Timezone for formatting dates in email templates (e.g. Asia/Karachi). Empty = UTC. */
+    displayTimezone?: string;
   };
   sms: {
     apiUrl: string;

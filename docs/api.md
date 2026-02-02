@@ -1,6 +1,6 @@
 # API Documentation
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2026-02-01
 
 **📚 Complete Documentation**: See [api-complete.md](./api-complete.md) for full API reference
 
@@ -74,7 +74,7 @@ Base: `http://localhost:3001/api/`
 {
   "success": true,
   "embedUrl": "http://localhost:3000/d/abc123?token=TOKEN&kiosk=1&orgId=1&var-vehicle=V001&var-vehicle-locked=true",
-  "expiresAt": "2025-12-23T12:00:00.000Z"
+  "expiresAt": "2026-02-01T12:00:00.000Z"
 }
 ```
 

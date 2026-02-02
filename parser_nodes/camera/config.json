@@ -1,0 +1,121 @@
+{
+    "data_transfer_mode": {
+        "mode": "LOGS",
+        "description": "Data Transfer Mode: LOGS (CSV files for testing) or RABBITMQ (publish to RabbitMQ for production)"
+    },
+    "parser_node": {
+        "node_id": "camera-parser-dev",
+        "vendor": "camera",
+        "expected_devices": 600,
+        "description": "Camera parser service configuration (local development)"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "megatechtrackers",
+        "username": "postgres",
+        "password": "postgres",
+        "description": "Database configuration (for loading cms_servers, camera_alarm_config)"
+    },
+    "rabbitmq": {
+        "host": "localhost",
+        "port": 5672,
+        "virtual_host": "/",
+        "username": "guest",
+        "password": "guest",
+        "exchange": "tracking_data_exchange",
+        "publisher_confirms": true,
+        "description": "RabbitMQ configuration (only used in RABBITMQ mode)"
+    },
+    "cms_servers": [
+        {
+            "name": "main-cms",
+            "host": "203.101.163.180",
+            "web_port": 8080,
+            "stream_port": 6604,
+            "storage_port": 6611,
+            "download_port": 6609,
+            "username": "admin",
+            "password": "Megamis.54321",
+            "enabled": true
+        },
+        {
+            "name": "backup-cms",
+            "host": "124.29.204.5",
+            "web_port": 8080,
+            "stream_port": 6604,
+            "storage_port": 6611,
+            "download_port": 6609,
+            "username": "admin",
+            "password": "Mis@123@@!!",
+            "enabled": true
+        },
+        {
+            "name": "backup-cms2",
+            "host": "124.29.204.6",
+            "web_port": 8080,
+            "stream_port": 6604,
+            "storage_port": 6611,
+            "download_port": 6609,
+            "username": "admin",
+            "password": "Mis@123@@!!",
+            "enabled": true
+        }
+    ],
+    "_cms_servers_description": "Array of CMS servers for LOGS mode testing. In RABBITMQ mode, uses cms_servers table in database.",
+    "polling": {
+        "device_status_interval_seconds": 30,
+        "safety_alarms_interval_seconds": 60,
+        "realtime_alarms_interval_seconds": 10,
+        "alarm_lookback_minutes": 120,
+        "alarm_backfill_hours": 168,
+        "gps_backfill_hours": 168,
+        "max_concurrent_requests": 20,
+        "request_timeout_seconds": 30,
+        "parallel_chunk_size": 20,
+        "enable_trackdata_polling": true,
+        "filter_alarm_types": true,
+        "description": "Polling intervals and concurrency. filter_alarm_types: true=only selected types, false=ALL types for testing."
+    },
+    "circuit_breaker": {
+        "failure_threshold": 5,
+        "reset_timeout_seconds": 60,
+        "description": "Circuit breaker settings to protect against unhealthy CMS servers"
+    },
+    "deduplication": {
+        "max_cache_size": 10000,
+        "ttl_hours": 1,
+        "description": "In-memory deduplication cache for alarm records"
+    },
+    "alarm_config": {
+        "cache_ttl_minutes": 30,
+        "cache_max_size": 10000,
+        "auto_provision_enabled": true,
+        "description": "Camera alarm config loader cache settings. Auto-provision creates config from template (imei=0) for new devices."
+    },
+    "health_check": {
+        "enabled": true,
+        "port": 8080,
+        "description": "HTTP health check server (/health, /health/live, /health/ready, /metrics)"
+    },
+    "load_monitoring": {
+        "enabled": true,
+        "report_interval_seconds": 30,
+        "api_endpoint": null,
+        "log_metrics": true,
+        "description": "Load monitoring configuration"
+    },
+    "logging": {
+        "level": "DEBUG",
+        "log_file": "logs/camera_parser.log",
+        "json_format": false,
+        "max_bytes": 10485760,
+        "backup_count": 5,
+        "description": "Logging Configuration - logs go to logs/ folder"
+    },
+    "shutdown": {
+        "task_timeout_seconds": 5.0,
+        "drain_timeout_seconds": 2.0,
+        "description": "Graceful shutdown timeouts"
+    }
+}

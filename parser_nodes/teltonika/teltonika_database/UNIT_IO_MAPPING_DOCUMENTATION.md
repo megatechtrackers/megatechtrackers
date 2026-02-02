@@ -199,9 +199,9 @@ When processing an AVL record from a device packet:
 
 **Flow**:
 1. After status detection, if `event_status != 'Normal'` and `status_mapping.is_alarm == 1`:
-2. **Time Window Check**: Checks if GPS time (UTC+5) is within the `start_time`/`end_time` window:
-   - Uses `_is_time_in_window(gps_time_utc5, status_mapping.start_time, status_mapping.end_time)`
-   - GPS time is already converted to UTC+5: `gps_time_utc5 = gps_time + timedelta(hours=5)`
+2. **Time Window Check**: Checks if GPS time (UTC) is within the `start_time`/`end_time` window:
+   - Uses `_is_time_in_window(gps_time, status_mapping.start_time, status_mapping.end_time)`
+   - GPS time from device is UTC; `start_time`/`end_time` are stored in UTC (user configures in Ops UI with working timezone, converted to UTC for storage)
    - Compares only the time component (hour, minute, second) with the window
    - Supports windows that span midnight (e.g., `22:00:00` to `6:00:00`)
    - If GPS time is **not** within the window, alarm is **not** created
@@ -214,8 +214,8 @@ When processing an AVL record from a device packet:
 4. Alarm record is saved to `alarms` table (Database mode) or `alarms.csv` (Logs mode)
 
 **Time Window Examples**:
-- `start_time=3:00:00`, `end_time=6:00:00`: Alarm only triggers between 3 AM and 6 AM UTC+5
-- `start_time=22:00:00`, `end_time=6:00:00`: Alarm triggers between 10 PM and 6 AM UTC+5 (spans midnight)
+- `start_time=3:00:00`, `end_time=6:00:00`: Alarm only triggers between 3 AM and 6 AM UTC
+- `start_time=22:00:00`, `end_time=6:00:00`: Alarm triggers between 10 PM and 6 AM UTC (spans midnight)
 - `start_time=0:00:00`, `end_time=23:59:59`: Alarm triggers at any time (24-hour window)
 
 ### 4. Final Output Phase
@@ -362,9 +362,9 @@ Calculates the number of decimal places based on `io_multiplier`.
 Checks if GPS datetime time component is within the start_time and end_time window.
 
 **Parameters**:
-- `gps_datetime`: GPS datetime (already in UTC+5)
-- `start_time_str`: Start time in HH:MM:SS format (e.g., "3:00:00")
-- `end_time_str`: End time in HH:MM:SS format (e.g., "6:00:00")
+- `gps_datetime`: GPS datetime (UTC from device)
+- `start_time_str`: Start time in HH:MM:SS format (e.g., "3:00:00") — stored in UTC
+- `end_time_str`: End time in HH:MM:SS format (e.g., "6:00:00") — stored in UTC
 
 **Returns**: `True` if GPS time is within the window, `False` otherwise
 
@@ -375,9 +375,9 @@ Checks if GPS datetime time component is within the start_time and end_time wind
 - Returns `False` on parsing errors (no alarms created if time check fails)
 
 **Example**:
-- GPS time: `2026-01-05 04:30:00` (UTC+5)
+- GPS time: `2026-01-05 04:30:00` (UTC)
 - Window: `start_time=3:00:00`, `end_time=6:00:00`
-- Result: `True` (4:30 AM is between 3 AM and 6 AM)
+- Result: `True` (4:30 AM UTC is between 3 AM and 6 AM UTC)
 
 ## Examples
 
@@ -435,7 +435,7 @@ Checks if GPS datetime time component is within the start_time and end_time wind
 - Mapping found: `io_id=3, value=1, io_name="Panic", value_name="On", is_alarm=1, is_sms=1, is_email=1, is_call=1, start_time=0:00:00, end_time=23:59:59`
 - Result: 
   - `status = "Panic On"`
-  - Time window check: GPS time (UTC+5) is within `0:00:00` to `23:59:59` → `True`
+  - Time window check: GPS time (UTC) is within `0:00:00` to `23:59:59` → `True`
   - Alarm record created with `is_sms=1, is_email=1, is_call=1`
   - Saved to `trackdata` table/CSV (always)
   - Saved to `events` table/CSV (because `status != 'Normal'`)
@@ -449,7 +449,7 @@ Checks if GPS datetime time component is within the start_time and end_time wind
 ```
 
 **Processing**:
-- Device sends: `event_id=3, raw_value=1` at GPS time `2026-01-05 04:30:00` (UTC+5)
+- Device sends: `event_id=3, raw_value=1` at GPS time `2026-01-05 04:30:00` (UTC)
 - Mapping found: `io_id=3, value=1, io_name="Panic", value_name="On", is_alarm=1, start_time=3:00:00, end_time=6:00:00`
 - Result: 
   - `status = "Panic On"`
@@ -457,7 +457,7 @@ Checks if GPS datetime time component is within the start_time and end_time wind
   - Alarm record created
 
 **Alternative Scenario**:
-- Device sends: `event_id=3, raw_value=1` at GPS time `2026-01-05 10:30:00` (UTC+5)
+- Device sends: `event_id=3, raw_value=1` at GPS time `2026-01-05 10:30:00` (UTC)
 - Result: 
   - `status = "Panic On"`
   - Time window check: GPS time `10:30:00` is **not** within `3:00:00` to `6:00:00` → `False`
@@ -500,8 +500,8 @@ Checks if GPS datetime time component is within the start_time and end_time wind
 8. **Error Codes**: Temperature sensors have special error code handling before multiplier is applied
 9. **Empty Values**: Columns are set to empty string `""` if calculated value is 0 or error detected
 10. **Decimal Precision**: Automatically calculated from `io_multiplier` (e.g., `0.1` → 1 decimal, `0.01` → 2 decimals)
-11. **Alarm Detection**: Alarms are created when `status != 'Normal'` AND `is_alarm=1` in the mapping AND GPS time (UTC+5) is within `start_time`/`end_time` window
-12. **Time Window Check**: GPS time is converted to UTC+5 before checking against `start_time`/`end_time` window. Only the time component (hour, minute, second) is compared. Supports windows that span midnight (e.g., `22:00:00` to `6:00:00`)
+11. **Alarm Detection**: Alarms are created when `status != 'Normal'` AND `is_alarm=1` in the mapping AND GPS time (UTC) is within `start_time`/`end_time` window
+12. **Time Window Check**: GPS time (UTC from device) is compared with `start_time`/`end_time` (stored in UTC). Only the time component (hour, minute, second) is compared. Supports windows that span midnight (e.g., `22:00:00` to `6:00:00`)
 13. **Event Records**: Events are created when `status != 'Normal'` (all non-normal statuses, no time window check)
 14. **Digital IO Multiplier**: Multiplier is **not** applied to digital IOs (`io_type=2`), only to analog IOs (`io_type=3`)
 

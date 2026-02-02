@@ -247,8 +247,6 @@ class AsyncPacketParser:
         # GPS data
         gps = getattr(record, "gps_element", None)
         gps_time = record.date_time if record.date_time else server_time
-        # Convert to UTC+5
-        gps_time_utc5 = gps_time + timedelta(hours=5) if gps_time else server_time
         
         # Convert raw integer coordinates to decimal degrees
         latitude = float(gps.y) / 10000000.0 if gps and gps.y else 0.0
@@ -273,7 +271,7 @@ class AsyncPacketParser:
         base_record = {
             'imei': imei,
             'server_time': server_time.isoformat(),
-            'gps_time': gps_time_utc5.isoformat(),
+            'gps_time': gps_time.isoformat() if gps_time else server_time.isoformat(),
             'latitude': latitude,
             'longitude': longitude,
             'altitude': altitude,
@@ -419,8 +417,8 @@ class AsyncPacketParser:
         base_record['is_alarm'] = 0
         if event_status != 'Normal' and status_mapping and status_mapping.is_alarm:
             # Check if GPS time is within the time window (StartTime/EndTime)
-            # gps_time_utc5 is already in UTC+5, so we use it directly
-            if self._is_time_in_window(gps_time_utc5, status_mapping.start_time, status_mapping.end_time):
+            # gps_time from device is UTC
+            if self._is_time_in_window(gps_time, status_mapping.start_time, status_mapping.end_time):
                 base_record['is_alarm'] = 1
                 base_record['is_sms'] = 1 if status_mapping.is_sms else 0
                 base_record['is_email'] = 1 if status_mapping.is_email else 0
@@ -579,7 +577,7 @@ class AsyncPacketParser:
         Check if GPS datetime time component is within the start_time and end_time window.
         
         Args:
-            gps_datetime: GPS datetime (already in UTC+5)
+            gps_datetime: GPS datetime (UTC from device)
             start_time_str: Start time in HH:MM:SS format (e.g., "3:00:00")
             end_time_str: End time in HH:MM:SS format (e.g., "6:00:00")
         
@@ -597,7 +595,7 @@ class AsyncPacketParser:
             start_hour, start_min, start_sec = parse_time(start_time_str)
             end_hour, end_min, end_sec = parse_time(end_time_str)
             
-            # Get GPS time components (already in UTC+5)
+            # Get GPS time components (UTC from device)
             gps_hour = gps_datetime.hour
             gps_min = gps_datetime.minute
             gps_sec = gps_datetime.second

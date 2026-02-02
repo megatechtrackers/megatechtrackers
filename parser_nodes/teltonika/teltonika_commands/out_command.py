@@ -6,7 +6,7 @@ Note: SMS commands are handled by separate SMS Gateway Service
 import threading
 import logging
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class OutCommand:
         self.data: str = ""
         self.param: str = ""
         self.data_type: str = "GPRS"  # GPRS or SMS
-        self.datetime: datetime = datetime.now()
+        self.datetime: datetime = datetime.now(timezone.utc)
         self.remark: str = ""
         self.send_by_sim_no: str = ""  # For SMS commands
         self.devicetype: str = "Teltonika"

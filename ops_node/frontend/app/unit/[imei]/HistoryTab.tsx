@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Clock, Send, ArrowDownLeft, Wifi, MessageSquare, User, Calendar, CheckCircle, XCircle, AlertCircle, Timer, Link2, ChevronDown, ChevronRight, Filter } from "lucide-react";
 import { CommandHistory } from "@/lib/api";
 import { cn, formatRelativeTime, formatDateTime } from "@/lib/utils";
+import { useWorkingTimezone } from "@/lib/TimezoneContext";
 
 interface HistoryTabProps {
   history: CommandHistory[];
@@ -84,6 +85,7 @@ function StatusBadge({ status }: { status: string }) {
 // Paired command card - shows sent command with its response grouped together
 function PairedCommandCard({ pair, defaultExpanded = false }: { pair: CommandPair; defaultExpanded?: boolean }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const { workingTimezone } = useWorkingTimezone();
   const { sent, response, isPaired } = pair;
   
   // Determine overall status
@@ -136,7 +138,7 @@ function PairedCommandCard({ pair, defaultExpanded = false }: { pair: CommandPai
               )}
             </div>
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-              <span>{sent.created_at ? formatRelativeTime(sent.created_at) : 'Unknown'}</span>
+              <span>{sent.created_at ? formatRelativeTime(sent.created_at, workingTimezone) : 'Unknown'}</span>
               {sent.user_id && (
                 <>
                   <span>•</span>
@@ -172,7 +174,7 @@ function PairedCommandCard({ pair, defaultExpanded = false }: { pair: CommandPai
                 Command Sent
               </div>
               <span className="text-[10px] text-slate-400">
-                {sent.created_at ? formatDateTime(sent.created_at) : 'Unknown'}
+                {sent.created_at ? formatDateTime(sent.created_at, workingTimezone) : 'Unknown'}
               </span>
             </div>
             <div className="bg-white rounded-lg border border-slate-200 p-3">
@@ -191,7 +193,7 @@ function PairedCommandCard({ pair, defaultExpanded = false }: { pair: CommandPai
                   Response Received
                 </div>
                 <span className="text-[10px] text-slate-400">
-                  {response.created_at ? formatDateTime(response.created_at) : 'Unknown'}
+                  {response.created_at ? formatDateTime(response.created_at, workingTimezone) : 'Unknown'}
                 </span>
                 {sent.created_at && response.created_at && (
                   <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -238,6 +240,7 @@ function PairedCommandCard({ pair, defaultExpanded = false }: { pair: CommandPai
 
 // Standalone incoming message card
 function IncomingMessageCard({ item }: { item: CommandHistory }) {
+  const { workingTimezone } = useWorkingTimezone();
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-3">
@@ -247,7 +250,7 @@ function IncomingMessageCard({ item }: { item: CommandHistory }) {
         </div>
         <MethodBadge method={item.send_method ?? undefined} />
         <span className="text-xs text-slate-400 ml-auto">
-          {item.created_at ? formatRelativeTime(item.created_at) : 'Unknown'}
+          {item.created_at ? formatRelativeTime(item.created_at, workingTimezone) : 'Unknown'}
         </span>
       </div>
       <div className="px-4 pb-4">
@@ -258,7 +261,7 @@ function IncomingMessageCard({ item }: { item: CommandHistory }) {
         </div>
         <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-400">
           {item.created_at && (
-            <span>{formatDateTime(item.created_at)}</span>
+            <span>{formatDateTime(item.created_at, workingTimezone)}</span>
           )}
         </div>
       </div>
@@ -281,6 +284,7 @@ type FilterMode = 'all' | 'success' | 'pending' | 'failed';
 export default function HistoryTab({ history }: HistoryTabProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const { workingTimezone } = useWorkingTimezone();
   
   // Group outgoing commands with their responses
   const { pairs, standaloneIncoming } = useMemo(() => {
@@ -377,43 +381,40 @@ export default function HistoryTab({ history }: HistoryTabProps) {
     }).length,
   }), [pairs]);
   
-  // Group by date
+  // Group by date (use working timezone for consistent display)
   const groupedByDate = useMemo(() => {
     const groups: Record<string, { pairs: CommandPair[]; standalone: CommandHistory[] }> = {};
-    
+    const dateOpts: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      ...(workingTimezone ? { timeZone: workingTimezone } : {}),
+    };
+
     filteredPairs.forEach(pair => {
-      const date = pair.sent.created_at 
-        ? new Date(pair.sent.created_at).toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })
+      const date = pair.sent.created_at
+        ? new Date(pair.sent.created_at).toLocaleDateString('en-US', dateOpts)
         : 'Unknown Date';
-      
+
       if (!groups[date]) groups[date] = { pairs: [], standalone: [] };
       groups[date].pairs.push(pair);
     });
-    
+
     // Only show standalone incoming if not filtering
     if (filterMode === 'all') {
       standaloneIncoming.forEach(item => {
-        const date = item.created_at 
-          ? new Date(item.created_at).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })
+        const date = item.created_at
+          ? new Date(item.created_at).toLocaleDateString('en-US', dateOpts)
           : 'Unknown Date';
-        
+
         if (!groups[date]) groups[date] = { pairs: [], standalone: [] };
         groups[date].standalone.push(item);
       });
     }
-    
+
     return groups;
-  }, [filteredPairs, standaloneIncoming, filterMode]);
+  }, [filteredPairs, standaloneIncoming, filterMode, workingTimezone]);
 
   return (
     <div className="max-h-[calc(100vh-260px)] overflow-y-auto pr-1">

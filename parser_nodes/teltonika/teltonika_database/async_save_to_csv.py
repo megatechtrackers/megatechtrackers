@@ -8,7 +8,7 @@ import logging
 import csv
 import os
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import aiofiles
 import io
 
@@ -191,7 +191,7 @@ class AsyncSaveToCSV:
         
         # Extract values with defaults - convert numeric fields to strings for CSV
         csv_row = {
-            'server_time': record.get('server_time', datetime.now().isoformat()),
+            'server_time': record.get('server_time', datetime.now(timezone.utc).isoformat() + 'Z'),
             'imei': record.get('imei', ''),
             'gps_time': record.get('gps_time', ''),
             'latitude': record.get('latitude', 0.0),
@@ -268,14 +268,14 @@ class AsyncSaveToCSV:
         Returns:
             Event CSV row dictionary
         """
-        from datetime import datetime
+        from datetime import datetime, timezone
         from dateutil import parser
         
         # Extract values with defaults
         csv_row = {
             'imei': record.get('imei', 'UNKNOWN'),
-            'server_time': record.get('server_time', datetime.now().isoformat()),
-            'gps_time': record.get('gps_time', datetime.now().isoformat()),
+            'server_time': record.get('server_time', datetime.now(timezone.utc).isoformat() + 'Z'),
+            'gps_time': record.get('gps_time', datetime.now(timezone.utc).isoformat() + 'Z'),
             'latitude': record.get('latitude', 0.0),
             'longitude': record.get('longitude', 0.0),
             'altitude': record.get('altitude', 0),
@@ -298,14 +298,14 @@ class AsyncSaveToCSV:
         Returns:
             Alarm CSV row dictionary
         """
-        from datetime import datetime
+        from datetime import datetime, timezone
         from dateutil import parser
         
         # Extract values with defaults
         csv_row = {
             'imei': record.get('imei', 'UNKNOWN'),
-            'server_time': record.get('server_time', datetime.now().isoformat()),
-            'gps_time': record.get('gps_time', datetime.now().isoformat()),
+            'server_time': record.get('server_time', datetime.now(timezone.utc).isoformat() + 'Z'),
+            'gps_time': record.get('gps_time', datetime.now(timezone.utc).isoformat() + 'Z'),
             'latitude': record.get('latitude', 0.0),
             'longitude': record.get('longitude', 0.0),
             'altitude': record.get('altitude', 0),

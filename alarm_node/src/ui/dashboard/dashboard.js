@@ -309,7 +309,7 @@ async function fetchCircuitBreakers() {
                     <div class="cb-details">
                         <div>Failures: ${metrics.error}</div>
                         <div>Successes: ${metrics.sent}</div>
-                        ${cb.lastFailureTime ? `<div>Last Failure: ${new Date(cb.lastFailureTime).toLocaleString()}</div>` : ''}
+                        ${cb.lastFailureTime ? `<div>Last Failure: ${formatDate(cb.lastFailureTime)}</div>` : ''}
                     </div>
                     <button class="primary" onclick="resetCircuitBreaker('${cb.name}')">Reset</button>
                 </div>
@@ -697,10 +697,23 @@ window.addEventListener('orientationchange', function() {
     setTimeout(handleResize, 200);
 });
 
+function initDashboardTimezone() {
+    const sel = document.getElementById('dashboard-timezone');
+    if (!sel) return;
+    sel.value = typeof getWorkingTimezone === 'function' ? getWorkingTimezone() : '';
+    sel.addEventListener('change', function() {
+        try { localStorage.setItem('alarm_working_timezone', sel.value || ''); } catch (_) {}
+        refresh().catch(() => {});
+        if (typeof loadAlarmHistory === 'function') loadAlarmHistory();
+        if (typeof fetchCircuitBreakers === 'function') fetchCircuitBreakers();
+    });
+}
+
 // Initial load - wrap in DOMContentLoaded to ensure DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initCharts();
+        initDashboardTimezone();
         refresh().catch(err => {
             console.error('Initial refresh failed:', err);
         });
@@ -709,6 +722,7 @@ if (document.readyState === 'loading') {
 } else {
     // DOM is already loaded
     initCharts();
+    initDashboardTimezone();
     refresh().catch(err => {
         console.error('Initial refresh failed:', err);
     });
@@ -755,14 +769,18 @@ async function loadAlarmHistory() {
     
     try {
         const res = await fetch(`/api/alarms/history?${params}`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ success: false, error: 'Invalid response' }));
         
         if (data.success) {
             renderAlarmHistory(data.history, data.total);
+        } else {
+            const msg = (data.error || res.statusText || 'Request failed').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            document.getElementById('history-table-body').innerHTML =
+                '<tr><td colspan="8" style="padding: 24px; text-align: center; color: #ef4444;">Failed to load history: ' + msg + '</td></tr>';
         }
     } catch (error) {
         console.error('Failed to load alarm history:', error);
-        document.getElementById('history-table-body').innerHTML = 
+        document.getElementById('history-table-body').innerHTML =
             '<tr><td colspan="8" style="padding: 24px; text-align: center; color: #ef4444;">Failed to load history</td></tr>';
     }
 }
@@ -782,7 +800,7 @@ function renderAlarmHistory(history, total) {
     }
     
     tbody.innerHTML = history.map(h => {
-        const time = new Date(h.created_at || h.processed_at).toLocaleString();
+        const time = formatDate(h.created_at || h.processed_at);
         const statusColor = {
             'sent': '#22c55e',
             'delivered': '#22c55e',
@@ -871,7 +889,7 @@ async function loadDLQItems() {
         }
         
         tbody.innerHTML = data.items.map(item => {
-            const timeStr = item.created_at ? new Date(item.created_at).toLocaleString() : '-';
+            const timeStr = item.created_at ? formatDate(item.created_at) : '-';
             const channelColor = item.channel === 'email' ? '#3b82f6' : item.channel === 'sms' ? '#22c55e' : '#8b5cf6';
             const errorTypeColor = item.error_type === 'RATE_LIMIT' ? '#f59e0b' : item.error_type === 'PROVIDER' ? '#ef4444' : '#94a3b8';
             
@@ -946,8 +964,8 @@ async function loadPausedQueueItems() {
         }
         
         tbody.innerHTML = data.items.map(item => {
-            const pausedAt = item.pausedAt ? new Date(item.pausedAt).toLocaleString() : '-';
-            const gpsTime = item.gpsTime ? new Date(item.gpsTime).toLocaleString() : '-';
+            const pausedAt = item.pausedAt ? formatDate(item.pausedAt) : '-';
+            const gpsTime = item.gpsTime ? formatDate(item.gpsTime) : '-';
             const lat = item.latitude ? parseFloat(item.latitude).toFixed(5) : '-';
             const lng = item.longitude ? parseFloat(item.longitude).toFixed(5) : '-';
             const mapLink = item.latitude && item.longitude 

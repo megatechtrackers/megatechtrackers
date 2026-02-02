@@ -5,7 +5,7 @@ Replaces the in-memory buffer approach with database-backed command queue
 import asyncio
 import logging
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, delete, and_, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -224,7 +224,7 @@ class AsyncGPRSCommandsPoller:
         out_cmd.setParam(command['command_text'])
         out_cmd.setData(command['command_text'])
         out_cmd.setDataType('GPRS')
-        out_cmd.setDatetime(command['created_at'] or datetime.now())
+        out_cmd.setDatetime(command['created_at'] or datetime.now(timezone.utc))
         out_cmd.setRemark(f"config_id={command['config_id']}, user={command['user_id']}")
         return out_cmd
     

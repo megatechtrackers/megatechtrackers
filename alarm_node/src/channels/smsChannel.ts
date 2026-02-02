@@ -6,6 +6,8 @@ import templateVersioning from '../services/templateVersioning';
 import rateLimiter from '../services/rateLimiter';
 import featureFlags from '../services/featureFlags';
 import smsModemPool from '../services/smsModemPool';
+import configurationService from '../services/configurationService';
+import config from '../config';
 
 interface SmsValidation {
   length: number;
@@ -154,7 +156,8 @@ export class SmsChannel extends BaseChannel {
     } catch (error: any) {
       // Fallback to default template if versioning fails
       logger.warn(`Template versioning failed, using default: ${error.message}`);
-      message = this.generateSmsMessage(alarm);
+      const displayTz = await this.getDisplayTimezone();
+      message = this.generateSmsMessage(alarm, displayTz);
     }
     
     const contentValidation = this.validateSmsContent(message);
@@ -255,12 +258,31 @@ export class SmsChannel extends BaseChannel {
     }
   }
 
-  private generateSmsMessage(alarm: Alarm): string {
+  /**
+   * Get display timezone for formatting dates in default SMS template (same as Email Display Timezone for consistency).
+   */
+  private async getDisplayTimezone(): Promise<string> {
+    try {
+      const emailConfig = await configurationService.getChannelConfigByMode('email', false);
+      if (emailConfig?.display_timezone) return emailConfig.display_timezone;
+    } catch {
+      // fallback to env
+    }
+    return config.email.displayTimezone || 'UTC';
+  }
+
+  private generateSmsMessage(alarm: Alarm, displayTimezone: string): string {
     const googleMapsUrl = `https://maps.google.com/?q=${alarm.latitude},${alarm.longitude}`;
-    
+    const timeStr = new Date(alarm.server_time).toLocaleString('en-US', {
+      timeZone: displayTimezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
     const message = `Alarm #${alarm.id}: ${alarm.status}
 Device: ${alarm.imei}
-Time: ${new Date(alarm.server_time).toLocaleTimeString()}
+Time: ${timeStr}
 Location: ${alarm.latitude.toFixed(5)}, ${alarm.longitude.toFixed(5)}
 Speed: ${alarm.speed} km/h
 Map: ${googleMapsUrl}`;

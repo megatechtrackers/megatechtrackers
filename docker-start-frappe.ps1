@@ -43,17 +43,6 @@ Write-Host "   ✓ Docker is running" -ForegroundColor Green
 Write-Host "Building and starting Docker containers..." -ForegroundColor Cyan
 Write-Host "   (Starting full stack with frappe profile)" -ForegroundColor Gray
 
-# Remove any conflicting containers that might exist from previous runs
-Write-Host "Cleaning up any conflicting containers..." -ForegroundColor Gray
-$containerNames = @("docs", "web-app", "mobile-app", "frappe", "grafana", "grafana-proxy", "access-gateway", "mariadb", "redis")
-foreach ($name in $containerNames) {
-    $existing = docker ps -a --filter "name=$name" --format "{{.Names}}" 2>$null
-    if ($existing -eq $name) {
-        Write-Host "   Removing existing container: $name" -ForegroundColor Yellow
-        docker rm -f $name 2>$null | Out-Null
-    }
-}
-
 docker compose --profile frappe up --build -d
 
 # --- Auto-provision keys (Grafana + Frappe) ---
@@ -347,7 +336,7 @@ Write-Host "   - Frappe:        http://localhost:8000 (Administrator/admin)"
 Write-Host "   - Grafana:       http://localhost:3000 (admin/admin)"
 Write-Host "   - Access Gateway: http://localhost:3001/health"
 Write-Host "   - Next.js:       http://localhost:3002"
-Write-Host "   - Docs:          http://localhost:8001"
+Write-Host "   - Docs:          http://localhost:8002"
 Write-Host "   - MariaDB:       localhost:3306"
 Write-Host "   - Redis:         localhost:6379"
 Write-Host ""

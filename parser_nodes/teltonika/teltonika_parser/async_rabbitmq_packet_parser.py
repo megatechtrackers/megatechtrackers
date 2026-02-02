@@ -5,7 +5,7 @@ Wraps AsyncPacketParser to publish to RabbitMQ or save to CSV based on mode
 import asyncio
 import logging
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from teltonika_parser import async_packet_parser
 from teltonika_parser.async_packet_parser import AsyncPacketParser
@@ -96,7 +96,7 @@ class RabbitMQPacketParser:
                 return [], False
             
             # Parse records
-            server_time = datetime.now()
+            server_time = datetime.now(timezone.utc)
             records = []
             
             # Iterate through AVL records in the collection
@@ -148,7 +148,7 @@ class RabbitMQPacketParser:
                     base_message = {
                         "vendor": self.vendor,
                         "vendor_version": "1.0",
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
                         "imei": imei,
                         "device_ip": device_ip,
                         "device_port": device_port,

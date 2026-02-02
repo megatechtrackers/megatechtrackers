@@ -56,15 +56,11 @@ inhibit_rules:
 # Receivers
 receivers:
   # Primary receiver - routes all alerts to alarm-service
-  # alarm-service handles email via DB-configured recipients
+  # alarm-service handles email via DB-configured recipients.
+  # Test profile: alarm-service-test has network alias alarm-service and listens on 3200.
   - name: 'alarm-service'
     webhook_configs:
-      # Production: alarm-service (port 3200). Test profile: alarm-service-test (port 3100).
       - url: 'http://alarm-service:3200/api/config/alertmanager/webhook'
-        send_resolved: true
-        http_config:
-          follow_redirects: true
-      - url: 'http://alarm-service-test:3100/api/config/alertmanager/webhook'
         send_resolved: true
         http_config:
           follow_redirects: true

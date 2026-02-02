@@ -1,0 +1,172 @@
+# ============================================================
+# CAMERA PARSER SERVICE - STATUS
+# ============================================================
+
+title: Camera Parser - Status
+uid: camera-parser-status
+tags:
+- camera
+- mdvr
+- cms
+- parser
+
+panels:
+# ============================================================
+# OVERVIEW ROW
+# ============================================================
+- row: Camera Parser Overview
+
+- title: CMS Servers Healthy
+  width: 4
+  query: sum(camera_cms_servers_healthy)
+  thresholds:
+  - 1:#73BF69
+  graph_mode: none
+
+- title: CMS Servers Unhealthy
+  width: 4
+  query: sum(camera_cms_servers_unhealthy)
+  thresholds:
+  - 1:#FADE2A
+  - 2:#F2495C
+  graph_mode: none
+
+- title: Publish Success Rate
+  type: gauge
+  width: 4
+  query: parser_service_publish_success_rate{vendor="camera"}
+  unit: '%'
+  thresholds: $success_rate
+
+- title: Events Published
+  width: 4
+  query: sum(camera_events_published)
+  color: '#73BF69'
+  graph_mode: none
+
+- title: Devices Polled
+  width: 4
+  query: sum(camera_devices_polled)
+  color: '#8AB8FF'
+  graph_mode: none
+
+- title: Circuit Breaker Trips
+  width: 4
+  query: sum(camera_circuit_breaker_trips)
+  thresholds:
+  - 1:#FADE2A
+  - 5:#F2495C
+  graph_mode: none
+
+# ============================================================
+# THROUGHPUT ROW
+# ============================================================
+- row: Throughput & Errors
+
+- title: Events Published Rate
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: rate(camera_events_published[$__rate_interval]) * 60
+    legend: Events/min
+  - expr: rate(camera_trackdata_published[$__rate_interval]) * 60
+    legend: Trackdata/min
+  fill_opacity: 20
+
+- title: Error Rate
+  type: timeseries
+  width: 12
+  height: 8
+  queries:
+  - expr: rate(camera_api_errors[$__rate_interval]) * 60
+    legend: API Errors/min
+  - expr: parser_service_error_rate{vendor="camera"}
+    legend: Publish Error Rate %
+  fill_opacity: 15
+  thresholds:
+  - 5:#FADE2A
+  - 10:#F2495C
+
+# ============================================================
+# RESOURCE USAGE ROW
+# ============================================================
+- row: Resource Usage
+
+- title: CPU Usage
+  type: timeseries
+  width: 8
+  height: 6
+  query: parser_service_cpu_percent{vendor="camera"} | CPU %
+  unit: '%'
+  thresholds: $usage_percent
+  fill_opacity: 30
+  color: '#FF9830'
+
+- title: Memory Usage
+  type: timeseries
+  width: 8
+  height: 6
+  query: parser_service_memory_percent{vendor="camera"} | Memory %
+  unit: '%'
+  fill_opacity: 30
+  color: '#8AB8FF'
+
+- title: Dedup Cache Size
+  type: timeseries
+  width: 8
+  height: 6
+  query: camera_dedup_cache_size | Cache Size
+  fill_opacity: 20
+  thresholds:
+  - 8000:#FADE2A
+  - 9500:#F2495C
+  color: '#B877D9'
+
+# ============================================================
+# DEDUPLICATION ROW
+# ============================================================
+- row: Deduplication & Polling
+
+- title: Duplicates Skipped
+  width: 6
+  query: sum(camera_dedup_hits)
+  color: '#73BF69'
+  graph_mode: none
+
+- title: Poll Cycles
+  width: 6
+  query: sum(camera_poll_cycles)
+  color: '#8AB8FF'
+  graph_mode: none
+
+- title: Dedup Hit Rate
+  type: timeseries
+  width: 12
+  height: 5
+  query: rate(camera_dedup_hits[$__rate_interval]) * 60 | Dedup Hits/min
+  fill_opacity: 20
+  color: '#B877D9'
+
+# ============================================================
+# CMS SERVER HEALTH ROW
+# ============================================================
+- row: CMS Server Health
+
+- title: CMS Server Status Over Time
+  type: timeseries
+  width: 12
+  height: 6
+  queries:
+  - camera_cms_servers_healthy | Healthy
+  - camera_cms_servers_unhealthy | Unhealthy
+  stacking: normal
+  fill_opacity: 60
+
+- title: Circuit Breaker Trips Over Time
+  type: timeseries
+  width: 12
+  height: 6
+  query: rate(camera_circuit_breaker_trips[$__rate_interval]) * 60 | Trips/min
+  fill_opacity: 30
+  color: '#F2495C'

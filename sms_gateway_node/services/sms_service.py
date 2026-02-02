@@ -5,7 +5,7 @@ Polls command_outbox, sends SMS, handles responses
 import asyncio
 import logging
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from ..config import Config, ServerParams
@@ -32,7 +32,7 @@ class SMSService:
         """Initialize SMS service."""
         self.modem_pool = ModemPool.get_instance()
         self.running = False
-        self.last_cleanup = datetime.now()
+        self.last_cleanup = datetime.now(timezone.utc)
         
         # Load config values
         self.max_retries = ServerParams.get_int('timeouts.max_retries', 3)
@@ -338,8 +338,8 @@ class SMSService:
                     VALUES (:sim_no, :imei, :msg_text, NOW())
                 """), {"sim_no": sender, "imei": imei, "msg_text": msg_text})
                 
-                # Try to match to command_sent
-                timeout_threshold = datetime.now() - timedelta(minutes=self.reply_timeout_minutes)
+                # Try to match to command_sent; naive UTC for TIMESTAMP binding
+                timeout_threshold = (datetime.now(timezone.utc) - timedelta(minutes=self.reply_timeout_minutes)).replace(tzinfo=None)
                 
                 result = await session.execute(text("""
                     SELECT id, imei, command_text, config_id, user_id, sent_at
@@ -523,7 +523,7 @@ class SMSService:
     
     async def _maybe_cleanup(self):
         """Run timeout cleanup periodically."""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         seconds_since_cleanup = (now - self.last_cleanup).total_seconds()
         
         if seconds_since_cleanup >= self.cleanup_interval_seconds:

@@ -24,7 +24,7 @@ import json
 import logging
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from collections import deque
@@ -175,7 +175,7 @@ async def handle_send_sms(request: web.Request) -> web.Response:
                 to=to,
                 from_sender=from_sender,
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key=api_key[:8] + '...' if len(api_key) > 8 else api_key,
                 request_headers={'Content-Type': headers_dict.get('Content-Type', '')},
@@ -193,7 +193,7 @@ async def handle_send_sms(request: web.Request) -> web.Response:
                 to=to,
                 from_sender=from_sender,
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key=api_key[:8] + '...' if len(api_key) > 8 else api_key,
                 request_headers={'Content-Type': headers_dict.get('Content-Type', '')},
@@ -211,7 +211,7 @@ async def handle_send_sms(request: web.Request) -> web.Response:
                 to=to,
                 from_sender=from_sender,
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='rate_limited',
                 api_key=api_key[:8] + '...' if len(api_key) > 8 else api_key,
                 request_headers={'Content-Type': headers_dict.get('Content-Type', '')},
@@ -234,7 +234,7 @@ async def handle_send_sms(request: web.Request) -> web.Response:
                 to=to,
                 from_sender=from_sender,
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key=api_key[:8] + '...' if len(api_key) > 8 else api_key,
                 request_headers={'Content-Type': headers_dict.get('Content-Type', '')},
@@ -252,7 +252,7 @@ async def handle_send_sms(request: web.Request) -> web.Response:
             to=to,
             from_sender=from_sender,
             message=message,
-            received_at=datetime.now().isoformat(),
+            received_at=datetime.now(timezone.utc).isoformat() + 'Z',
             status='success',
             api_key=api_key[:8] + '...' if len(api_key) > 8 else api_key,
             request_headers={'Content-Type': headers_dict.get('Content-Type', '')},
@@ -285,7 +285,7 @@ async def handle_health(request: web.Request) -> web.Response:
     return web.json_response({
         'status': 'healthy',
         'service': 'mock-sms-server',
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     })
 
 
@@ -402,7 +402,7 @@ async def handle_alertmanager_webhook(request: web.Request) -> web.Response:
                 to='+15550000001',  # Default alert recipient
                 from_sender='AlertManager',
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='success',
                 api_key='alertmanager-webhook',
                 request_headers={'Source': 'AlertManager'},
@@ -555,7 +555,7 @@ async def handle_teltonika_send_sms(request: web.Request) -> web.Response:
                 to=number,
                 from_sender=f'Teltonika-{modem}',
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key='teltonika-api',
                 request_headers={'API': 'Teltonika'},
@@ -581,7 +581,7 @@ async def handle_teltonika_send_sms(request: web.Request) -> web.Response:
                 to=number,
                 from_sender=f'Teltonika-{modem}',
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key='teltonika-api',
                 request_headers={'API': 'Teltonika'},
@@ -607,7 +607,7 @@ async def handle_teltonika_send_sms(request: web.Request) -> web.Response:
                 to=number,
                 from_sender=f'Teltonika-{modem}',
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='rate_limited',
                 api_key='teltonika-api',
                 request_headers={'API': 'Teltonika'},
@@ -634,7 +634,7 @@ async def handle_teltonika_send_sms(request: web.Request) -> web.Response:
                 to=number,
                 from_sender=f'Teltonika-{modem}',
                 message=message,
-                received_at=datetime.now().isoformat(),
+                received_at=datetime.now(timezone.utc).isoformat() + 'Z',
                 status='failed',
                 api_key='teltonika-api',
                 request_headers={'API': 'Teltonika'},
@@ -660,7 +660,7 @@ async def handle_teltonika_send_sms(request: web.Request) -> web.Response:
             to=number,
             from_sender=f'Teltonika-{modem}',
             message=message,
-            received_at=datetime.now().isoformat(),
+            received_at=datetime.now(timezone.utc).isoformat() + 'Z',
             status='success',
             api_key='teltonika-api',
             request_headers={'API': 'Teltonika'},

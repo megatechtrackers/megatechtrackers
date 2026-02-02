@@ -17,6 +17,8 @@ import {
   Unit,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { timeUTCToLocal, timeLocalToUTC } from '@/lib/timeUtils';
+import { useWorkingTimezone } from '@/lib/TimezoneContext';
 
 // IO Type labels
 const IO_TYPES: Record<number, string> = {
@@ -37,6 +39,7 @@ interface UnitIOMappingTabProps {
 }
 
 export default function UnitIOMappingTab({ unit }: UnitIOMappingTabProps) {
+  const { workingTimezone } = useWorkingTimezone();
   const [mappings, setMappings] = useState<UnitIOMapping[]>([]);
   const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,7 +275,7 @@ export default function UnitIOMappingTab({ unit }: UnitIOMappingTabProps) {
                     <td className="px-4 py-3 text-slate-600">{mapping.value ?? 'N/A'}</td>
                     <td className="px-4 py-3 text-slate-600">{TARGET_TYPES[mapping.target]}</td>
                     <td className="px-4 py-3 text-slate-600 text-xs font-mono">
-                      {mapping.start_time?.slice(0, 5)} - {mapping.end_time?.slice(0, 5)}
+                      {mapping.start_time ? timeUTCToLocal(mapping.start_time, workingTimezone) : '-'} - {mapping.end_time ? timeUTCToLocal(mapping.end_time, workingTimezone) : '-'}
                     </td>
                     <td className="px-4 py-3">
                       {mapping.is_alarm ? (
@@ -330,6 +333,7 @@ export default function UnitIOMappingTab({ unit }: UnitIOMappingTabProps) {
       {showEditor && (
         <IOMappingEditor
           mapping={editingMapping}
+          workingTimezone={workingTimezone}
           onSave={handleSave}
           onClose={() => { setShowEditor(false); setEditingMapping(null); }}
         />
@@ -429,10 +433,12 @@ export default function UnitIOMappingTab({ unit }: UnitIOMappingTabProps) {
 // Inline Editor Component
 function IOMappingEditor({ 
   mapping, 
+  workingTimezone = '',
   onSave, 
   onClose 
 }: { 
   mapping: UnitIOMapping | null;
+  workingTimezone?: string;
   onSave: (data: Partial<UnitIOMapping>) => void;
   onClose: () => void;
 }) {
@@ -445,8 +451,8 @@ function IOMappingEditor({
     value: mapping?.value ?? '',
     target: mapping?.target || 0,
     column_name: mapping?.column_name || '',
-    start_time: mapping?.start_time?.slice(0, 5) || '00:00',
-    end_time: mapping?.end_time?.slice(0, 5) || '23:59',
+    start_time: mapping?.start_time ? timeUTCToLocal(mapping.start_time, workingTimezone) : '00:00',
+    end_time: mapping?.end_time ? timeUTCToLocal(mapping.end_time, workingTimezone) : '23:59',
     is_alarm: mapping?.is_alarm || 0,
     is_sms: mapping?.is_sms || 0,
     is_email: mapping?.is_email || 0,
@@ -458,8 +464,8 @@ function IOMappingEditor({
     onSave({
       ...formData,
       value: formData.value === '' ? null : Number(formData.value),
-      start_time: formData.start_time + ':00',
-      end_time: formData.end_time + ':59',
+      start_time: timeLocalToUTC(formData.start_time + ':00', workingTimezone),
+      end_time: timeLocalToUTC(formData.end_time + ':59', workingTimezone),
     });
   };
 

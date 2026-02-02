@@ -6,7 +6,7 @@ from sqlalchemy import Column, BigInteger, DateTime, Float, Integer, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
 from typing import Dict, Any, Optional
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 import json
 import logging
 
@@ -23,32 +23,51 @@ IS_VALID_FALSE = 0
 DEFAULT_STATUS = 'Normal'
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure datetime is timezone-aware UTC. Naive datetimes are treated as UTC."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """
+    Convert datetime to naive UTC for binding to TIMESTAMP WITHOUT TIME ZONE.
+    AsyncPG rejects offset-aware datetimes for TIMESTAMP WITHOUT TIME ZONE columns.
+    """
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def parse_datetime_field(record: Dict[str, Any], field: str, default: Optional[datetime] = None) -> datetime:
     """
     Parse datetime field from record dictionary with fallback handling.
+    Returns UTC datetime. Naive datetimes from parser are treated as UTC.
     
     Args:
         record: Dictionary containing the field to parse
         field: Field name to extract from record
-        default: Default datetime to use if parsing fails (defaults to datetime.now())
+        default: Default datetime to use if parsing fails (defaults to datetime.now(timezone.utc))
         
     Returns:
-        Parsed datetime object
+        Parsed datetime object (UTC)
     """
     from dateutil import parser
     
     if default is None:
-        default = datetime.now()
+        default = datetime.now(timezone.utc)
     
     field_value = record.get(field, '')
     
     if isinstance(field_value, str):
         try:
-            return parser.parse(field_value)
+            parsed = parser.parse(field_value)
+            return _ensure_utc(parsed)
         except (ValueError, TypeError, AttributeError):
             return default
     elif isinstance(field_value, datetime):
-        return field_value
+        return _ensure_utc(field_value)
     else:
         return default
 
@@ -156,6 +175,9 @@ class TrackData(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             # Parse dynamic_io
             dynamic_io = record.get('dynamic_io', '{}')
@@ -169,7 +191,7 @@ class TrackData(Base):
                 dynamic_io = {}
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -203,7 +225,7 @@ class TrackData(Base):
             # Build values dict for Core insert
             values = {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 **defaults
             }
 
@@ -231,7 +253,7 @@ class TrackData(Base):
                     class DummyTrackData:
                         def __init__(self):
                             self.imei = imei_int
-                            self.gps_time = gps_time
+                            self.gps_time = gps_time_naive
                     
                     return DummyTrackData()
                 except Exception as db_error:
@@ -303,9 +325,12 @@ class Alarm(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -326,7 +351,7 @@ class Alarm(Base):
             # Build values dict for Core insert
             values = {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 **defaults
             }
 
@@ -355,7 +380,7 @@ class Alarm(Base):
                     class DummyAlarm:
                         def __init__(self):
                             self.imei = imei_int
-                            self.gps_time = gps_time
+                            self.gps_time = gps_time_naive
                     
                     return DummyAlarm()
                 except Exception as db_error:
@@ -407,9 +432,12 @@ class Event(Base):
             # Parse datetime fields using shared utility
             server_time = parse_datetime_field(record, 'server_time')
             gps_time = parse_datetime_field(record, 'gps_time', default=server_time)
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            server_time_naive = _to_naive_utc(server_time)
+            gps_time_naive = _to_naive_utc(gps_time)
 
             defaults = {
-                'server_time': server_time,
+                'server_time': server_time_naive,
                 'latitude': record.get('latitude', 0.0),
                 'longitude': record.get('longitude', 0.0),
                 'altitude': record.get('altitude', 0),
@@ -425,7 +453,7 @@ class Event(Base):
             # Build values dict for Core insert
             values = {
                 'imei': imei_int,
-                'gps_time': gps_time,
+                'gps_time': gps_time_naive,
                 **defaults
             }
 
@@ -453,7 +481,7 @@ class Event(Base):
                     class DummyEvent:
                         def __init__(self):
                             self.imei = imei_int
-                            self.gps_time = gps_time
+                            self.gps_time = gps_time_naive
                     
                     return DummyEvent()
                 except Exception as db_error:
@@ -533,11 +561,14 @@ class LastStatus(Base):
             distance: Optional distance to reference in kilometers
         """
         try:
+            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
+            gps_time_naive = _to_naive_utc(gps_time) if gps_time is not None else None
+            server_time_naive = _to_naive_utc(server_time) if server_time is not None else None
             # Build values dict for Core insert
             values = {
                 'imei': imei,
-                'gps_time': gps_time,
-                'server_time': server_time,
+                'gps_time': gps_time_naive,
+                'server_time': server_time_naive,
                 'latitude': latitude,
                 'longitude': longitude,
                 'altitude': altitude,

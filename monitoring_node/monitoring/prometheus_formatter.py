@@ -180,5 +180,82 @@ def format_prometheus_metrics(metrics: Dict[str, Any], parser_node_metrics: Dict
             vendor = node_metrics.get('vendor', 'unknown')
             err_rate = node_metrics.get('error_rate', 0)
             lines.append(f'parser_service_error_rate{{node="{node_id}",vendor="{vendor}"}} {err_rate}')
+        
+        # =====================
+        # Camera-specific metrics (for camera vendor nodes)
+        # =====================
+        
+        camera_nodes = {k: v for k, v in parser_node_metrics.items() if v.get('vendor') == 'camera'}
+        
+        if camera_nodes:
+            # CMS servers healthy
+            lines.append("# HELP camera_cms_servers_healthy Number of healthy CMS servers")
+            lines.append("# TYPE camera_cms_servers_healthy gauge")
+            for node_id, node_metrics in camera_nodes.items():
+                healthy = node_metrics.get('cms_servers_healthy', 0)
+                lines.append(f'camera_cms_servers_healthy{{node="{node_id}"}} {healthy}')
+            
+            # CMS servers unhealthy
+            lines.append("# HELP camera_cms_servers_unhealthy Number of unhealthy CMS servers")
+            lines.append("# TYPE camera_cms_servers_unhealthy gauge")
+            for node_id, node_metrics in camera_nodes.items():
+                unhealthy = node_metrics.get('cms_servers_unhealthy', 0)
+                lines.append(f'camera_cms_servers_unhealthy{{node="{node_id}"}} {unhealthy}')
+            
+            # Circuit breaker trips
+            lines.append("# HELP camera_circuit_breaker_trips Total circuit breaker trips")
+            lines.append("# TYPE camera_circuit_breaker_trips counter")
+            for node_id, node_metrics in camera_nodes.items():
+                trips = node_metrics.get('circuit_breaker_trips', 0)
+                lines.append(f'camera_circuit_breaker_trips{{node="{node_id}"}} {trips}')
+            
+            # Devices polled
+            lines.append("# HELP camera_devices_polled Total devices polled")
+            lines.append("# TYPE camera_devices_polled counter")
+            for node_id, node_metrics in camera_nodes.items():
+                devices = node_metrics.get('devices_polled', 0)
+                lines.append(f'camera_devices_polled{{node="{node_id}"}} {devices}')
+            
+            # Events published
+            lines.append("# HELP camera_events_published Total events/violations published")
+            lines.append("# TYPE camera_events_published counter")
+            for node_id, node_metrics in camera_nodes.items():
+                events = node_metrics.get('events_published', 0)
+                lines.append(f'camera_events_published{{node="{node_id}"}} {events}')
+            
+            # Trackdata published
+            lines.append("# HELP camera_trackdata_published Total trackdata records published")
+            lines.append("# TYPE camera_trackdata_published counter")
+            for node_id, node_metrics in camera_nodes.items():
+                trackdata = node_metrics.get('trackdata_published', 0)
+                lines.append(f'camera_trackdata_published{{node="{node_id}"}} {trackdata}')
+            
+            # Deduplication hits
+            lines.append("# HELP camera_dedup_hits Total deduplication cache hits")
+            lines.append("# TYPE camera_dedup_hits counter")
+            for node_id, node_metrics in camera_nodes.items():
+                hits = node_metrics.get('dedup_hits', 0)
+                lines.append(f'camera_dedup_hits{{node="{node_id}"}} {hits}')
+            
+            # Deduplication cache size
+            lines.append("# HELP camera_dedup_cache_size Current deduplication cache size")
+            lines.append("# TYPE camera_dedup_cache_size gauge")
+            for node_id, node_metrics in camera_nodes.items():
+                size = node_metrics.get('dedup_cache_size', 0)
+                lines.append(f'camera_dedup_cache_size{{node="{node_id}"}} {size}')
+            
+            # Poll cycles
+            lines.append("# HELP camera_poll_cycles Total polling cycles completed")
+            lines.append("# TYPE camera_poll_cycles counter")
+            for node_id, node_metrics in camera_nodes.items():
+                cycles = node_metrics.get('poll_cycles', 0)
+                lines.append(f'camera_poll_cycles{{node="{node_id}"}} {cycles}')
+            
+            # API errors
+            lines.append("# HELP camera_api_errors Total CMS API errors")
+            lines.append("# TYPE camera_api_errors counter")
+            for node_id, node_metrics in camera_nodes.items():
+                api_errors = node_metrics.get('api_errors', 0)
+                lines.append(f'camera_api_errors{{node="{node_id}"}} {api_errors}')
     
     return "\n".join(lines) + "\n"

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import psutil
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 import aiohttp
 
@@ -30,7 +30,7 @@ class ParserNodeLoadMonitor:
         self.total_errors = 0  # Total processing errors
         self.publish_successes = 0
         self.publish_failures = 0
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(timezone.utc)
         self._report_task: Optional[asyncio.Task] = None
         
         # Load configuration
@@ -117,7 +117,7 @@ class ParserNodeLoadMonitor:
         metrics = {
             "node_id": self.node_id,
             "vendor": self.vendor,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "active_connections": self.active_connections,
             "total_connections": self.total_connections,
             "total_rejected": self.total_rejected,
@@ -157,7 +157,7 @@ class ParserNodeLoadMonitor:
     
     def _calculate_mps(self) -> float:
         """Calculate messages per second"""
-        elapsed = (datetime.now() - self.start_time).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds()
         if elapsed > 0:
             return self.messages_processed / elapsed
         return 0.0

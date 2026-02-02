@@ -1,7 +1,9 @@
-"""Device Config Schemas - Matches original CommandConfigApi structure"""
+"""Device Config Schemas - Matches original CommandConfigApi structure. Datetime serialized as UTC with Z."""
 from pydantic import BaseModel
 from typing import Optional, Any
 from datetime import datetime
+
+from app.utils.datetime_utils import serialize_datetime_utc
 
 
 class SubDetailSchema(BaseModel):
@@ -70,6 +72,7 @@ class DeviceConfigResponse(DeviceConfigBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {datetime: serialize_datetime_utc}
 
 
 class DeviceListResponse(BaseModel):

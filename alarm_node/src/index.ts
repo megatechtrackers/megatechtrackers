@@ -143,8 +143,7 @@ async function startHealthServer(): Promise<void> {
       params.push(limit, offset);
       
       const result = await db.default.query(query, params);
-      
-      res.json({ success: true, items: result.rows, total });
+      res.json({ success: true, items: serializeRows(result.rows as any[]), total });
     } catch (error: any) {
       logger.error('Failed to fetch DLQ items:', error);
       res.status(500).json({ success: false, error: error.message });
@@ -231,6 +230,17 @@ async function startHealthServer(): Promise<void> {
 
   // Alarm History endpoint - joins with alarms table to get alarm type (status)
   const db = await import('./db');
+  /** Serialize DB rows for JSON: BigInt and Date break JSON.stringify */
+  const serializeRows = (rows: any[]): any[] =>
+    rows.map((row: any) => {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(row)) {
+        if (typeof v === 'bigint') out[k] = String(v);
+        else if (v instanceof Date) out[k] = v.toISOString();
+        else out[k] = v;
+      }
+      return out;
+    });
   app.get('/api/alarms/history', async (req, res) => {
     try {
       const imei = req.query.imei as string | undefined;
@@ -282,8 +292,7 @@ async function startHealthServer(): Promise<void> {
       params.push(limit, offset);
       
       const result = await db.default.query(query, params);
-      
-      res.json({ success: true, history: result.rows, total });
+      res.json({ success: true, history: serializeRows(result.rows as any[]), total });
     } catch (error: any) {
       logger.error('Failed to fetch alarm history:', error);
       res.status(500).json({ success: false, error: error.message });
@@ -645,6 +654,29 @@ async function main(): Promise<void> {
       }
     }, periodicReprocessInterval);
     logger.info(`Periodic pending alarm reprocessing enabled (every ${periodicReprocessInterval / 1000}s)`);
+    
+    // Self-healing: periodic DB cleanup (alarms_history, alarms_dlq, alarms_sms_modem_usage) - no manual intervention
+    const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const runDbCleanup = async () => {
+      try {
+        const db = (await import('./db')).default;
+        const firstCol = (row: any) => row && (row[Object.keys(row)[0]] ?? Object.values(row)[0]);
+        const r1 = await db.query('SELECT cleanup_old_alarms_history(365)');
+        const deletedHistory = Number(firstCol(r1.rows[0])) || 0;
+        const r2 = await db.query('SELECT cleanup_old_alarms_dlq(90)');
+        const deletedDlq = Number(firstCol(r2.rows[0])) || 0;
+        const r3 = await db.query('SELECT cleanup_old_alarms_sms_modem_usage(730)');
+        const deletedUsage = Number(firstCol(r3.rows[0])) || 0;
+        if (deletedHistory > 0 || deletedDlq > 0 || deletedUsage > 0) {
+          logger.info('DB cleanup completed', { deletedHistory, deletedDlq, deletedUsage });
+        }
+      } catch (e: any) {
+        logger.warn('DB cleanup failed (will retry next interval)', { error: e.message });
+      }
+    };
+    setTimeout(() => runDbCleanup(), 60 * 1000); // run once 1 min after startup
+    setInterval(runDbCleanup, CLEANUP_INTERVAL_MS);
+    logger.info('Periodic DB cleanup enabled (alarms_history 365d, dlq 90d, modem_usage 730d)');
     
     logger.info('Alarm Service is running');
     logger.info('Active Features:');

@@ -8,7 +8,7 @@ Write-Host ""
 
 # Stop containers first
 Write-Host "Stopping Docker containers..." -ForegroundColor Yellow
-docker-compose down 2>&1 | Out-Null
+docker compose down 2>&1 | Out-Null
 Start-Sleep -Seconds 2
 
 # Get all .sh files
@@ -76,7 +76,7 @@ if ($fixed -gt 0) {
     Write-Host "✓ All shell scripts now have Unix (LF) line endings!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "  1. Start containers: docker-compose up -d" -ForegroundColor White
+    Write-Host "  1. Start containers: docker compose up -d" -ForegroundColor White
     Write-Host "  2. Check logs: docker logs postgres-primary --tail 50" -ForegroundColor White
 } else {
     Write-Host "All files already have correct line endings." -ForegroundColor Green

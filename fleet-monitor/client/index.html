@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Leaflet.js for interactive maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <!-- HLS.js for HLS stream playback -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7"></script>
+    <!-- mpegts.js for FLV/MPEG-TS/HTTP streaming (successor to flv.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+    <!-- mp4box.js for MP4 parsing and MSE playback (enables HEVC in Chrome) -->
+    <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Fleet Monitor</h1>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="search-box">
+                    <input type="text" id="deviceSearch" placeholder="Search devices...">
+                </div>
+                
+                <div class="device-filter">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="hideOfflineDevices" checked onchange="toggleOfflineFilter()">
+                        <span class="checkmark"></span>
+                        <span class="filter-label">Hide offline devices</span>
+                    </label>
+                    <span class="device-count" id="deviceCount"></span>
+                </div>
+                
+                <div class="device-tree" id="deviceTree">
+                    <div class="loading-indicator">Loading devices...</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="refresh-btn" onclick="loadDevices()">
+                    <span class="icon">↻</span> Refresh
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+        
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                    <span id="menuIcon">☰</span>
+                </button>
+                <div class="breadcrumb" id="breadcrumb">
+                    <span>Select a device</span>
+                </div>
+                <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+                    <span title="Display times in device region">
+                        <label for="working-timezone" style="font-size: 11px; color: #94a3b8; margin-right: 4px;">Time:</label>
+                        <select id="working-timezone" class="form-select" style="padding: 4px 8px; font-size: 12px; background: var(--bg-secondary, #1e293b); border: 1px solid var(--border-color, #334155); border-radius: 6px; color: inherit;">
+                            <option value="">My browser</option>
+                            <option value="Asia/Karachi">Pakistan</option>
+                            <option value="America/New_York">US Eastern</option>
+                            <option value="America/Chicago">US Central</option>
+                            <option value="America/Denver">US Mountain</option>
+                            <option value="America/Los_Angeles">US Pacific</option>
+                            <option value="Europe/London">UK</option>
+                            <option value="Asia/Dubai">UAE</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </span>
+                    <span class="status-indicator" id="connectionStatus">
+                        <span class="dot"></span>
+                        <span class="text">Connecting...</span>
+                    </span>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="content" id="content">
+                <div class="welcome-screen">
+                    <div class="welcome-icon">📡</div>
+                    <h2>Welcome to Fleet Monitor</h2>
+                    <p>Select a device from the sidebar to view its status, location, and event history.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Video Player Modal -->
+    <div id="videoModal" class="video-modal" style="display: none;">
+        <div class="video-modal-backdrop" onclick="closeVideoModal()"></div>
+        <div class="video-modal-content">
+            <div class="video-modal-header">
+                <h3 id="videoModalTitle">Video Playback</h3>
+                <div class="video-modal-actions">
+                    <button onclick="closeVideoModal()" class="btn-close">✕</button>
+                </div>
+                <div class="video-modal-direct-actions" style="margin-top: 6px;">
+                    <span style="font-size: 11px; color: #888; margin-right: 8px;">Download:</span>
+                    <button onclick="playDirectFromDownload()" class="btn-small btn-direct" title="Download from Download Server">⬇ Download Srv</button>
+                    <button onclick="playDirectFromStorage()" class="btn-small btn-direct" title="Download from Storage Server">⬇ Storage</button>
+                    <button onclick="playDirectFromDevice()" class="btn-small btn-direct" title="Download from Device MDVR">⬇ Device</button>
+                </div>
+            </div>
+            <div class="video-modal-body">
+                <div id="videoLoading" class="video-loading">Loading video...</div>
+                <video id="videoPlayer" controls autoplay playsinline style="width: 100%; max-height: 70vh; background: #000; display: none;">
+                    Your browser does not support the video tag.
+                </video>
+                <div id="videoError" class="video-error" style="display: none;">
+                    <p>Unable to play video in browser.</p>
+                    <p style="font-size: 12px; color: #888;">Use the download buttons above to save and play with VLC.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Modules (load in dependency order) -->
+    <script src="constants.js"></script>
+    <script src="utils.js"></script>
+    <script src="geocoding.js"></script>
+    <script src="templates.js"></script>
+    <script src="api.js"></script>
+    <script src="devices.js"></script>
+    <script src="gpsTab.js"></script>
+    <script src="mapTab.js"></script>
+    <script src="tabs.js"></script>
+    <script src="liveStream.js"></script>
+    <script src="videoPlayer.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

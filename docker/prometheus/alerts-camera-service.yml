@@ -1,0 +1,156 @@
+groups:
+  - name: camera-parser-alerts
+    rules:
+      # =====================
+      # Camera Parser Service Health
+      # =====================
+      
+      - alert: CameraParserDown
+        expr: absent(parser_service_trackers_online{vendor="camera"})
+        for: 2m
+        labels:
+          severity: critical
+          service: camera-parser
+        annotations:
+          summary: "Camera parser service is not reporting metrics"
+          description: "No metrics received from camera parser service for 2 minutes. The service may be down."
+      
+      - alert: CameraParserHighErrorRate
+        expr: parser_service_error_rate{vendor="camera"} > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Camera parser has high error rate"
+          description: "Camera parser {{ $labels.node }} has error rate of {{ $value | printf \"%.1f\" }}% (threshold: 10%)"
+      
+      - alert: CameraParserCriticalErrorRate
+        expr: parser_service_error_rate{vendor="camera"} > 25
+        for: 2m
+        labels:
+          severity: critical
+          service: camera-parser
+        annotations:
+          summary: "Camera parser has critical error rate"
+          description: "Camera parser {{ $labels.node }} has error rate of {{ $value | printf \"%.1f\" }}% (threshold: 25%)"
+      
+      # =====================
+      # CMS Server Health
+      # =====================
+      
+      - alert: CameraAllCMSServersUnhealthy
+        expr: camera_cms_servers_healthy == 0 and camera_cms_servers_unhealthy > 0
+        for: 2m
+        labels:
+          severity: critical
+          service: camera-parser
+        annotations:
+          summary: "All CMS servers are unhealthy"
+          description: "Camera parser {{ $labels.node }} has no healthy CMS servers. All {{ $value }} servers are in circuit breaker state."
+      
+      - alert: CameraCMSServerUnhealthy
+        expr: camera_cms_servers_unhealthy > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "CMS server(s) are unhealthy"
+          description: "Camera parser {{ $labels.node }} has {{ $value }} unhealthy CMS server(s) in circuit breaker state."
+      
+      - alert: CameraCircuitBreakerTrips
+        expr: increase(camera_circuit_breaker_trips[5m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Multiple circuit breaker trips detected"
+          description: "Camera parser {{ $labels.node }} had {{ $value | printf \"%.0f\" }} circuit breaker trips in the last 5 minutes."
+      
+      # =====================
+      # Publishing Health
+      # =====================
+      
+      - alert: CameraParserLowPublishRate
+        expr: parser_service_publish_success_rate{vendor="camera"} < 95
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Camera parser has low publish success rate"
+          description: "Camera parser {{ $labels.node }} publish success rate is {{ $value | printf \"%.1f\" }}% (threshold: 95%)"
+      
+      - alert: CameraParserPublishFailure
+        expr: parser_service_publish_success_rate{vendor="camera"} < 80
+        for: 2m
+        labels:
+          severity: critical
+          service: camera-parser
+        annotations:
+          summary: "Camera parser publish failure critical"
+          description: "Camera parser {{ $labels.node }} publish success rate is {{ $value | printf \"%.1f\" }}% (threshold: 80%)"
+      
+      - alert: CameraNoEventsPublished
+        expr: increase(camera_events_published[10m]) == 0 and camera_cms_servers_healthy > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "No camera events published"
+          description: "Camera parser {{ $labels.node }} has not published any events in the last 10 minutes despite having healthy CMS servers."
+      
+      # =====================
+      # Resource Usage
+      # =====================
+      
+      - alert: CameraParserHighCPU
+        expr: parser_service_cpu_percent{vendor="camera"} > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Camera parser high CPU usage"
+          description: "Camera parser {{ $labels.node }} CPU usage is {{ $value | printf \"%.1f\" }}% (threshold: 80%)"
+      
+      - alert: CameraParserHighMemory
+        expr: parser_service_memory_percent{vendor="camera"} > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Camera parser high memory usage"
+          description: "Camera parser {{ $labels.node }} memory usage is {{ $value | printf \"%.1f\" }}% (threshold: 85%)"
+      
+      # =====================
+      # Deduplication Cache
+      # =====================
+      
+      - alert: CameraDedupCacheNearFull
+        expr: camera_dedup_cache_size > 8000
+        for: 5m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "Camera deduplication cache is near capacity"
+          description: "Camera parser {{ $labels.node }} dedup cache has {{ $value }} entries (max: 10000). Old entries may be evicted."
+      
+      # =====================
+      # API Errors
+      # =====================
+      
+      - alert: CameraAPIErrorsHigh
+        expr: increase(camera_api_errors[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: camera-parser
+        annotations:
+          summary: "High number of CMS API errors"
+          description: "Camera parser {{ $labels.node }} had {{ $value | printf \"%.0f\" }} API errors in the last 5 minutes."

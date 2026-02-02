@@ -1,0 +1,11 @@
+imei,event_type,is_sms,is_email,is_call,priority,start_time,end_time,enabled
+0,Overspeeding,1,1,0,5,0:00:00,23:59:59,1
+0,Distraction,1,0,0,3,0:00:00,23:59:59,1
+0,Smoking,1,0,0,3,0:00:00,23:59:59,1
+0,PhoneCalling,1,0,0,3,0:00:00,23:59:59,1
+0,Fatigue,0,1,0,2,0:00:00,23:59:59,1
+0,SeatBelt,1,0,0,4,0:00:00,23:59:59,1
+0,Forward Collision,1,1,1,5,0:00:00,23:59:59,1
+0,Backward Collision,1,1,0,5,0:00:00,23:59:59,1
+0,Lost Face,0,1,0,2,0:00:00,23:59:59,1
+0,Eyes Close,1,0,0,4,0:00:00,23:59:59,1

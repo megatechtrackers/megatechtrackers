@@ -2,10 +2,14 @@
 FROM node:20-alpine AS base
 
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install system dependencies (with retries for network issues)
+RUN for i in $(seq 1 20); do \
+    apk add --no-cache libc6-compat && break || \
+    echo "Retry $i failed, waiting 60s..." && sleep 60; \
+    done
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm config set fetch-retries 20 && npm config set fetch-retry-mintimeout 60000 && npm config set fetch-retry-maxtimeout 300000 && npm config set fetch-timeout 1200000 && npm ci
 
 FROM base AS builder
 WORKDIR /app

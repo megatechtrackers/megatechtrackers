@@ -2,8 +2,8 @@ FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (with retries for network issues)
+RUN apt-get update -o Acquire::Retries=10 && apt-get install -y -o Acquire::Retries=10 \
     gcc \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY consumer_node/requirements.txt requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (upgrade pip for security and dependency resolution)
+RUN pip install --upgrade pip && pip install --no-cache-dir --retries 20 --timeout 1200 -r requirements.txt
 
 # Copy application code
 COPY . .

@@ -1,6 +1,6 @@
 # Complete API Documentation
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2026-02-01
 
 **Interactive Documentation**:
 - **Access Gateway API**: [Swagger UI](http://localhost:3001/api-docs) (OpenAPI 3.0)
@@ -513,7 +513,7 @@ Generate authenticated Grafana embed URL with locked filters.
 {
   "success": true,
   "embedUrl": "http://localhost:3000/d/abc123?token=TOKEN&kiosk=1&orgId=1&var-vehicle=V001&var-vehicle-locked=true",
-  "expiresAt": "2025-12-23T12:00:00.000Z"
+  "expiresAt": "2026-02-01T12:00:00.000Z"
 }
 ```
 
@@ -569,7 +569,7 @@ Service health check.
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-12-23T12:00:00.000Z",
+  "timestamp": "2026-02-01T12:00:00.000Z",
   "version": "1.0.0",
   "services": {
     "grafana": "ok",

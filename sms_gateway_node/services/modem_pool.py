@@ -10,9 +10,12 @@ Supports hybrid modem selection:
 """
 import asyncio
 import logging
+import time
+from contextlib import asynccontextmanager
 from typing import Optional, Dict, List, Literal
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.exc import DBAPIError, OperationalError, InterfaceError
 from sqlalchemy import text
 
 from ..config import Config
@@ -24,15 +27,33 @@ logger = logging.getLogger(__name__)
 # Service types that can use modems
 SmsServiceType = Literal['alarms', 'commands', 'otp', 'marketing']
 
+# Connection error types
+CONNECTION_ERRORS = (
+    ConnectionError, ConnectionRefusedError, ConnectionResetError,
+    BrokenPipeError, TimeoutError, asyncio.TimeoutError, OSError,
+)
+
+
+def is_connection_error(error: Exception) -> bool:
+    """Check if an exception indicates a connection problem"""
+    if isinstance(error, CONNECTION_ERRORS):
+        return True
+    if isinstance(error, (DBAPIError, OperationalError, InterfaceError)):
+        error_str = str(error).lower()
+        keywords = ['connection refused', 'connection reset', 'timeout', 'connect call failed']
+        return any(kw in error_str for kw in keywords)
+    return False
+
 
 class ModemPool:
     """
-    Manages pool of RUT200 SMS modems.
+    Manages pool of RUT200 SMS modems with resilient database connections.
     
     Features:
     - Load balancing based on quota remaining
     - Health status tracking
     - Daily usage tracking
+    - Automatic database reconnection
     - Shared with Alarm Service
     """
     
@@ -44,6 +65,9 @@ class ModemPool:
         self._engine = None
         self._session_maker = None
         self._initialized = False
+        self._reconnect_lock = asyncio.Lock()
+        self._consecutive_failures = 0
+        self._last_reconnect = 0
         
         logger.info("ModemPool initialized")
     
@@ -54,12 +78,8 @@ class ModemPool:
             cls._instance = ModemPool()
         return cls._instance
     
-    async def _init_db(self):
-        """Initialize database connection."""
-        if self._engine is not None:
-            return
-        
-        # Build database URL from config
+    def _create_engine(self):
+        """Create a new database engine"""
         db_config = Config.get_database_config()
         host = db_config.get('host', 'localhost')
         port = db_config.get('port', 5432)
@@ -69,16 +89,118 @@ class ModemPool:
         
         db_url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
         
-        self._engine = create_async_engine(db_url, echo=False, pool_pre_ping=True)
-        self._session_maker = async_sessionmaker(self._engine, expire_on_commit=False)
-        self._initialized = True
+        return create_async_engine(
+            db_url,
+            echo=False,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+            pool_recycle=1800,
+            pool_timeout=30,
+            connect_args={
+                "server_settings": {"timezone": "UTC"},
+                "command_timeout": 30,
+            }
+        )
+    
+    async def _init_db(self):
+        """Initialize database connection with retry."""
+        if self._engine is not None:
+            return
         
-        logger.info(f"Database connection initialized: {host}:{port}/{name}")
+        max_retries = 10
+        for attempt in range(max_retries):
+            try:
+                self._engine = self._create_engine()
+                self._session_maker = async_sessionmaker(self._engine, expire_on_commit=False)
+                
+                # Test connection
+                async with self._engine.connect() as conn:
+                    await conn.execute(text("SELECT 1"))
+                
+                self._initialized = True
+                db_config = Config.get_database_config()
+                logger.info(f"Database connection initialized: {db_config['host']}:{db_config['port']}/{db_config['name']}")
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    delay = min(2 ** attempt, 30)
+                    logger.warning(f"Database init failed (attempt {attempt + 1}): {e}. Retrying in {delay}s...")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Database init failed after {max_retries} attempts: {e}")
+                    raise
+    
+    async def _reconnect_db(self):
+        """Reconnect database engine"""
+        async with self._reconnect_lock:
+            now = time.time()
+            if now - self._last_reconnect < 5.0:
+                return
+            
+            self._last_reconnect = now
+            logger.warning("Reconnecting database...")
+            
+            try:
+                if self._engine:
+                    await self._engine.dispose()
+                
+                self._engine = self._create_engine()
+                self._session_maker = async_sessionmaker(self._engine, expire_on_commit=False)
+                
+                async with self._engine.connect() as conn:
+                    await conn.execute(text("SELECT 1"))
+                
+                self._consecutive_failures = 0
+                logger.info("Database reconnected successfully")
+            except Exception as e:
+                logger.error(f"Database reconnection failed: {e}")
+    
+    def _record_failure(self):
+        """Record a database failure"""
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= 3:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self._reconnect_db())
+            except RuntimeError:
+                pass
+    
+    def _record_success(self):
+        """Record a successful database operation"""
+        self._consecutive_failures = 0
     
     async def get_session(self) -> AsyncSession:
         """Get database session."""
         await self._init_db()
         return self._session_maker()
+    
+    @asynccontextmanager
+    async def get_resilient_session(self, max_retries: int = 3):
+        """Get database session with automatic retry on connection errors"""
+        await self._init_db()
+        
+        last_error = None
+        for attempt in range(max_retries + 1):
+            try:
+                async with self._session_maker() as session:
+                    yield session
+                    self._record_success()
+                    return
+            except Exception as e:
+                last_error = e
+                if is_connection_error(e):
+                    self._record_failure()
+                    if attempt < max_retries:
+                        delay = 1.0 * (2 ** attempt)
+                        logger.warning(f"DB connection error (attempt {attempt + 1}): {e}")
+                        await asyncio.sleep(delay)
+                        continue
+                raise
+        
+        if last_error:
+            raise last_error
     
     async def get_device_modem_id(self, imei: str) -> Optional[int]:
         """
@@ -370,14 +492,14 @@ class ModemPool:
                     WHERE id = :id
                 """), {"id": modem_id, "count": sms_count})
                 
-                # Update daily usage
-                today = date.today()
+                # Update daily usage (UTC midnight for consistency); naive UTC for TIMESTAMP binding
+                today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
                 await session.execute(text("""
                     INSERT INTO alarms_sms_modem_usage (modem_id, date, sms_count)
                     VALUES (:modem_id, :date, :count)
                     ON CONFLICT (modem_id, date)
                     DO UPDATE SET sms_count = alarms_sms_modem_usage.sms_count + :count
-                """), {"modem_id": modem_id, "date": today, "count": sms_count})
+                """), {"modem_id": modem_id, "date": today_utc, "count": sms_count})
                 
                 await session.commit()
                 

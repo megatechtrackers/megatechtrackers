@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Settings, Radio, Menu, X } from 'lucide-react';
+import { Home, Settings, Radio, Menu, X, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkingTimezone } from '@/lib/TimezoneContext';
+import { WORKING_TIMEZONES } from '@/lib/timeUtils';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { workingTimezone, setWorkingTimezone } = useWorkingTimezone();
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
@@ -30,6 +33,25 @@ export default function Navigation() {
             <div>
               <div className="font-bold text-white text-sm">Device Service</div>
             </div>
+          </div>
+
+          {/* Working timezone: for managing devices in another region */}
+          <div className="hidden sm:flex items-center gap-2">
+            <span title="Working timezone for device times">
+              <Globe className="w-4 h-4 text-slate-400" />
+            </span>
+            <select
+              value={workingTimezone}
+              onChange={(e) => setWorkingTimezone(e.target.value)}
+              className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-500 max-w-[160px]"
+              title="Use US/Pakistan time when viewing and setting device times"
+            >
+              {WORKING_TIMEZONES.map((opt) => (
+                <option key={opt.value || 'browser'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Desktop Navigation Links */}

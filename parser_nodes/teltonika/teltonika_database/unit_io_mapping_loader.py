@@ -6,7 +6,7 @@ Implements Phase 2: LRU cache with size limit + inactive device cleanup
 """
 import logging
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -145,7 +145,7 @@ class DatabaseUnitIOMappingLoader:
         if self._inactive_cleanup_hours <= 0:
             return
         
-        cutoff_time = datetime.utcnow() - timedelta(hours=self._inactive_cleanup_hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self._inactive_cleanup_hours)
         inactive_imeis = [
             imei for imei, metadata in self._cache_metadata.items()
             if metadata.last_access < cutoff_time
@@ -179,7 +179,7 @@ class DatabaseUnitIOMappingLoader:
             self._mappings_cache.move_to_end(imei)
             # Update last_access
             if imei in self._cache_metadata:
-                self._cache_metadata[imei].last_access = datetime.utcnow()
+                self._cache_metadata[imei].last_access = datetime.now(timezone.utc)
     
     async def _check_cache_stale(self, imei: str) -> bool:
         """
@@ -192,7 +192,7 @@ class DatabaseUnitIOMappingLoader:
             return True
         
         metadata = self._cache_metadata[imei]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # Check TTL fallback
         ttl_cutoff = metadata.cached_at + timedelta(minutes=self._cache_ttl_minutes)
@@ -284,8 +284,8 @@ class DatabaseUnitIOMappingLoader:
                     # Cache empty dict to avoid repeated queries
                     self._mappings_cache[imei] = {}
                     self._cache_metadata[imei] = CacheMetadata(
-                        cached_at=datetime.utcnow(),
-                        last_access=datetime.utcnow(),
+                        cached_at=datetime.now(timezone.utc),
+                        last_access=datetime.now(timezone.utc),
                         max_updateddate=max_updateddate
                     )
                     # Move to end (most recently used)
@@ -391,8 +391,8 @@ class DatabaseUnitIOMappingLoader:
                 # Cache the mappings AFTER all mappings are processed
                 self._mappings_cache[imei] = mappings_by_io
                 self._cache_metadata[imei] = CacheMetadata(
-                    cached_at=datetime.utcnow(),
-                    last_access=datetime.utcnow(),
+                    cached_at=datetime.now(timezone.utc),
+                    last_access=datetime.now(timezone.utc),
                     max_updateddate=max_updateddate
                 )
                 # Move to end (most recently used)
@@ -498,7 +498,7 @@ class DatabaseUnitIOMappingLoader:
         Returns:
             Dictionary with cache statistics
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         active_count = 0
         stale_count = 0
         

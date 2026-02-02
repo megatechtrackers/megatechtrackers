@@ -1,3 +1,7 @@
+# Node.js
+node_modules/
+.next/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -60,3 +64,20 @@ logs/
 
 # MkDocs build output (built in container; do not commit)
 site/
+
+# Project-specific (ops_node, alarm_node, mobile_app_node, android)
+postgres_data/
+.coverage
+htmlcov/
+.pytest_cache/
+*.bak
+.expo/
+web-build/
+npm-debug.log
+yarn-error.log
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
+*.jsbundle

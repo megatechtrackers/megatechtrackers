@@ -1,0 +1,92 @@
+{
+  "data_transfer_mode": {
+    "mode": "RABBITMQ",
+    "description": "Data Transfer Mode: LOGS (CSV files for testing) or RABBITMQ (publish to RabbitMQ for production)"
+  },
+  "parser_node": {
+    "node_id": "${NODE_ID:-camera-parser-1}",
+    "vendor": "${VENDOR:-camera}",
+    "node_index": ${NODE_INDEX:-0},
+    "total_nodes_for_vendor": ${TOTAL_NODES:-1},
+    "expected_devices": 600,
+    "description": "Camera parser service configuration"
+  },
+  "database": {
+    "host": "pgbouncer",
+    "port": 6432,
+    "name": "tracking_db",
+    "user": "parser_readonly",
+    "password": "readonly_password",
+    "engine": "PostgreSQL",
+    "description": "Database configuration for camera parser (read access for cms_servers, camera_alarm_config). Using PgBouncer connection pooler."
+  },
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "publisher_confirms": true,
+    "publisher_confirm_timeout": 5.0,
+    "message_persistence": true,
+    "description": "RabbitMQ configuration"
+  },
+  "cms_servers": [],
+  "_cms_servers_note": "Empty array - in RABBITMQ mode uses database cms_servers table. For fallback, set CMS_HOST/CMS_USERNAME/CMS_PASSWORD environment variables.",
+  "polling": {
+    "device_status_interval_seconds": 30,
+    "safety_alarms_interval_seconds": 60,
+    "realtime_alarms_interval_seconds": 10,
+    "alarm_lookback_minutes": 120,
+    "alarm_backfill_hours": 168,
+    "gps_backfill_hours": 168,
+    "filter_alarm_types": true,
+    "max_concurrent_requests": 20,
+    "request_timeout_seconds": 30,
+    "parallel_chunk_size": 20,
+    "enable_trackdata_polling": true,
+    "description": "Polling intervals and concurrency. Backfill defaults to 7 days (168 hours)."
+  },
+  "circuit_breaker": {
+    "failure_threshold": 5,
+    "reset_timeout_seconds": 60,
+    "description": "Circuit breaker settings to protect against unhealthy CMS servers"
+  },
+  "deduplication": {
+    "max_cache_size": 10000,
+    "ttl_hours": 1,
+    "description": "In-memory deduplication cache for alarm records"
+  },
+  "alarm_config": {
+    "cache_ttl_minutes": 30,
+    "cache_max_size": 10000,
+    "auto_provision_enabled": true,
+    "description": "Camera alarm config loader cache settings. Auto-provision creates config from template (imei=0) for new devices."
+  },
+  "health_check": {
+    "enabled": true,
+    "port": 8080,
+    "description": "HTTP health check server (/health, /health/live, /health/ready, /metrics)"
+  },
+  "load_monitoring": {
+    "enabled": true,
+    "report_interval_seconds": 10,
+    "api_endpoint": "http://monitoring-service:8080/api/parser-nodes/metrics",
+    "log_metrics": false,
+    "description": "Load monitoring configuration - reports metrics to monitoring service"
+  },
+  "logging": {
+    "level": "DEBUG",
+    "log_file": "logs/camera-parser.log",
+    "json_format": false,
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "description": "Logging Configuration"
+  },
+  "shutdown": {
+    "task_timeout_seconds": 5.0,
+    "drain_timeout_seconds": 2.0,
+    "description": "Graceful shutdown timeouts"
+  }
+}

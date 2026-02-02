@@ -16,19 +16,9 @@ if ! docker info &> /dev/null; then
 fi
 
 echo "Building and starting Docker containers..."
-echo "   (Starting full stack)"
+echo "   (Starting full stack with frappe profile)"
 
-# Remove any conflicting containers that might exist from previous runs
-echo "Cleaning up any conflicting containers..."
-CONTAINER_NAMES=("docs" "web-app" "mobile-app" "frappe" "grafana" "grafana-proxy" "access-gateway" "mariadb" "redis")
-for name in "${CONTAINER_NAMES[@]}"; do
-    if docker ps -a --filter "name=$name" --format "{{.Names}}" 2>/dev/null | grep -q "^${name}$"; then
-        echo "   Removing existing container: $name"
-        docker rm -f "$name" 2>/dev/null || true
-    fi
-done
-
-docker compose up --build -d
+docker compose --profile frappe up --build -d
 
 # --- Auto-provision keys (Grafana + Frappe) ---
 
@@ -187,14 +177,14 @@ if wait_http_ok "http://localhost:3000/api/health" 300 && wait_http_ok "http://l
   fi
 
   # Restart access-gateway to pick up newly written .env
-  docker compose up -d --no-deps --force-recreate access-gateway >/dev/null 2>&1 || true
+  docker compose --profile frappe up -d --no-deps --force-recreate access-gateway >/dev/null 2>&1 || true
 
   # Ensure Frappe allow_cors is configured for local dev (any origin)
   docker exec frappe bash -lc "cd /home/frappe/frappe-bench && bench --site site1.localhost set-config allow_cors '*'" >/dev/null 2>&1 || true
   # Ensure Frappe CSP frame-ancestors allows localhost:* so Expo web can embed forms/reports.
   # (CSP header is set by megatechtrackers.utils.http.after_request; this config is optional extra.)
   docker exec frappe bash -lc "cd /home/frappe/frappe-bench && bench --site site1.localhost set-config frame_ancestors 'http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:*'" >/dev/null 2>&1 || true
-  docker compose restart frappe >/dev/null 2>&1 || true
+  docker compose --profile frappe restart frappe >/dev/null 2>&1 || true
 
   # Hard verification (fail fast)
   if [ ! -f .env ] || ! grep -qE '^GRAFANA_API_KEY=.+' .env || ! grep -qE '^FRAPPE_API_KEY=.+' .env || ! grep -qE '^FRAPPE_API_SECRET=.+' .env; then
@@ -237,7 +227,7 @@ sleep 10
 
 echo ""
 echo "Service Status:"
-docker compose ps
+docker compose --profile frappe ps
 
 echo ""
 echo "Services are starting up."
@@ -247,7 +237,7 @@ echo "   - Frappe:        http://localhost:8000 (Administrator/admin)"
 echo "   - Grafana:       http://localhost:3000 (admin/admin)"
 echo "   - Access Gateway: http://localhost:3001/health"
 echo "   - Next.js:       http://localhost:3002"
-echo "   - Docs:          http://localhost:8001"
+echo "   - Docs:          http://localhost:8002"
 echo "   - MariaDB:       localhost:3306"
 echo "   - Redis:         localhost:6379"
 echo ""

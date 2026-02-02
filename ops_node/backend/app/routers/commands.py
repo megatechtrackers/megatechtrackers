@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.database import get_db
+from app.utils.datetime_utils import to_naive_utc
 from app.models import Unit, DeviceConfig, UnitConfig, CommandOutbox, CommandSent, CommandInbox, CommandHistory
 from app.schemas.command import (
     SendCommandRequest, CommandResponse, 
@@ -237,7 +238,7 @@ async def get_history(
 ):
     """Get command history for a unit"""
     
-    from_date = datetime.now() - timedelta(days=days)
+    from_date = to_naive_utc(datetime.now(timezone.utc) - timedelta(days=days))
     
     query = select(CommandHistory).where(
         CommandHistory.imei == imei,
@@ -330,9 +331,9 @@ async def mark_command_sent(
         raise HTTPException(status_code=404, detail="Command not found in outbox")
     
     status = "sent" if success else "failed"
-    now = datetime.now()
+    now_naive = to_naive_utc(datetime.now(timezone.utc))
     
-    # Create sent record
+    # Create sent record (naive UTC for TIMESTAMP WITHOUT TIME ZONE)
     sent_cmd = CommandSent(
         imei=outbox_cmd.imei,
         sim_no=outbox_cmd.sim_no,
@@ -343,7 +344,7 @@ async def mark_command_sent(
         status=status,
         error_message=error,
         created_at=outbox_cmd.created_at,
-        sent_at=now
+        sent_at=now_naive
     )
     db.add(sent_cmd)
     
@@ -358,7 +359,7 @@ async def mark_command_sent(
         send_method=outbox_cmd.send_method,
         user_id=outbox_cmd.user_id,
         created_at=outbox_cmd.created_at,
-        sent_at=now
+        sent_at=now_naive
     )
     db.add(history)
     
@@ -418,13 +419,13 @@ async def receive_sms(
 ):
     """Record received SMS: add to history, match to sent, clean up sent table"""
     
-    # Check for duplicate in history (within 1 minute)
+    # Check for duplicate in history (within 1 minute); naive UTC for TIMESTAMP binding
     result = await db.execute(
         select(CommandHistory).where(
             CommandHistory.sim_no == sim_no,
             CommandHistory.command_text == message,
             CommandHistory.direction == "incoming",
-            CommandHistory.created_at >= datetime.now() - timedelta(minutes=1)
+            CommandHistory.created_at >= to_naive_utc(datetime.now(timezone.utc) - timedelta(minutes=1))
         )
     )
     existing = result.scalar_one_or_none()
@@ -440,14 +441,14 @@ async def receive_sms(
     
     imei = unit.imei if unit else None
     
-    # Add incoming SMS to history
+    # Add incoming SMS to history (naive UTC for TIMESTAMP WITHOUT TIME ZONE)
     history = CommandHistory(
         imei=imei,
         sim_no=sim_no,
         direction="incoming",
         command_text=message,
         status="received",
-        created_at=datetime.now()
+        created_at=to_naive_utc(datetime.now(timezone.utc))
     )
     db.add(history)
     
@@ -459,7 +460,7 @@ async def receive_sms(
             select(CommandSent).where(
                 CommandSent.sim_no == sim_no,
                 CommandSent.status == "sent",
-                CommandSent.sent_at >= datetime.now() - timedelta(minutes=10)
+                CommandSent.sent_at >= to_naive_utc(datetime.now(timezone.utc) - timedelta(minutes=10))
             ).order_by(desc(CommandSent.sent_at)).limit(1)
         )
         sent_cmd = result.scalar_one_or_none()
@@ -471,7 +472,7 @@ async def receive_sms(
                     CommandHistory.sim_no == sim_no,
                     CommandHistory.direction == "outgoing",
                     CommandHistory.status == "sent",
-                    CommandHistory.sent_at >= datetime.now() - timedelta(minutes=10)
+                    CommandHistory.sent_at >= to_naive_utc(datetime.now(timezone.utc) - timedelta(minutes=10))
                 ).order_by(desc(CommandHistory.sent_at)).limit(1)
             )
             history_cmd = result.scalar_one_or_none()
@@ -499,7 +500,7 @@ async def cleanup_old_records(
 ):
     """Delete old sent and inbox records (already in history)"""
     
-    cutoff = datetime.now() - timedelta(hours=older_than_hours)
+    cutoff = to_naive_utc(datetime.now(timezone.utc) - timedelta(hours=older_than_hours))
     deleted_count = 0
     
     # Delete old sent commands (already in history)

@@ -1,7 +1,7 @@
 {
 	"charts": [],
 	"content": "[{\"type\":\"header\",\"data\":{\"text\":\"Access Control\",\"level\":4,\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Megatechtrackers Access Control\",\"col\":4}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"Configuration\",\"level\":4,\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"AC Company\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"AC Department\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"AC Vehicle\",\"col\":4}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"Forms & Reports\",\"level\":4,\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"AC Frappe Form\",\"col\":4}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"AC Grafana Report\",\"col\":4}}]",
-	"creation": "2025-12-23 00:00:00.000000",
+	"creation": "2026-02-01 00:00:00.000000",
 	"custom_blocks": [],
 	"docstatus": 0,
 	"doctype": "Workspace",
@@ -12,7 +12,7 @@
 	"is_hidden": 0,
 	"label": "Megatechtrackers",
 	"links": [],
-	"modified": "2025-12-23 00:00:00.000000",
+	"modified": "2026-02-01 00:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "Megatechtrackers",
 	"name": "Megatechtrackers",
