@@ -33,7 +33,9 @@ logs/*.log
 logs/*.csv
 *.log
 
-# IDE
+# IDE / editor
+.cursor
+.cursor/
 .vscode/
 .idea/
 *.swp

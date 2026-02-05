@@ -1,0 +1,35 @@
+{
+  "rabbitmq": {
+    "host": "rabbitmq-lb",
+    "port": 5672,
+    "virtual_host": "tracking_gateway",
+    "username": "tracking_user",
+    "password": "tracking_password",
+    "exchange": "tracking_data_exchange",
+    "queue": "metrics_queue",
+    "publisher_confirms": true,
+    "message_persistence": true
+  },
+  "database": {
+    "host": "pgbouncer",
+    "port": 6432,
+    "name": "tracking_db",
+    "user": "tracking_writer",
+    "password": "writer_password",
+    "engine": "PostgreSQL"
+  },
+  "metric_engine": {
+    "workers": 1,
+    "prefetch_count": 50,
+    "batch_size": 100,
+    "batch_timeout": 2.0,
+    "enabled": true
+  },
+  "logging": {
+    "log_file": "logs/metric_engine.log",
+    "level": "INFO",
+    "max_bytes": 10485760,
+    "backup_count": 5,
+    "json_format": false
+  }
+}

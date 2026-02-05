@@ -21,6 +21,7 @@ rule_files:
   - "alerts-sms-gateway-service.yml"
   - "alerts-camera-service.yml"
   - "alerts-consumer-service.yml"
+  - "alerts-metric-engine.yml"
 
 scrape_configs:
   # Prometheus itself
@@ -155,6 +156,17 @@ scrape_configs:
           instance: 'consumer-service-alarm'
           service: 'consumer-service'
           consumer_type: 'alarm'
+    metrics_path: '/metrics'
+
+  # Metric Engine Service (violations, trips, metric_events; runbook: metric_engine_node/docs/PROMETHEUS_RUNBOOK.md)
+  - job_name: 'metric_engine'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['metric-engine-service:9091']
+        labels:
+          instance: 'metric-engine-service'
+          service: 'metric-engine'
     metrics_path: '/metrics'
 
   # Web App (Next.js - frappe profile)

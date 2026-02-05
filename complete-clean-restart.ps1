@@ -30,7 +30,7 @@ Write-Host ""
 Write-Host "=== Step 2: Removing all containers ===" -ForegroundColor Yellow
 # docker-compose down should have removed containers, but force remove any remaining
 $containers = docker ps -a --format "{{.Names}}" | Where-Object { 
-    $_ -match "parser-service|camera-parser|consumer-service-|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
+    $_ -match "parser-service|camera-parser|consumer-service-|metric-engine-service|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
 }
 if ($containers) {
     $containers | ForEach-Object {
@@ -137,6 +137,7 @@ $services = @(
     "parser-service-1",
     "consumer-service-database",
     "consumer-service-alarm",
+    "metric-engine-service",
     "monitoring-service",
     "sms-gateway-service",
     "camera-parser",
@@ -229,7 +230,7 @@ docker compose rm -f alarm-service-test 2>&1 | Out-Null
 
 # Start parsers (Teltonika + camera), consumers, haproxy, monitoring-service, alarm-service, sms-gateway-service, ops-service
 # Use --profile production so alarm-service (which has that profile) is started
-docker-compose --profile production up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
+docker-compose --profile production up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm metric-engine-service monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error starting core services" -ForegroundColor Red
     exit 1
@@ -491,6 +492,18 @@ try {
     Write-Host "  ⚠ Operations Service Backend: Not responding (may still be starting)" -ForegroundColor Yellow
 }
 
+# Check Metric Engine Service health
+try {
+    $metricEngineHealth = Invoke-WebRequest -Uri "http://localhost:9091/health" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+    if ($metricEngineHealth.StatusCode -eq 200) {
+        Write-Host "  ✓ Metric Engine Service: Healthy" -ForegroundColor Green
+    } else {
+        Write-Host "  ⚠ Metric Engine Service: Status $($metricEngineHealth.StatusCode)" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "  ⚠ Metric Engine Service: Not responding (may still be starting)" -ForegroundColor Yellow
+}
+
 if (-not $allHealthy) {
     Write-Host "  ⚠ Some services are not healthy. Check logs for details." -ForegroundColor Yellow
     Write-Host "    Alarm Service: docker logs alarm-service" -ForegroundColor Gray
@@ -538,8 +551,8 @@ Write-Host "  Healthy: $healthy / $total containers" -ForegroundColor $(if ($hea
 Write-Host ""
 Write-Host "Total Containers Running:" -ForegroundColor Cyan
 $allContainers = (docker ps --format "{{.Names}}").Count
-Write-Host "  Total: $allContainers containers" -ForegroundColor $(if ($allContainers -ge 31) { "Green" } else { "Yellow" })
-Write-Host "  Expected: 31+ containers (20 core + 8 monitoring + 3 ops-service/gateway)" -ForegroundColor Gray
+Write-Host "  Total: $allContainers containers" -ForegroundColor $(if ($allContainers -ge 32) { "Green" } else { "Yellow" })
+Write-Host "  Expected: 32+ containers (20 core + 8 monitoring + 3 ops-service/gateway + metric-engine)" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "Production Services Status:" -ForegroundColor Cyan
@@ -579,6 +592,14 @@ if ($opsServiceFrontend -match "ops-service-frontend") {
     Write-Host "  ✓ Operations Service Frontend: Running (http://localhost:13000)" -ForegroundColor Green
 } else {
     Write-Host "  ⚠ Operations Service Frontend: Not running" -ForegroundColor Yellow
+}
+
+# Metric Engine Service
+$metricEngineService = docker ps --filter "name=metric-engine-service" --filter "status=running" --format "{{.Names}}" 2>&1
+if ($metricEngineService -match "metric-engine-service") {
+    Write-Host "  ✓ Metric Engine Service: Running (http://localhost:9091)" -ForegroundColor Green
+} else {
+    Write-Host "  ⚠ Metric Engine Service: Not running" -ForegroundColor Yellow
 }
 
 Write-Host ""

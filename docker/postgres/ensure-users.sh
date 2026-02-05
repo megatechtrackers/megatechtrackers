@@ -146,5 +146,24 @@ else
     echo "Location reference CSV file not found at $LOC_CSV_FILE (skipping)"
 fi
 
+# Set materialized view owners to tracking_writer (metric_engine connects as tracking_writer and needs to REFRESH them)
+# Note: GRANT ALL ON ALL TABLES above includes materialized views; setting owner ensures tracking_writer can REFRESH.
+echo "Setting materialized view owners to tracking_writer..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    DO \$\$
+    DECLARE
+        r RECORD;
+    BEGIN
+        FOR r IN (SELECT matviewname FROM pg_matviews WHERE schemaname = 'public') LOOP
+            EXECUTE format('ALTER MATERIALIZED VIEW %I OWNER TO tracking_writer', r.matviewname);
+        END LOOP;
+    END
+    \$\$;
+EOSQL
+echo "✓ Materialized view owners updated"
+
+# Ensure parser_readonly can SELECT from materialized views (ALL TABLES includes MVs; re-apply for any new MVs)
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO parser_readonly;"
+
 echo "All users, extensions, and tables verified!"
 echo "=========================================="

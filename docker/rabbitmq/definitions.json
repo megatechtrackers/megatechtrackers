@@ -125,6 +125,29 @@
       }
     },
     {
+      "name": "metrics_queue",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 3600000,
+        "x-max-length": 1000000,
+        "x-dead-letter-exchange": "dlx_tracking_data",
+        "x-dead-letter-routing-key": "dlq_metrics",
+        "x-queue-mode": "lazy"
+      }
+    },
+    {
+      "name": "dlq_metrics",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 100000
+      }
+    },
+    {
       "name": "alarm_notifications",
       "vhost": "tracking_gateway",
       "durable": true,
@@ -147,6 +170,16 @@
         "x-message-ttl": 604800000,
         "x-max-length": 10000
       }
+    },
+    {
+      "name": "invalid_data_queue",
+      "vhost": "tracking_gateway",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 604800000,
+        "x-max-length": 100000
+      }
     }
   ],
   "bindings": [
@@ -154,6 +187,14 @@
       "source": "tracking_data_exchange",
       "vhost": "tracking_gateway",
       "destination": "trackdata_queue",
+      "destination_type": "queue",
+      "routing_key": "tracking.*.trackdata",
+      "arguments": {}
+    },
+    {
+      "source": "tracking_data_exchange",
+      "vhost": "tracking_gateway",
+      "destination": "metrics_queue",
       "destination_type": "queue",
       "routing_key": "tracking.*.trackdata",
       "arguments": {}
@@ -196,6 +237,14 @@
       "destination": "dlq_events",
       "destination_type": "queue",
       "routing_key": "dlq_events",
+      "arguments": {}
+    },
+    {
+      "source": "dlx_tracking_data",
+      "vhost": "tracking_gateway",
+      "destination": "dlq_metrics",
+      "destination_type": "queue",
+      "routing_key": "dlq_metrics",
       "arguments": {}
     },
     {

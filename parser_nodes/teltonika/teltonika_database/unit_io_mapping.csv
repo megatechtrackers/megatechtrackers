@@ -12,7 +12,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544375602980,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 357544375602980,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 357544375602980,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-357544375602980,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 357544375602980,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 357544375602980,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 357544375602980,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -27,8 +26,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544375602980,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 357544375602980,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 357544375602980,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357544375602980,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544375602980,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 357544375602980,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 357544375602980,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 357544375602980,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -37,10 +34,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544375602980,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 357544375602980,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 357544375602980,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-357544375602980,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544375602980,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357544375602980,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544375602980,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352094085155775,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352094085155775,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352094085155775,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -54,7 +47,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094085155775,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352094085155775,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352094085155775,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352094085155775,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352094085155775,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352094085155775,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352094085155775,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -69,8 +61,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094085155775,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352094085155775,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352094085155775,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352094085155775,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094085155775,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352094085155775,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352094085155775,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352094085155775,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -79,10 +69,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094085155775,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352094085155775,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352094085155775,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352094085155775,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094085155775,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352094085155775,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094085155775,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 357454074658418,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 357454074658418,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 357454074658418,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -96,7 +82,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357454074658418,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 357454074658418,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 357454074658418,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-357454074658418,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 357454074658418,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 357454074658418,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 357454074658418,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -111,8 +96,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357454074658418,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 357454074658418,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 357454074658418,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357454074658418,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-357454074658418,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 357454074658418,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 357454074658418,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 357454074658418,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -121,10 +104,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357454074658418,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 357454074658418,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 357454074658418,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-357454074658418,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357454074658418,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357454074658418,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357454074658418,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 356307042117183,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 356307042117183,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 356307042117183,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -138,7 +117,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 356307042117183,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 356307042117183,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 356307042117183,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-356307042117183,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 356307042117183,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 356307042117183,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 356307042117183,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -153,8 +131,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 356307042117183,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 356307042117183,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 356307042117183,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-356307042117183,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-356307042117183,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 356307042117183,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 356307042117183,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 356307042117183,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -163,10 +139,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 356307042117183,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 356307042117183,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 356307042117183,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-356307042117183,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-356307042117183,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-356307042117183,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-356307042117183,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352094089400136,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352094089400136,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352094089400136,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -180,7 +152,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094089400136,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352094089400136,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352094089400136,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352094089400136,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352094089400136,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352094089400136,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352094089400136,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -195,8 +166,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094089400136,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352094089400136,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352094089400136,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352094089400136,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094089400136,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352094089400136,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352094089400136,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352094089400136,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -205,10 +174,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352094089400136,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352094089400136,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352094089400136,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352094089400136,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094089400136,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352094089400136,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352094089400136,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 359632101788088,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 359632101788088,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 359632101788088,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -222,7 +187,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359632101788088,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 359632101788088,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 359632101788088,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-359632101788088,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 359632101788088,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 359632101788088,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 359632101788088,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -237,8 +201,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359632101788088,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 359632101788088,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 359632101788088,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-359632101788088,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-359632101788088,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 359632101788088,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 359632101788088,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 359632101788088,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -247,10 +209,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359632101788088,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 359632101788088,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 359632101788088,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-359632101788088,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-359632101788088,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-359632101788088,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-359632101788088,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 354018113247716,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 354018113247716,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 354018113247716,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -264,7 +222,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 354018113247716,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 354018113247716,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 354018113247716,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-354018113247716,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 354018113247716,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 354018113247716,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 354018113247716,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -279,8 +236,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 354018113247716,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 354018113247716,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 354018113247716,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-354018113247716,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-354018113247716,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 354018113247716,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 354018113247716,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 354018113247716,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -289,10 +244,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 354018113247716,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 354018113247716,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 354018113247716,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-354018113247716,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-354018113247716,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-354018113247716,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-354018113247716,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848027112941,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352848027112941,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352848027112941,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -306,7 +257,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848027112941,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352848027112941,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352848027112941,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352848027112941,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352848027112941,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848027112941,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848027112941,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -321,8 +271,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848027112941,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352848027112941,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352848027112941,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848027112941,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848027112941,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848027112941,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848027112941,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848027112941,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -331,10 +279,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848027112941,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352848027112941,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352848027112941,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352848027112941,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848027112941,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848027112941,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848027112941,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848025988086,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352848025988086,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352848025988086,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -348,7 +292,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848025988086,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352848025988086,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352848025988086,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352848025988086,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352848025988086,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848025988086,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848025988086,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -363,8 +306,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848025988086,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352848025988086,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352848025988086,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848025988086,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848025988086,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848025988086,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848025988086,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848025988086,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -373,10 +314,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848025988086,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352848025988086,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352848025988086,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352848025988086,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848025988086,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848025988086,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848025988086,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 353976013360098,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 353976013360098,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 353976013360098,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -390,7 +327,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353976013360098,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 353976013360098,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 353976013360098,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-353976013360098,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 353976013360098,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 353976013360098,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 353976013360098,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -405,8 +341,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353976013360098,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 353976013360098,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 353976013360098,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353976013360098,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-353976013360098,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 353976013360098,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 353976013360098,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 353976013360098,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -415,10 +349,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353976013360098,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 353976013360098,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 353976013360098,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-353976013360098,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353976013360098,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353976013360098,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353976013360098,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848023607183,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352848023607183,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352848023607183,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -432,7 +362,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848023607183,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352848023607183,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352848023607183,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352848023607183,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352848023607183,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848023607183,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848023607183,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -447,8 +376,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848023607183,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352848023607183,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352848023607183,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848023607183,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848023607183,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352848023607183,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352848023607183,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352848023607183,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -457,10 +384,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352848023607183,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352848023607183,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352848023607183,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352848023607183,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848023607183,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352848023607183,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352848023607183,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352625699008304,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352625699008304,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352625699008304,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -474,7 +397,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625699008304,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352625699008304,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352625699008304,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352625699008304,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352625699008304,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352625699008304,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352625699008304,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -489,8 +411,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625699008304,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352625699008304,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352625699008304,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352625699008304,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625699008304,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352625699008304,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352625699008304,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352625699008304,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -499,10 +419,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625699008304,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352625699008304,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352625699008304,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352625699008304,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625699008304,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352625699008304,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625699008304,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 359633106583763,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 359633106583763,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 359633106583763,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -516,7 +432,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359633106583763,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 359633106583763,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 359633106583763,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-359633106583763,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 359633106583763,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 359633106583763,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 359633106583763,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -531,8 +446,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359633106583763,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 359633106583763,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 359633106583763,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-359633106583763,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-359633106583763,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 359633106583763,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 359633106583763,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 359633106583763,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -541,10 +454,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 359633106583763,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 359633106583763,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 359633106583763,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-359633106583763,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-359633106583763,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-359633106583763,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-359633106583763,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 357544373240676,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 357544373240676,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 357544373240676,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -558,7 +467,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544373240676,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 357544373240676,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 357544373240676,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-357544373240676,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 357544373240676,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 357544373240676,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 357544373240676,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -573,8 +481,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544373240676,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 357544373240676,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 357544373240676,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357544373240676,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544373240676,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 357544373240676,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 357544373240676,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 357544373240676,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -583,10 +489,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 357544373240676,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 357544373240676,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 357544373240676,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-357544373240676,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544373240676,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-357544373240676,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-357544373240676,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691841333213,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 353691841333213,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 353691841333213,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -600,7 +502,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691841333213,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 353691841333213,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 353691841333213,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-353691841333213,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 353691841333213,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691841333213,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691841333213,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -615,8 +516,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691841333213,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 353691841333213,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 353691841333213,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691841333213,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691841333213,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691841333213,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691841333213,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691841333213,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -625,10 +524,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691841333213,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 353691841333213,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 353691841333213,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-353691841333213,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691841333213,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691841333213,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691841333213,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 352625695475549,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 352625695475549,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 352625695475549,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -642,7 +537,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625695475549,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 352625695475549,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 352625695475549,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-352625695475549,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 352625695475549,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 352625695475549,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 352625695475549,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -657,8 +551,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625695475549,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 352625695475549,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 352625695475549,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352625695475549,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625695475549,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 352625695475549,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 352625695475549,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 352625695475549,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -667,10 +559,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 352625695475549,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 352625695475549,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 352625695475549,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-352625695475549,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625695475549,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-352625695475549,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-352625695475549,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551457,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 353691843551457,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 353691843551457,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -684,7 +572,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551457,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 353691843551457,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 353691843551457,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-353691843551457,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 353691843551457,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691843551457,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691843551457,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -699,8 +586,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551457,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 353691843551457,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551457,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551457,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551457,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551457,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691843551457,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691843551457,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -709,10 +594,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551457,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551457,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551457,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-353691843551457,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551457,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551457,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551457,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551523,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 353691843551523,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 353691843551523,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -726,7 +607,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551523,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 353691843551523,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 353691843551523,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-353691843551523,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 353691843551523,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691843551523,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691843551523,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -741,8 +621,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551523,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 353691843551523,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551523,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551523,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551523,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551523,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 353691843551523,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 353691843551523,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -751,10 +629,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 353691843551523,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551523,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 353691843551523,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-353691843551523,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551523,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551523,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-353691843551523,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 350424064740085,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,0,1,0
 350424064740085,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,0,1,0
 350424064740085,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -768,7 +642,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 350424064740085,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 350424064740085,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 350424064740085,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-350424064740085,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 350424064740085,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 350424064740085,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 350424064740085,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -783,8 +656,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 350424064740085,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 350424064740085,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 350424064740085,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-350424064740085,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-350424064740085,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 350424064740085,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 350424064740085,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 350424064740085,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -793,10 +664,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 350424064740085,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 350424064740085,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 350424064740085,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-350424064740085,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-350424064740085,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-350424064740085,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-350424064740085,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000001,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000001,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000001,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -810,7 +677,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000001,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000001,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000001,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000001,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000001,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000001,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000001,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -825,8 +691,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000001,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000001,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000001,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000001,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000001,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000001,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000001,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000001,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -835,10 +699,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000001,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000001,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000001,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000001,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000001,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000001,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000001,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000002,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000002,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000002,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -852,7 +712,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000002,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000002,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000002,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000002,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000002,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000002,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000002,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -867,8 +726,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000002,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000002,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000002,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000002,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000002,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000002,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000002,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000002,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -877,10 +734,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000002,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000002,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000002,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000002,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000002,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000002,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000002,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000003,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000003,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000003,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -894,7 +747,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000003,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000003,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000003,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000003,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000003,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000003,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000003,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -909,8 +761,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000003,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000003,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000003,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000003,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000003,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000003,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000003,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000003,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -919,10 +769,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000003,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000003,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000003,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000003,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000003,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000003,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000003,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000004,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000004,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000004,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -936,7 +782,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000004,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000004,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000004,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000004,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000004,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000004,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000004,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -951,8 +796,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000004,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000004,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000004,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000004,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000004,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000004,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000004,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000004,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -961,10 +804,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000004,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000004,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000004,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000004,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000004,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000004,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000004,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000005,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000005,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000005,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -978,7 +817,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000005,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000005,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000005,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000005,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000005,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000005,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000005,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -993,8 +831,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000005,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000005,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000005,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000005,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000005,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000005,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000005,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000005,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1003,10 +839,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000005,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000005,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000005,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000005,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000005,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000005,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000005,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000006,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000006,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000006,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1020,7 +852,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000006,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000006,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000006,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000006,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000006,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000006,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000006,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1035,8 +866,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000006,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000006,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000006,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000006,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000006,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000006,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000006,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000006,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1045,10 +874,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000006,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000006,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000006,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000006,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000006,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000006,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000006,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000007,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000007,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000007,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1062,7 +887,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000007,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000007,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000007,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000007,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000007,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000007,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000007,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1077,8 +901,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000007,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000007,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000007,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000007,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000007,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000007,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000007,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000007,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1087,10 +909,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000007,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000007,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000007,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000007,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000007,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000007,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000007,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000008,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000008,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000008,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1104,7 +922,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000008,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000008,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000008,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000008,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000008,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000008,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000008,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1119,8 +936,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000008,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000008,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000008,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000008,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000008,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000008,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000008,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000008,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1129,10 +944,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000008,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000008,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000008,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000008,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000008,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000008,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000008,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000009,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000009,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000009,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1146,7 +957,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000009,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000009,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000009,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000009,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000009,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000009,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000009,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1161,8 +971,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000009,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000009,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000009,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000009,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000009,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000009,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000009,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000009,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1171,10 +979,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000009,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000009,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000009,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000009,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000009,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000009,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000009,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000010,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000010,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000010,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1188,7 +992,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000010,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000010,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000010,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000010,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000010,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000010,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000010,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1203,8 +1006,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000010,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000010,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000010,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000010,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000010,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000010,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000010,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000010,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1213,10 +1014,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000010,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000010,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000010,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000010,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000010,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000010,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000010,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000011,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000011,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000011,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1230,7 +1027,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000011,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000011,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000011,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000011,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000011,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000011,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000011,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1245,8 +1041,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000011,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000011,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000011,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000011,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000011,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000011,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000011,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000011,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1255,10 +1049,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000011,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000011,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000011,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000011,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000011,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000011,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000011,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000012,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000012,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000012,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1272,7 +1062,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000012,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000012,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000012,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000012,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000012,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000012,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000012,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1287,8 +1076,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000012,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000012,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000012,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000012,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000012,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000012,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000012,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000012,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1297,10 +1084,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000012,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000012,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000012,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000012,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000012,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000012,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000012,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000013,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000013,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000013,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1314,7 +1097,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000013,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000013,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000013,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000013,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000013,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000013,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000013,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1329,8 +1111,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000013,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000013,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000013,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000013,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000013,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000013,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000013,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000013,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1339,10 +1119,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000013,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000013,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000013,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000013,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000013,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000013,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000013,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000014,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000014,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000014,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1356,7 +1132,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000014,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000014,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000014,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000014,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000014,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000014,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000014,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1371,8 +1146,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000014,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000014,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000014,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000014,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000014,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000014,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000014,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000014,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1381,10 +1154,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000014,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000014,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000014,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000014,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000014,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000014,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000014,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000015,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000015,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000015,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1398,7 +1167,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000015,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000015,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000015,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000015,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000015,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000015,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000015,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1413,8 +1181,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000015,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000015,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000015,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000015,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000015,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000015,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000015,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000015,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1423,10 +1189,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000015,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000015,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000015,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000015,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000015,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000015,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000015,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000016,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000016,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000016,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1440,7 +1202,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000016,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000016,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000016,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000016,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000016,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000016,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000016,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1455,8 +1216,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000016,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000016,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000016,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000016,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000016,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000016,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000016,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000016,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1465,10 +1224,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000016,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000016,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000016,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000016,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000016,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000016,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000016,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000017,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000017,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000017,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1482,7 +1237,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000017,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000017,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000017,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000017,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000017,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000017,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000017,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1497,8 +1251,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000017,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000017,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000017,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000017,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000017,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000017,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000017,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000017,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1507,10 +1259,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000017,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000017,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000017,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000017,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000017,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000017,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000017,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000018,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000018,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000018,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1524,7 +1272,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000018,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000018,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000018,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000018,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000018,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000018,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000018,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1539,8 +1286,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000018,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000018,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000018,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000018,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000018,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000018,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000018,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000018,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1549,10 +1294,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000018,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000018,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000018,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000018,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000018,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000018,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000018,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000019,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000019,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000019,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1566,7 +1307,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000019,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000019,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000019,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000019,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000019,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000019,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000019,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1581,8 +1321,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000019,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000019,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000019,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000019,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000019,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000019,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000019,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000019,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1591,10 +1329,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000019,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000019,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000019,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000019,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000019,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000019,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000019,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000020,1,1,2,Ignition,Off,0,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000020,1,1,2,Ignition,On,1,1,status,3:00:00,6:00:00,1,1,1,1
 999000000000020,2,1,2,Passenger Seatbelt,Open,0,1,status,0:00:00,23:59:59,0,0,0,0
@@ -1608,7 +1342,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000020,11,0.001,3,Ain 3,,,3,ain3,0:00:00,23:59:59,0,0,0,0
 999000000000020,19,0.001,3,Ain 4,,,3,ain4,0:00:00,23:59:59,0,0,0,0
 999000000000020,66,0.001,2,Main Battery,,,2,status|main_battery,0:00:00,23:59:59,1,1,1,1
-999000000000020,67,0.001,3,Battery Voltage,,,0,battery_voltage,0:00:00,23:59:59,0,0,0,0
 999000000000020,72,0.1,3,Dallas Temperature 1,,,0,dallas_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000020,73,0.1,3,Dallas Temperature 2,,,0,dallas_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000020,74,0.1,3,Dallas Temperature 3,,,0,dallas_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1623,8 +1356,6 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000020,156,1,2,GeoFence2,Enter,1,1,status,0:00:00,23:59:59,1,1,1,1
 999000000000020,248,1,2,Immobilizer,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000020,248,1,2,Immobilizer,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000020,252,1,2,Battery,Present,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000020,252,1,2,Battery,Unplugged,1,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000020,25,0.01,3,BLE Temperature 1,,,0,ble_temperature_1,0:00:00,23:59:59,0,0,0,0
 999000000000020,26,0.01,3,BLE Temperature 2,,,0,ble_temperature_2,0:00:00,23:59:59,0,0,0,0
 999000000000020,27,0.01,3,BLE Temperature 3,,,0,ble_temperature_3,0:00:00,23:59:59,0,0,0,0
@@ -1633,7 +1364,3 @@ imei,io_id,io_multiplier,io_type,io_name,value_name,value,target,column_name,sta
 999000000000020,253,1,2,Harsh,Braking,2,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000020,253,1,2,Harsh,Cornering,3,1,status,0:00:00,23:59:59,0,0,0,0
 999000000000020,254,0.01,3,Green Driving Value,,,0,green_driving_value,0:00:00,23:59:59,0,0,0,0
-999000000000020,179,1,2,Immobilizer1,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000020,179,1,2,Immobilizer1,ON,1,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000020,180,1,2,Immobilizer2,OFF,0,1,status,0:00:00,23:59:59,0,0,0,0
-999000000000020,180,1,2,Immobilizer2,ON,1,1,status,0:00:00,23:59:59,0,0,0,0

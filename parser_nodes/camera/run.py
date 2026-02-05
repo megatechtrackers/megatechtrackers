@@ -112,13 +112,17 @@ async def _run_poller():
     await _load_monitor.start_reporting()
     logger.info(f"Load monitor started for node: {node_id}")
     
-    # Define health and metrics callbacks
+    # Define health and metrics callbacks (refresh CMS counts from poller before returning)
     async def get_metrics():
+        if _poller and _load_monitor:
+            _poller.get_stats()  # Updates load_monitor.cms_servers_healthy/unhealthy from circuit breakers
         if _load_monitor:
             return await _load_monitor.get_metrics()
         return {}
     
     async def get_health():
+        if _poller and _load_monitor:
+            _poller.get_stats()  # Refresh CMS healthy/unhealthy so /health and dashboards show correct counts
         if _load_monitor:
             metrics = await _load_monitor.get_metrics()
             return {
@@ -146,6 +150,8 @@ async def _run_poller():
         try:
             # Create poller with load monitor and shared shutdown event
             _poller = CMSPoller(load_monitor=_load_monitor, shutdown_event=_shutdown_event)
+            if _load_monitor:
+                _load_monitor.set_poller(_poller)  # So get_metrics() refreshes cms_servers_healthy/unhealthy
             
             # Mark as ready before starting
             if _health_server:

@@ -527,6 +527,87 @@ class Database {
     }
   }
 
+  /**
+   * Insert metric_engine event into alarms table for notification processing.
+   * Checks metrics_alarm_config for is_alarm; if 0, returns null (skip).
+   * Returns { id, is_sms, is_email, is_call, priority } for processing, or null if skipped.
+   */
+  async insertMetricEngineAlarm(content: {
+    imei: number | string;
+    gps_time: string | Date;
+    latitude?: number;
+    longitude?: number;
+    status?: string;
+    event_type?: string;
+    event_category?: string;
+    severity?: string;
+    source?: string;
+  }): Promise<{ id: number; is_sms: number; is_email: number; is_call: number; priority: number } | null> {
+    const imei = typeof content.imei === 'string' ? parseInt(content.imei, 10) : content.imei;
+    const eventType = content.event_type || content.status || 'Unknown';
+
+    try {
+      // Check metrics_alarm_config: is_alarm=0 or enabled=false -> skip
+      const configQuery = `
+        SELECT is_alarm, is_sms, is_email, is_call, priority, enabled
+        FROM metrics_alarm_config
+        WHERE (imei = $1 OR imei = 0) AND event_type = $2 AND enabled = TRUE
+        ORDER BY imei DESC NULLS LAST
+        LIMIT 1
+      `;
+      const configResult = await this.query(configQuery, [imei, eventType]);
+      const config = configResult.rows[0];
+
+      if (config && config.is_alarm === 0) {
+        logger.debug(`Metric engine event skipped (is_alarm=0): imei=${imei}, event_type=${eventType}`);
+        return null;
+      }
+
+      const isSms = config?.is_sms ?? 0;
+      const isEmail = config?.is_email ?? 0;
+      const isCall = config?.is_call ?? 0;
+      const priority = config?.priority ?? 5;
+
+      const gpsTime = content.gps_time instanceof Date
+        ? content.gps_time
+        : new Date(content.gps_time);
+      const serverTime = new Date();
+      const lat = Number(content.latitude) || 0;
+      const lon = Number(content.longitude) || 0;
+
+      const insertQuery = `
+        INSERT INTO alarms (
+          imei, server_time, gps_time, latitude, longitude, altitude, angle, satellites, speed,
+          status, vendor, is_sms, is_email, is_call, is_valid, priority, category
+        )
+        VALUES ($1, $2, $3, $4, $5, 0, 0, 0, 0, $6, 'metric_engine', $7, $8, $9, 1, $10, $11)
+        ON CONFLICT (imei, gps_time) DO UPDATE SET
+          status = EXCLUDED.status,
+          is_sms = EXCLUDED.is_sms,
+          is_email = EXCLUDED.is_email,
+          is_call = EXCLUDED.is_call,
+          priority = EXCLUDED.priority,
+          category = EXCLUDED.category,
+          vendor = EXCLUDED.vendor
+        RETURNING id
+      `;
+      const result = await this.query(insertQuery, [
+        imei, serverTime, gpsTime, lat, lon,
+        eventType, isSms, isEmail, isCall, priority,
+        content.event_category || 'metric'
+      ]);
+      const id = result.rows[0]?.id;
+      if (id) {
+        logger.debug(`Inserted metric_engine alarm: id=${id}, imei=${imei}, event_type=${eventType}`);
+        return { id, is_sms: isSms, is_email: isEmail, is_call: isCall, priority };
+      }
+      return null;
+    } catch (error: any) {
+      logger.warn('insertMetricEngineAlarm failed:', error?.message);
+      return null;
+    }
+  }
+
   async getPendingAlarms(channel?: 'email' | 'sms' | 'voice' | 'all', limit: number = 100): Promise<any[]> {
     let query: string;
     let params: any[];

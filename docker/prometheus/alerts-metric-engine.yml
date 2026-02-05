@@ -1,0 +1,92 @@
+# Metric Engine alerts (plan § 12.6: service down, circuit breaker open, high error rate)
+# Runbook: metric_engine_node/docs/PROMETHEUS_RUNBOOK.md
+groups:
+  - name: metric_engine_alerts
+    interval: 30s
+    rules:
+      # Service down (plan § 12.6)
+      - alert: MetricEngineDown
+        expr: up{job="metric_engine"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: metric-engine
+        annotations:
+          summary: "Metric engine service is down"
+          description: "Metric engine {{ $labels.instance }} has been down for more than 1 minute"
+
+      # Readiness: DB or RabbitMQ unreachable (plan § 12.6)
+      - alert: MetricEngineNotReady
+        expr: metric_engine_ready == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: metric-engine
+        annotations:
+          summary: "Metric engine not ready"
+          description: "Metric engine readiness is 0 (DB or RabbitMQ unreachable) for 2+ minutes"
+
+      # Calculator errors high (plan § 12.6)
+      - alert: MetricEngineCalculatorErrorsHigh
+        expr: sum(rate(metric_engine_calculator_errors_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: metric-engine
+        annotations:
+          summary: "Metric engine calculator error rate high"
+          description: "Calculator error rate {{ $value | humanize }}/s over 5m - check calculator logic"
+
+      # Messages failed high (plan § 12.6)
+      - alert: MetricEngineMessagesFailedHigh
+        expr: sum(rate(metric_engine_messages_failed_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: metric-engine
+        annotations:
+          summary: "Metric engine message failure rate high"
+          description: "Message failure rate {{ $value | humanize }}/s over 5m - check pipeline and DB"
+
+      # DLQ growth (plan § 12.6, PRODUCTION_CHECKLIST)
+      - alert: MetricEngineDLQGrowing
+        expr: rabbitmq_queue_messages{queue=~"dlq_metrics|dlq_tracking_data"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: metric-engine
+        annotations:
+          summary: "Metric engine DLQ growing"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages - check dlq_metrics and consumer"
+
+      - alert: MetricEngineDLQCritical
+        expr: rabbitmq_queue_messages{queue=~"dlq_metrics|dlq_tracking_data"} > 10000
+        for: 2m
+        labels:
+          severity: critical
+          service: metric-engine
+        annotations:
+          summary: "Metric engine DLQ critical"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages - immediate attention required"
+
+      # Circuit breaker open (plan § 12.6)
+      - alert: MetricEngineCircuitBreakerOpen
+        expr: metric_engine_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: warning
+          service: metric-engine
+        annotations:
+          summary: "Metric engine circuit breaker open"
+          description: "Circuit breaker {{ $labels.name }} is open - DB or RabbitMQ failures; check connectivity"
+
+      # Not processing (queue backing up)
+      - alert: MetricEngineNotProcessing
+        expr: rate(metric_engine_messages_processed_total[5m]) == 0 AND rabbitmq_queue_messages{queue="metrics_queue"} > 100
+        for: 3m
+        labels:
+          severity: critical
+          service: metric-engine
+        annotations:
+          summary: "Metric engine not processing messages"
+          description: "No messages processed in 5m but metrics_queue has {{ $value }} messages"

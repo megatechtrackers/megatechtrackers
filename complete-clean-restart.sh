@@ -26,7 +26,7 @@ docker compose down || true
 
 echo ""
 echo "=== Step 2: Removing all containers ==="
-containers=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'parser-service|camera-parser|consumer-service-|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs' || true)
+containers=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'parser-service|camera-parser|consumer-service-|metric-engine-service|postgres-|rabbitmq-|monitoring-service|prometheus|grafana|alertmanager|.*-exporter|alarm-service|haproxy-tracker|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs' || true)
 if [ -n "$containers" ]; then
     echo "$containers" | while read -r name; do
         [ -z "$name" ] && continue
@@ -108,6 +108,7 @@ services=(
     "parser-service-1"
     "consumer-service-database"
     "consumer-service-alarm"
+    "metric-engine-service"
     "monitoring-service"
     "sms-gateway-service"
     "camera-parser"
@@ -184,7 +185,7 @@ echo ""
 echo "=== Step 8b: Starting remaining core services (production) ==="
 docker compose stop alarm-service-test 2>/dev/null || true
 docker compose rm -f alarm-service-test 2>/dev/null || true
-docker compose --profile production up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
+docker compose --profile production up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm metric-engine-service monitoring-service alarm-service sms-gateway-service ops-service-backend ops-service-frontend
 echo "Core services started"
 echo "Waiting for services to initialize..."
 sleep 10
@@ -276,6 +277,7 @@ echo "  5. Grafana: http://localhost:3000 (admin/admin)"
 echo "  6. Alertmanager: http://localhost:9093"
 echo "  7. Operations Service UI: http://localhost:13000"
 echo "  8. Operations Service API: http://localhost:18000/health"
+echo "  9. Metric Engine: http://localhost:9091/health"
 echo ""
 echo "To start Frappe layer later:"
 echo "  docker compose --profile frappe up -d"

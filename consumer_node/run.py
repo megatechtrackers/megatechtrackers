@@ -13,17 +13,17 @@ from config import Config
 from consumer.rabbitmq_consumer import RabbitMQConsumer, create_database_consumer, create_alarm_consumer
 from consumer.orm_init import init_orm
 from consumer.message_deduplicator import get_deduplicator
+from consumer.health_server import start_health_server, set_db_ready, set_rabbitmq_ready
 from logging_config import setup_logging_from_config
-from metrics import start_metrics_server
 
 # Configure logging from config.json
 setup_logging_from_config()
 
 logger = logging.getLogger(__name__)
 
-# Start Prometheus /metrics server (health + throughput)
+# Start health/ready/metrics server (plan § 12.6: /health, /health/ready for K8s probes)
 METRICS_PORT = int(os.environ.get("CONSUMER_METRICS_PORT", "9090"))
-start_metrics_server(METRICS_PORT)
+start_health_server(METRICS_PORT)
 
 # Global consumers
 _consumers: List[RabbitMQConsumer] = []
@@ -49,12 +49,14 @@ async def main():
         logger.info("Initializing database connection (will retry if unavailable)...")
         try:
             await init_orm(retry=True)  # Retry indefinitely
+            set_db_ready(True)
             logger.info("✓ Database connection initialized")
         except asyncio.CancelledError:
             logger.info("Database initialization cancelled due to shutdown")
             raise  # Re-raise to exit main() gracefully
         except Exception as e:
             logger.warning(f"Database not available at startup: {e}. Consumer will continue running and retry connection.")
+            set_db_ready(False)
             # Continue anyway - connections will retry when needed
         
         # Start deduplication cleanup task
@@ -81,7 +83,7 @@ async def main():
                 except Exception as e:
                     logger.warning(f"Failed to connect consumer for {consumer.queue_name}: {e}. Will retry in background.")
                     # Continue - connection will retry when start_consuming is called
-            
+            set_rabbitmq_ready(True)
             logger.info(f"✓ Connected {len(_consumers)} database consumers")
             
             # Start consuming (run all consumers concurrently)
@@ -109,7 +111,7 @@ async def main():
                 except Exception as e:
                     logger.warning(f"Failed to connect consumer for {consumer.queue_name}: {e}. Will retry in background.")
                     # Continue - connection will retry when start_consuming is called
-            
+            set_rabbitmq_ready(True)
             logger.info(f"✓ Connected {len(_consumers)} alarm consumers (high priority)")
             
             # Start consuming (run all consumers concurrently)
@@ -155,6 +157,7 @@ async def main():
             except Exception as e:
                 logger.warning(f"Error flushing batches for {consumer.queue_name}: {e}", exc_info=True)
         
+        set_rabbitmq_ready(False)
         # Now disconnect all consumers
         logger.info("Disconnecting consumers...")
         for consumer in _consumers:

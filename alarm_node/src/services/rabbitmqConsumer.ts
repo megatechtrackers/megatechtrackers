@@ -5,6 +5,7 @@ import metrics from '../utils/metrics';
 import config from '../config';
 import alarmProcessor from './alarmProcessor';
 import systemStateManager from './systemState';
+import db from '../db';
 import { Alarm } from '../types';
 
 /**
@@ -244,6 +245,25 @@ class RabbitMQConsumer {
           // Parse message content first (may fail)
           content = JSON.parse(msg.content.toString());
           alarmId = content.alarmId || content.id || null;
+
+          // Metric engine events: insert into alarms first (no id yet), then process
+          if (content.source === 'metric_engine' && !alarmId) {
+            const inserted = await db.insertMetricEngineAlarm(content);
+            if (inserted == null) {
+              this.channel!.ack(msg);
+              ackSent = true;
+              metrics.incrementCounter('rabbitmq_message_received');
+              metrics.incrementCounter('rabbitmq_message_acknowledged');
+              return;
+            }
+            content.alarmId = inserted.id;
+            content.id = inserted.id;
+            content.is_sms = inserted.is_sms;
+            content.is_email = inserted.is_email;
+            content.is_call = inserted.is_call;
+            content.priority = inserted.priority;
+            alarmId = inserted.id;
+          }
           
           // Convert RabbitMQ message to Alarm object
           // Support both formats: Alarm Service format and Consumer Service format

@@ -1,0 +1,143 @@
+# ============================================================
+# METRIC ENGINE SERVICE - STATUS
+# ============================================================
+# Metric engine: trackdata → calculators → metric_events, MVs.
+# Metrics from metric-engine-service:9091 (job: metric_engine).
+# ============================================================
+
+title: Metric Engine Service - Status
+uid: metric-engine-service-status
+tags:
+- metric-engine
+- rabbitmq
+- monitoring
+refresh: 30s
+panels:
+- row: Service Health
+- title: Metric Engine Up
+  width: 4
+  query: up{job="metric_engine"}
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+- title: Readiness (DB + RabbitMQ)
+  width: 4
+  query: metric_engine_ready
+  thresholds: $up_down
+  graph_mode: none
+  text_mode: value
+  mappings: $up_down
+- title: Circuit Breaker (DB)
+  width: 4
+  query: metric_engine_circuit_breaker_state{name="db"}
+  thresholds:
+  - { value: null, color: green }
+  - { value: 0, color: green }
+  - { value: 1, color: red }
+  - { value: 2, color: yellow }
+  graph_mode: none
+  text_mode: value
+  mappings:
+  - { value: 0, text: "Closed", color: green }
+  - { value: 1, text: "Open", color: red }
+  - { value: 2, text: "Half-open", color: yellow }
+- title: Circuit Breaker (RabbitMQ)
+  width: 4
+  query: metric_engine_circuit_breaker_state{name="rabbitmq"}
+  thresholds:
+  - { value: null, color: green }
+  - { value: 0, color: green }
+  - { value: 1, color: red }
+  - { value: 2, color: yellow }
+  graph_mode: none
+  text_mode: value
+  mappings:
+  - { value: 0, text: "Closed", color: green }
+  - { value: 1, text: "Open", color: red }
+  - { value: 2, text: "Half-open", color: yellow }
+
+- row: Throughput
+- title: Messages Processed (rate)
+  type: timeseries
+  width: 24
+  height: 8
+  query: sum(rate(metric_engine_messages_processed_total[5m])) by (queue)
+  unit: ops
+  fill_opacity: 20
+- title: Messages Failed (rate)
+  type: timeseries
+  width: 24
+  height: 7
+  query: sum(rate(metric_engine_messages_failed_total[5m])) by (queue)
+  unit: ops
+  thresholds: $error_count
+  fill_opacity: 20
+- title: Calculator Errors (rate)
+  type: timeseries
+  width: 24
+  height: 7
+  query: sum(rate(metric_engine_calculator_errors_total[5m])) by (calculator) | {{calculator}}
+  unit: ops
+  thresholds: $error_count
+  fill_opacity: 20
+
+- row: Calculator visibility
+- title: Calculators by name (one row per calculator)
+  type: table
+  width: 24
+  height: 10
+  queries:
+  - expr: sum(rate(metric_engine_calculator_invocations_total[5m])) by (calculator)
+    legend: Invocations/s
+  - expr: histogram_quantile(0.95, sum(rate(metric_engine_calculator_duration_seconds_bucket[5m])) by (le, calculator))
+    legend: Duration P95 (s)
+  - expr: sum(rate(metric_engine_calculator_events_emitted_total[5m])) by (calculator)
+    legend: Events/s
+  - expr: sum(rate(metric_engine_calculator_errors_total[5m])) by (calculator)
+    legend: Errors/s
+- title: Calculator invocations (rate)
+  type: timeseries
+  width: 24
+  height: 8
+  query: sum(rate(metric_engine_calculator_invocations_total[5m])) by (calculator) | {{calculator}}
+  unit: ops
+  fill_opacity: 20
+- title: Calculator duration P95 (seconds)
+  type: timeseries
+  width: 24
+  height: 8
+  query: histogram_quantile(0.95, sum(rate(metric_engine_calculator_duration_seconds_bucket[5m])) by (le, calculator)) | {{calculator}}
+  unit: s
+  fill_opacity: 20
+- title: Calculator events emitted (rate)
+  type: timeseries
+  width: 24
+  height: 8
+  query: sum(rate(metric_engine_calculator_events_emitted_total[5m])) by (calculator) | {{calculator}}
+  unit: ops
+  fill_opacity: 20
+
+- row: Current Counts
+- title: Processed (instant)
+  width: 6
+  query: sum(metric_engine_messages_processed_total) by (queue)
+  color: '#73BF69'
+  graph_mode: none
+- title: Failed (instant)
+  width: 6
+  query: sum(metric_engine_messages_failed_total) by (queue)
+  thresholds: $error_count
+  graph_mode: none
+- title: Calculator Errors (instant)
+  width: 6
+  query: sum(metric_engine_calculator_errors_total) by (calculator)
+  thresholds: $error_count
+  graph_mode: none
+- title: Processed Over Time
+  type: timeseries
+  width: 12
+  height: 6
+  query: metric_engine_messages_processed_total
+  unit: short
+  fill_opacity: 15

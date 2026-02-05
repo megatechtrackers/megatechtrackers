@@ -1,0 +1,17 @@
+# Metric Engine Node Dependencies
+
+# Async Database
+asyncpg>=0.29.0
+sqlalchemy>=2.0.0
+
+# RabbitMQ
+aio-pika>=9.0.0
+
+# HTTP server for health + metrics
+aiohttp>=3.9.0
+
+# Utilities
+python-dateutil>=2.8.2
+
+# Prometheus metrics
+prometheus_client>=0.19.0

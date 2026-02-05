@@ -16,6 +16,20 @@ from .message_deduplicator import get_deduplicator, increment_retry_count, clear
 logger = logging.getLogger(__name__)
 
 
+def _opt_bool(record: Dict[str, Any], key: str):
+    """Parse optional boolean from record (bool, int 0/1, str true/false)."""
+    val = record.get(key)
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, int):
+        return bool(val)
+    if isinstance(val, str):
+        return val.lower() in ('true', '1', 'yes', 'on')
+    return None
+
+
 class BatchAccumulator:
     """
     Accumulates messages and processes them in batches for better performance.
@@ -151,7 +165,17 @@ class BatchAccumulator:
                         else:
                             server_time = datetime.now(timezone.utc)
                         
-                        # Update LastStatus
+                        # Parse dynamic_io for laststatus (consumer-owned trackdata mirror)
+                        dio = record.get('dynamic_io')
+                        if isinstance(dio, str):
+                            try:
+                                dio = json.loads(dio) if dio else {}
+                            except (json.JSONDecodeError, TypeError):
+                                dio = {}
+                        elif not isinstance(dio, dict):
+                            dio = {}
+
+                        # Update LastStatus (consumer-owned columns only; do not update metric engine state columns)
                         await LastStatus.upsert(
                             imei=imei_int,
                             gps_time=gps_time,
@@ -164,7 +188,31 @@ class BatchAccumulator:
                             speed=record.get('speed', 0),
                             reference_id=record.get('reference_id'),
                             distance=record.get('distance'),
-                            vendor=record.get('vendor', 'teltonika')
+                            vendor=record.get('vendor', 'teltonika'),
+                            status=record.get('status'),
+                            ignition=_opt_bool(record, 'ignition'),
+                            driver_seatbelt=_opt_bool(record, 'driver_seatbelt'),
+                            passenger_seatbelt=_opt_bool(record, 'passenger_seatbelt'),
+                            door_status=_opt_bool(record, 'door_status'),
+                            passenger_seat=record.get('passenger_seat'),
+                            main_battery=record.get('main_battery'),
+                            battery_voltage=record.get('battery_voltage'),
+                            fuel=record.get('fuel'),
+                            dallas_temperature_1=record.get('dallas_temperature_1'),
+                            dallas_temperature_2=record.get('dallas_temperature_2'),
+                            dallas_temperature_3=record.get('dallas_temperature_3'),
+                            dallas_temperature_4=record.get('dallas_temperature_4'),
+                            ble_temperature_1=record.get('ble_temperature_1'),
+                            ble_temperature_2=record.get('ble_temperature_2'),
+                            ble_temperature_3=record.get('ble_temperature_3'),
+                            ble_temperature_4=record.get('ble_temperature_4'),
+                            ble_humidity_1=record.get('ble_humidity_1'),
+                            ble_humidity_2=record.get('ble_humidity_2'),
+                            ble_humidity_3=record.get('ble_humidity_3'),
+                            ble_humidity_4=record.get('ble_humidity_4'),
+                            green_driving_value=record.get('green_driving_value'),
+                            dynamic_io=dio,
+                            is_valid=record.get('is_valid'),
                         )
                     except Exception as e:
                         logger.debug(f"Error updating LastStatus for record: {e}")

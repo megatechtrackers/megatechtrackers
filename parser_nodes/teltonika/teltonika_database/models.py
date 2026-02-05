@@ -523,7 +523,7 @@ class UnitIOMapping(Base):
 
 
 class LastStatus(Base):
-    """LastStatus table - stores latest status/position for each device"""
+    """laststatus table - stores latest status/position for each device"""
     __tablename__ = "laststatus"
     
     imei: Mapped[int] = mapped_column(BigInteger, primary_key=True)

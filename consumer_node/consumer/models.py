@@ -75,6 +75,58 @@ def parse_datetime_field(record: Dict[str, Any], field: str, default: Optional[d
         return default
 
 
+def _to_optional_float(v: Any) -> Optional[float]:
+    """Coerce value to float for DB. Parser may send strings (e.g. '0.500'). Returns None for None/empty."""
+    if v is None or v == '':
+        return None
+    if isinstance(v, float):
+        return v
+    if isinstance(v, int):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v.strip()) if v.strip() else None
+        except (ValueError, TypeError):
+            return None
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return None
+
+
+def _to_optional_int(v: Any) -> Optional[int]:
+    """Coerce value to int for DB. Parser may send strings. Returns None for None/empty."""
+    if v is None or v == '':
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float):
+        return int(v)
+    if isinstance(v, str):
+        try:
+            return int(float(v.strip())) if v.strip() else None
+        except (ValueError, TypeError):
+            return None
+    try:
+        return int(float(v))
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_bool_field(record: Dict[str, Any], field: str) -> Optional[bool]:
+    """Parse boolean field from record (supports bool, int 0/1, str true/false)."""
+    val = record.get(field)
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, int):
+        return bool(val)
+    if isinstance(val, str):
+        return val.lower() in ('true', '1', 'yes', 'on')
+    return None
+
+
 def parse_numeric_field(record: Dict[str, Any], field: str, field_type: type = float, default: Optional[Any] = None) -> Optional[Any]:
     """
     Parse numeric field from record dictionary with fallback handling.
@@ -140,6 +192,10 @@ class TrackData(Base):
     speed: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(100), default='Normal')
     vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
+    ignition: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    driver_seatbelt: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    passenger_seatbelt: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    door_status: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     passenger_seat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     main_battery: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     battery_voltage: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -204,6 +260,10 @@ class TrackData(Base):
                 'speed': record.get('speed', 0),
                 'status': record.get('status', DEFAULT_STATUS),
                 'vendor': record.get('vendor', 'teltonika'),
+                'ignition': _parse_bool_field(record, 'ignition'),
+                'driver_seatbelt': _parse_bool_field(record, 'driver_seatbelt'),
+                'passenger_seatbelt': _parse_bool_field(record, 'passenger_seatbelt'),
+                'door_status': _parse_bool_field(record, 'door_status'),
                 'passenger_seat': parse_numeric_field(record, 'passenger_seat', float),
                 'main_battery': parse_numeric_field(record, 'main_battery', float),
                 'battery_voltage': parse_numeric_field(record, 'battery_voltage', float),
@@ -727,9 +787,10 @@ class UnitIOMapping(Base):
 
 
 class LastStatus(Base):
-    """LastStatus table - stores latest status/position for each device"""
+    """laststatus table - stores latest status/position for each device.
+    Consumer owns: position + trackdata mirror columns. Metric engine owns state columns only."""
     __tablename__ = "laststatus"
-    
+
     imei: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     gps_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     server_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -742,13 +803,73 @@ class LastStatus(Base):
     reference_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     vendor: Mapped[str] = mapped_column(String(50), default='teltonika')
+    # Consumer-owned trackdata mirror columns (do not update metric engine state columns)
+    status: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ignition: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    driver_seatbelt: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    passenger_seatbelt: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    door_status: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    passenger_seat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    main_battery: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    battery_voltage: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    fuel: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dallas_temperature_1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dallas_temperature_2: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dallas_temperature_3: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dallas_temperature_4: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ble_temperature_1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ble_temperature_2: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ble_temperature_3: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ble_temperature_4: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ble_humidity_1: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ble_humidity_2: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ble_humidity_3: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ble_humidity_4: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    green_driving_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    dynamic_io: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    is_valid: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     updateddate: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     @classmethod
-    async def upsert(cls, imei: int, gps_time: Optional[datetime], server_time: Optional[datetime],
-                     latitude: float, longitude: float, altitude: int, angle: int,
-                     satellites: int, speed: int, reference_id: Optional[int] = None,
-                     distance: Optional[float] = None, vendor: str = 'teltonika') -> None:
+    async def upsert(
+        cls,
+        imei: int,
+        gps_time: Optional[datetime],
+        server_time: Optional[datetime],
+        latitude: float,
+        longitude: float,
+        altitude: int,
+        angle: int,
+        satellites: int,
+        speed: int,
+        reference_id: Optional[int] = None,
+        distance: Optional[float] = None,
+        vendor: str = 'teltonika',
+        status: Optional[str] = None,
+        ignition: Optional[bool] = None,
+        driver_seatbelt: Optional[bool] = None,
+        passenger_seatbelt: Optional[bool] = None,
+        door_status: Optional[bool] = None,
+        passenger_seat: Optional[float] = None,
+        main_battery: Optional[float] = None,
+        battery_voltage: Optional[float] = None,
+        fuel: Optional[float] = None,
+        dallas_temperature_1: Optional[float] = None,
+        dallas_temperature_2: Optional[float] = None,
+        dallas_temperature_3: Optional[float] = None,
+        dallas_temperature_4: Optional[float] = None,
+        ble_temperature_1: Optional[float] = None,
+        ble_temperature_2: Optional[float] = None,
+        ble_temperature_3: Optional[float] = None,
+        ble_temperature_4: Optional[float] = None,
+        ble_humidity_1: Optional[int] = None,
+        ble_humidity_2: Optional[int] = None,
+        ble_humidity_3: Optional[int] = None,
+        ble_humidity_4: Optional[int] = None,
+        green_driving_value: Optional[float] = None,
+        dynamic_io: Optional[dict] = None,
+        is_valid: Optional[int] = None,
+    ) -> None:
         """
         Update or insert last status using SQLAlchemy Core.
         
@@ -767,10 +888,29 @@ class LastStatus(Base):
             vendor: Vendor name (teltonika, camera)
         """
         try:
-            # Bind naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg rejects aware datetimes)
             gps_time_naive = _to_naive_utc(gps_time) if gps_time is not None else None
             server_time_naive = _to_naive_utc(server_time) if server_time is not None else None
-            # Build values dict for Core insert
+            # Coerce numeric columns: parser may send strings (e.g. '0.500'); DB expects float/int
+            passenger_seat = _to_optional_float(passenger_seat)
+            main_battery = _to_optional_float(main_battery)
+            battery_voltage = _to_optional_float(battery_voltage)
+            fuel = _to_optional_float(fuel)
+            dallas_temperature_1 = _to_optional_float(dallas_temperature_1)
+            dallas_temperature_2 = _to_optional_float(dallas_temperature_2)
+            dallas_temperature_3 = _to_optional_float(dallas_temperature_3)
+            dallas_temperature_4 = _to_optional_float(dallas_temperature_4)
+            ble_temperature_1 = _to_optional_float(ble_temperature_1)
+            ble_temperature_2 = _to_optional_float(ble_temperature_2)
+            ble_temperature_3 = _to_optional_float(ble_temperature_3)
+            ble_temperature_4 = _to_optional_float(ble_temperature_4)
+            ble_humidity_1 = _to_optional_int(ble_humidity_1)
+            ble_humidity_2 = _to_optional_int(ble_humidity_2)
+            ble_humidity_3 = _to_optional_int(ble_humidity_3)
+            ble_humidity_4 = _to_optional_int(ble_humidity_4)
+            green_driving_value = _to_optional_float(green_driving_value)
+            is_valid = _to_optional_int(is_valid)
+            distance = _to_optional_float(distance)
+            # Consumer-owned columns only (do not overwrite metric engine state columns)
             values = {
                 'imei': imei,
                 'gps_time': gps_time_naive,
@@ -783,28 +923,54 @@ class LastStatus(Base):
                 'speed': speed,
                 'reference_id': reference_id,
                 'distance': distance,
-                'vendor': vendor
+                'vendor': vendor,
+                'status': status,
+                'ignition': ignition,
+                'driver_seatbelt': driver_seatbelt,
+                'passenger_seatbelt': passenger_seatbelt,
+                'door_status': door_status,
+                'passenger_seat': passenger_seat,
+                'main_battery': main_battery,
+                'battery_voltage': battery_voltage,
+                'fuel': fuel,
+                'dallas_temperature_1': dallas_temperature_1,
+                'dallas_temperature_2': dallas_temperature_2,
+                'dallas_temperature_3': dallas_temperature_3,
+                'dallas_temperature_4': dallas_temperature_4,
+                'ble_temperature_1': ble_temperature_1,
+                'ble_temperature_2': ble_temperature_2,
+                'ble_temperature_3': ble_temperature_3,
+                'ble_temperature_4': ble_temperature_4,
+                'ble_humidity_1': ble_humidity_1,
+                'ble_humidity_2': ble_humidity_2,
+                'ble_humidity_3': ble_humidity_3,
+                'ble_humidity_4': ble_humidity_4,
+                'green_driving_value': green_driving_value,
+                'dynamic_io': dynamic_io,
+                'is_valid': is_valid,
             }
-
-            # Use PostgreSQL-specific insert with ON CONFLICT DO UPDATE
             table = cls.__table__
+            # Columns to update on conflict (consumer-owned only; exclude metric engine state columns)
+            consumer_columns = {
+                'gps_time', 'server_time', 'latitude', 'longitude', 'altitude', 'angle',
+                'satellites', 'speed', 'reference_id', 'distance', 'vendor', 'updateddate',
+                'status', 'ignition', 'driver_seatbelt', 'passenger_seatbelt', 'door_status',
+                'passenger_seat', 'main_battery', 'battery_voltage', 'fuel',
+                'dallas_temperature_1', 'dallas_temperature_2', 'dallas_temperature_3', 'dallas_temperature_4',
+                'ble_temperature_1', 'ble_temperature_2', 'ble_temperature_3', 'ble_temperature_4',
+                'ble_humidity_1', 'ble_humidity_2', 'ble_humidity_3', 'ble_humidity_4',
+                'green_driving_value', 'dynamic_io', 'is_valid',
+            }
             async with get_session() as session:
                 try:
                     stmt = pg_insert(table).values(values)
-                    
                     update_dict = {
                         col.name: text(f'EXCLUDED.{col.name}')
                         for col in table.columns
-                        if col.name != 'imei'  # imei is the primary key
+                        if col.name != 'imei' and col.name in consumer_columns
                     }
-                    # Explicitly update updateddate to current timestamp
                     update_dict['updateddate'] = func.now()
-                    
-                    stmt = stmt.on_conflict_do_update(
-                        index_elements=['imei'],
-                        set_=update_dict
-                    )
-                    
+                    stmt = stmt.on_conflict_do_update(index_elements=['imei'], set_=update_dict)
                     await session.execute(stmt)
                     await session.commit()
                 except Exception as db_error:

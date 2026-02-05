@@ -6,8 +6,11 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
 import aiohttp
+
+if TYPE_CHECKING:
+    pass  # Avoid circular import; poller has get_stats() method
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +84,13 @@ class CameraParserLoadMonitor:
         self.report_interval = int(os.getenv('LOAD_MONITORING_INTERVAL', '30'))
         self.api_endpoint = os.getenv('LOAD_MONITORING_ENDPOINT')
         self.log_metrics = os.getenv('LOAD_MONITORING_LOG', 'true').lower() == 'true'
+        
+        # Optional reference to CMS poller to refresh cms_servers_healthy/unhealthy before reporting
+        self._poller_ref: Optional[Any] = None
+    
+    def set_poller(self, poller: Any):
+        """Set reference to CMSPoller so get_metrics() can refresh CMS counts from circuit breakers."""
+        self._poller_ref = poller
     
     # =========================================================================
     # Metric Recording Methods
@@ -281,6 +291,13 @@ class CameraParserLoadMonitor:
     
     async def get_metrics(self) -> Dict[str, Any]:
         """Get current metrics in format compatible with monitoring node"""
+        # Refresh CMS healthy/unhealthy from poller so dashboards and push show correct active count
+        if self._poller_ref and hasattr(self._poller_ref, 'get_stats'):
+            try:
+                self._poller_ref.get_stats()
+            except Exception as e:
+                logger.debug(f"Could not refresh CMS stats from poller: {e}")
+        
         uptime_seconds = (datetime.now(timezone.utc) - self.start_time).total_seconds()  # UTC consistent
         
         # Calculate rates

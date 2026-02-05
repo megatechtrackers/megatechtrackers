@@ -1,0 +1,32 @@
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update -o Acquire::Retries=10 && apt-get install -y -o Acquire::Retries=10 \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY metric_engine_node/requirements.txt metric_engine_node/requirements.txt
+
+# Install Python dependencies
+RUN pip install --upgrade pip && pip install --no-cache-dir --retries 20 --timeout 1200 -r metric_engine_node/requirements.txt
+
+# Copy application code
+COPY . .
+
+# Remove existing config and copy Docker config
+RUN rm -f /app/metric_engine_node/config.json
+COPY docker/config/metric_engine.docker.json /app/metric_engine_node/config.json
+
+# Copy entrypoint and ensure LF line endings (avoids "no such file or directory" when exec in Linux)
+COPY docker/entrypoint-metric-engine.sh /usr/local/bin/entrypoint-metric-engine.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint-metric-engine.sh && chmod +x /usr/local/bin/entrypoint-metric-engine.sh
+
+# Create logs directory
+RUN mkdir -p logs
+
+ENTRYPOINT ["/usr/local/bin/entrypoint-metric-engine.sh"]
+CMD ["python", "metric_engine_node/run.py"]

@@ -32,7 +32,7 @@ docker compose --profile testing --profile frappe --profile production down || t
 
 echo ""
 echo "=== Step 2: Removing all containers ==="
-containers=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'parser-service|camera-parser|consumer-service-|postgres-|rabbitmq-|monitoring-service|mock-tracker|haproxy-tracker|alarm-service|mailhog|mock-sms|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs' || true)
+containers=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'parser-service|camera-parser|consumer-service-|metric-engine-service|postgres-|rabbitmq-|monitoring-service|mock-tracker|haproxy-tracker|alarm-service|mailhog|mock-sms|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs' || true)
 if [ -n "$containers" ]; then
     echo "$containers" | while read -r name; do
         [ -z "$name" ] && continue
@@ -114,6 +114,7 @@ services=(
     "parser-service-1"
     "consumer-service-database"
     "consumer-service-alarm"
+    "metric-engine-service"
     "monitoring-service"
     "mock-sms-server"
     "mock-tracker"
@@ -230,7 +231,7 @@ done
 
 echo ""
 echo "=== Step 11: Starting remaining core services ==="
-docker compose up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm monitoring-service sms-gateway-service ops-service-backend ops-service-frontend
+docker compose up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm metric-engine-service monitoring-service sms-gateway-service ops-service-backend ops-service-frontend
 echo "Core services started"
 echo "Waiting for services to initialize..."
 sleep 10
@@ -327,6 +328,7 @@ echo "Monitoring URLs:"
 echo "  MailHog (Emails):     http://localhost:8025"
 echo "  Mock SMS (SMS):       http://localhost:8786"
 echo "  Alarm Service (Test): http://localhost:13100/health"
+echo "  Metric Engine:        http://localhost:9091/health"
 echo "  Operations Service UI:  http://localhost:13000"
 echo "  Operations Service API: http://localhost:18000/health"
 echo "  RabbitMQ:             http://localhost:15672 (tracking_user/tracking_password)"

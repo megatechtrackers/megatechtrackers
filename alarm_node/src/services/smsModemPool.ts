@@ -819,15 +819,30 @@ class SmsModemPool {
       }
     }
     
-    // Update metrics - use cached data for metrics to avoid extra DB call
-    const status = this.getPoolStatusFromCache();
+    // Update metrics from DB so Grafana shows correct usage/remaining (alarm dashboard uses API/DB;
+    // SMS gateway and other writers update DB directly, so cache would be stale).
+    let status: PoolStatus;
+    try {
+      status = await this.getPoolStatus();
+      // Sync in-memory cache with DB so pool selection and next health cycle use fresh quota
+      for (const m of status.modems) {
+        const config = this.modemConfigs.get(m.id);
+        if (config) {
+          config.sms_sent_count = m.sms_sent_count;
+          config.sms_limit = m.sms_limit;
+          config.health_status = m.health_status as ModemConfig['health_status'];
+        }
+      }
+    } catch (error: any) {
+      logger.warn('Failed to refresh pool status from DB for metrics, using cache:', error?.message);
+      status = this.getPoolStatusFromCache();
+    }
     metrics.setGauge('sms_modem_pool_size', status.totalModems);
     metrics.setGauge('sms_modem_healthy_count', status.healthyModems);
+    metrics.setGauge('sms_modem_degraded_count', status.degradedModems);
+    metrics.setGauge('sms_modem_unhealthy_count', status.unhealthyModems);
     metrics.setGauge('sms_modem_quota_exhausted_count', status.quotaExhaustedModems);
-    
-    // Update per-modem usage metrics
     for (const modem of status.modems) {
-      // Ensure numeric values (PostgreSQL returns strings for BIGINT)
       const sentCount = Number(modem.sms_sent_count) || 0;
       const limit = Number(modem.sms_limit) || 0;
       metrics.setGauge('sms_modem_usage_count', sentCount, { modem_name: modem.name });

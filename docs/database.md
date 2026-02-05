@@ -12,7 +12,7 @@ These are **not** schema sources; they have specific roles:
 
 | File | Purpose |
 |------|---------|
-| `database/migrations/*.sql` | Incremental migrations (add columns, etc.) |
+| `database/migrations/README.md` | States that no migrations are used; schema.sql only. Do not add migration SQL files. |
 | `ops_node/migration/001_schema.sql` | Legacy Operations Service schema snapshot (superseded by `database/schema.sql`) |
 | `ops_node/migration/migrate_sql_server_to_cfg.sql` | One-off migration from SQL Server |
 | `alarm_node/test-alarm.sql` | Test data for alarms |
@@ -82,6 +82,8 @@ postgresql://postgres:postgres@localhost:5432/tracking_db
 
 1. Edit `database/schema.sql` directly
 2. Use `IF NOT EXISTS` for new tables
-3. Use `ON CONFLICT DO NOTHING` for seed data
-4. Test by running schema on fresh database
-5. Commit changes to version control
+3. **Table and view names**: Use lowercase only (e.g. `trackdata`, `laststatus`, `metric_events`). Do not use quoted mixed-case identifiers in SQL.
+4. **Add new columns in the CREATE TABLE definition only** — project not launched, so do not use `ALTER TABLE ADD COLUMN` or idempotent DO blocks that add columns
+5. Use `ON CONFLICT DO NOTHING` for seed data
+6. Test by running schema on fresh database
+7. Commit changes to version control

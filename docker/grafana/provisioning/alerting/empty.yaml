@@ -1,0 +1,4 @@
+# Minimal alerting provisioning so Grafana does not warn on invalid files.
+# Add real alert rule groups here if needed (see Grafana alerting provisioning docs).
+apiVersion: 1
+groups: []

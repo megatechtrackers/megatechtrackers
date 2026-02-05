@@ -35,7 +35,7 @@ Write-Host ""
 Write-Host "=== Step 2: Removing all containers ===" -ForegroundColor Yellow
 # docker-compose down should have removed containers, but force remove any remaining
 $containers = docker ps -a --format "{{.Names}}" | Where-Object { 
-    $_ -match "parser-service|camera-parser|consumer-service-|postgres-|rabbitmq-|monitoring-service|mock-tracker|haproxy-tracker|alarm-service|mailhog|mock-sms|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
+    $_ -match "parser-service|camera-parser|consumer-service-|metric-engine-service|postgres-|rabbitmq-|monitoring-service|mock-tracker|haproxy-tracker|alarm-service|mailhog|mock-sms|sms-gateway-service|ops-service|mariadb|frappe|access-gateway|web-app|mobile-app|docs" 
 }
 if ($containers) {
     $containers | ForEach-Object {
@@ -142,6 +142,7 @@ $services = @(
     "parser-service-1",
     "consumer-service-database",
     "consumer-service-alarm",
+    "metric-engine-service",
     "monitoring-service",
     "mock-sms-server",
     "mock-tracker",
@@ -300,7 +301,7 @@ if (-not $rabbitmqReady) {
 Write-Host ""
 Write-Host "=== Step 11: Starting remaining core services ===" -ForegroundColor Yellow
 # Start parsers (Teltonika + camera), consumers, haproxy, monitoring-service, sms-gateway-service, ops-service
-docker compose up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm monitoring-service sms-gateway-service ops-service-backend ops-service-frontend
+docker compose up -d haproxy-tracker parser-service-1 parser-service-2 parser-service-3 parser-service-4 parser-service-5 parser-service-6 parser-service-7 parser-service-8 camera-parser consumer-service-database consumer-service-alarm metric-engine-service monitoring-service sms-gateway-service ops-service-backend ops-service-frontend
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error starting core services" -ForegroundColor Red
     exit 1
@@ -720,6 +721,14 @@ if ($opsServiceFrontendUp -match "ops-service-frontend") {
     Write-Host "  ✗ Operations Service Frontend: Not running" -ForegroundColor Red
 }
 
+# Metric Engine Service
+$metricEngineUp = docker ps --filter "name=metric-engine-service" --filter "status=running" --format "{{.Names}}" 2>&1
+if ($metricEngineUp -match "metric-engine-service") {
+    Write-Host "  ✓ Metric Engine Service: Running (http://localhost:9091)" -ForegroundColor Green
+} else {
+    Write-Host "  ✗ Metric Engine Service: Not running" -ForegroundColor Red
+}
+
 Write-Host ""
 Write-Host "=== Step 17: Health Check Validation ===" -ForegroundColor Yellow
 Write-Host "Validating service health endpoints..." -ForegroundColor Cyan
@@ -803,7 +812,7 @@ Write-Host ""
 Write-Host "Total Containers Running:" -ForegroundColor Cyan
 $allContainers = (docker ps --format "{{.Names}}").Count
 Write-Host "  Total: $allContainers containers" -ForegroundColor $(if ($allContainers -ge 35) { "Green" } else { "Yellow" })
-Write-Host "  Expected: 35+ containers (20 core + 8 monitoring + 4 testing + 3 ops-service/gateway)" -ForegroundColor Gray
+Write-Host "  Expected: 36+ containers (20 core + 8 monitoring + 4 testing + 3 ops-service/gateway + metric-engine)" -ForegroundColor Gray
 
 # =============================================================================
 # OPTIONAL: Start Frappe Access Control Layer

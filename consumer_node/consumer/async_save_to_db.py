@@ -3,6 +3,7 @@ Async SaveToDBDynamically for Megatechtrackers Fleet Tracking
 Dynamic database saving with async operations using SQLAlchemy Core
 """
 import asyncio
+import json
 import logging
 import socket
 from typing import List, Dict, Any
@@ -118,7 +119,7 @@ class AsyncSaveToDB:
                 else:
                     logger.warning(f"Failed to create Alarm from record: imei={imei_str}")
             
-            # Update LastStatus using ORM
+            # Update LastStatus using ORM (consumer-owned columns only: position + trackdata mirror; plan § 3.5)
             try:
                 imei_int = int(imei_str) if imei_str != 'UNKNOWN' else 0
                 from dateutil import parser
@@ -127,6 +128,18 @@ class AsyncSaveToDB:
                     if dt.tzinfo is None:
                         return dt.replace(tzinfo=timezone.utc)
                     return dt.astimezone(timezone.utc)
+
+                def _opt_bool(r, key):
+                    v = r.get(key)
+                    if v is None:
+                        return None
+                    if isinstance(v, bool):
+                        return v
+                    if isinstance(v, (int, float)):
+                        return bool(v)
+                    if isinstance(v, str):
+                        return v.strip().lower() in ('1', 'true', 'yes')
+                    return None
 
                 gps_time_str = record.get('gps_time', '')
                 if isinstance(gps_time_str, str):
@@ -151,7 +164,16 @@ class AsyncSaveToDB:
                     server_time = _ensure_utc(server_time_str)
                 else:
                     server_time = datetime.now(timezone.utc)
-                
+
+                dio = record.get('dynamic_io')
+                if isinstance(dio, str):
+                    try:
+                        dio = json.loads(dio) if dio else {}
+                    except (json.JSONDecodeError, TypeError):
+                        dio = {}
+                elif not isinstance(dio, dict):
+                    dio = {}
+
                 await LastStatus.upsert(
                     imei=imei_int,
                     gps_time=gps_time,
@@ -163,7 +185,32 @@ class AsyncSaveToDB:
                     satellites=record.get('satellites', 0),
                     speed=record.get('speed', 0),
                     reference_id=record.get('reference_id'),
-                    distance=record.get('distance')
+                    distance=record.get('distance'),
+                    vendor=record.get('vendor', 'teltonika'),
+                    status=record.get('status'),
+                    ignition=_opt_bool(record, 'ignition'),
+                    driver_seatbelt=_opt_bool(record, 'driver_seatbelt'),
+                    passenger_seatbelt=_opt_bool(record, 'passenger_seatbelt'),
+                    door_status=_opt_bool(record, 'door_status'),
+                    passenger_seat=record.get('passenger_seat'),
+                    main_battery=record.get('main_battery'),
+                    battery_voltage=record.get('battery_voltage'),
+                    fuel=record.get('fuel'),
+                    dallas_temperature_1=record.get('dallas_temperature_1'),
+                    dallas_temperature_2=record.get('dallas_temperature_2'),
+                    dallas_temperature_3=record.get('dallas_temperature_3'),
+                    dallas_temperature_4=record.get('dallas_temperature_4'),
+                    ble_temperature_1=record.get('ble_temperature_1'),
+                    ble_temperature_2=record.get('ble_temperature_2'),
+                    ble_temperature_3=record.get('ble_temperature_3'),
+                    ble_temperature_4=record.get('ble_temperature_4'),
+                    ble_humidity_1=record.get('ble_humidity_1'),
+                    ble_humidity_2=record.get('ble_humidity_2'),
+                    ble_humidity_3=record.get('ble_humidity_3'),
+                    ble_humidity_4=record.get('ble_humidity_4'),
+                    green_driving_value=record.get('green_driving_value'),
+                    dynamic_io=dio,
+                    is_valid=record.get('is_valid'),
                 )
                 logger.debug(f"Updated LastStatus: imei={imei_str}")
             except (ConnectionError, OSError, TimeoutError, asyncio.TimeoutError) as e:
